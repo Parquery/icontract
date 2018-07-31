@@ -17,10 +17,10 @@ with open(os.path.join(here, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='icontract',
-    version='1.0.0',
+    version='1.0.1',
     description='Provide design-by-contract with informative violation messages',
     long_description=long_description,
-    url='https://https://github.com/Parquery/icontract',
+    url='https://github.com/Parquery/icontract',
     author='Marko Ristin',
     author_email='marko@parquery.com',
     classifiers=[
