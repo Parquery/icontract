@@ -1,0 +1,11 @@
+[TYPECHECK]
+ignored-modules = numpy
+ignored-classes = numpy,PurePath
+generated-members=bottle\.request\.forms\.decode,bottle\.request\.query\.decode
+
+[FORMAT]
+max-line-length=120
+
+[MESSAGES CONTROL]
+disable=too-few-public-methods,abstract-class-little-used,len-as-condition,bad-continuation,bad-whitespace
+
