@@ -1,19 +1,22 @@
 icontract
 =========
 
-icontract provides design-by-contract to Python3 with informative violation messages.
+icontract provides `design-by-contract <https://en.wikipedia.org/wiki/Design_by_contract>`_ to Python3 with informative
+violation messages.
 
 There exist a couple of contract libraries. However, at the time of this writing (July 2018), they all required the
-programmer either to learn a new syntax (`PyContracts<https://pypi.org/project/PyContracts/>`_) or to write
-redundant condition descriptions (*e.g.*, `contracts<https://pypi.org/project/contracts/>`_,
-`covenant<https://github.com/kisielk/covenant>_`,
-`dpcontracts<https://pypi.org/project/dpcontracts/>`_,
-`pyadbc<https://pypi.org/project/pyadbc/>`_ and.
-`pcd<https://pypi.org/project/pcd>`_).
+programmer either to learn a new syntax (`PyContracts <https://pypi.org/project/PyContracts/>`_) or to write
+redundant condition descriptions (
+*e.g.*,
+`contracts <https://pypi.org/project/contracts/>`_,
+`covenant <https://github.com/kisielk/covenant>`_,
+`dpcontracts <https://pypi.org/project/dpcontracts/>`_,
+`pyadbc <https://pypi.org/project/pyadbc/>`_ and
+`pcd <https://pypi.org/project/pcd>`_).
 
-This library was strongly inspired by them, but we went a step further and use the
-`meta<https://github.com/srossross/Meta>`_ programming library to infer violation messages from the code in order to
-promote dont-repeat-yourself principle (`DRY<https://en.wikipedia.org/wiki/Don%27t_repeat_yourself`_) and spare the
+This library was strongly inspired by them, but we go a step further and use the
+`meta <https://github.com/srossross/Meta>`_ programming library to infer violation messages from the code in order to
+promote dont-repeat-yourself principle (`DRY <https://en.wikipedia.org/wiki/Don%27t_repeat_yourself>`_) and spare the
 programmer the tedious task of repeating the message that was already written in code.
 
 We want this library to be used mainly in production code and let us spot both development and production bugs with
