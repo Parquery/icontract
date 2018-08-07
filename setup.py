@@ -36,4 +36,5 @@ setup(
         'dev': ['mypy==0.570', 'pylint==1.8.2', 'yapf==0.20.2', 'tox>=3.0.0'],
         'test': ['tox>=3.0.0']
     },
-    py_modules=['icontract'])
+    py_modules=['icontract'],
+    package_data={"icontract": ["py.typed"]})
