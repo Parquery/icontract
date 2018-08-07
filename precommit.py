@@ -159,6 +159,7 @@ def main() -> int:
     # yapf: disable
     pths = sorted(
         list(py_dir.glob("*.py")) +
+        list(py_dir.glob("icontract/*.py")) +
         list((py_dir / 'tests').glob("*.py"))
     )
     # yapf: enable
