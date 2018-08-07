@@ -19,7 +19,8 @@ def _condition_as_text(condition: Callable) -> str:
     lambda_node = meta.decompiler.decompile_func(condition)
     assert isinstance(lambda_node, ast.Lambda)
 
-    body_txt = str(meta.dump_python_source(lambda_node.body)).strip()
+    # pylint: disable=no-member
+    body_txt = str(meta.dump_python_source(lambda_node.body)).strip()  # type: ignore
 
     # Strip enclosing brackets from the body
     if body_txt.startswith("(") and body_txt.endswith(")"):
