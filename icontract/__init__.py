@@ -2,6 +2,7 @@
 import ast
 import inspect
 from typing import Callable, MutableMapping, Any, Optional, Set, List  # pylint: disable=unused-import
+import functools
 
 import meta.decompiler
 
@@ -113,6 +114,9 @@ class pre:  # pylint: disable=invalid-name
 
             return func(*args, **kwargs)
 
+        # Copy __doc__ and other properties so that doctests can run
+        functools.update_wrapper(wrapped, func)
+
         return wrapped
 
 
@@ -214,5 +218,8 @@ class post:  # pylint: disable=invalid-name
                 raise ViolationError(": ".join(parts))
 
             return result
+
+        # Copy __doc__ and other properties so that doctests can run
+        functools.update_wrapper(wrapped, func)
 
         return wrapped
