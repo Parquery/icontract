@@ -10,7 +10,7 @@ import icontract.recompute
 import icontract.represent
 
 
-class ViolationError(Exception):
+class ViolationError(AssertionError):
     """Indicate a violation of a contract."""
 
     pass
