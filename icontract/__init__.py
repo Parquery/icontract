@@ -1,33 +1,19 @@
 """Decorate functions with contracts."""
 import ast
-import inspect
-from typing import Callable, MutableMapping, Any, Optional, Set, List  # pylint: disable=unused-import
 import functools
+import inspect
+from typing import Callable, MutableMapping, Any, Optional, Set, List, Mapping  # pylint: disable=unused-import
 
 import meta.decompiler
+
+import icontract.recompute
+import icontract.represent
 
 
 class ViolationError(Exception):
     """Indicate a violation of a contract."""
 
     pass
-
-
-def _condition_as_text(condition: Callable) -> str:
-    if condition.__name__ != "<lambda>":
-        return condition.__name__
-
-    lambda_node = meta.decompiler.decompile_func(condition)
-    assert isinstance(lambda_node, ast.Lambda)
-
-    # pylint: disable=no-member
-    body_txt = str(meta.dump_python_source(lambda_node.body)).strip()  # type: ignore
-
-    # Strip enclosing brackets from the body
-    if body_txt.startswith("(") and body_txt.endswith(")"):
-        body_txt = body_txt[1:-1]
-
-    return body_txt
 
 
 class pre:  # pylint: disable=invalid-name
@@ -56,7 +42,7 @@ class pre:  # pylint: disable=invalid-name
 
         self._condition_args = list(inspect.signature(condition).parameters.keys())  # type: List[str]
         self._condition_arg_set = set(self._condition_args)  # type: Set[str]
-        self._condition_as_text = _condition_as_text(condition=condition)
+        self._condition_as_text = icontract.represent.condition_as_text(condition=condition)
 
         self.description = description
 
@@ -100,17 +86,27 @@ class pre:  # pylint: disable=invalid-name
                 parts = ["Precondition violated"]
 
                 if self.description is not None:
-                    parts.append(self.description)
+                    parts.append(': ' + self.description)
 
+                parts.append(": ")
                 parts.append(self._condition_as_text)
 
                 if self._repr_func:
+                    parts.append(': ')
                     parts.append(self._repr_func(**condition_kwargs))
                 else:
-                    for key in self._condition_args:
-                        parts.append("{} was {!r}".format(key, condition_kwargs[key]))
+                    repr_values = icontract.represent.repr_values(
+                        condition=self.condition, condition_kwargs=condition_kwargs)
 
-                raise ViolationError(": ".join(parts))
+                    if len(repr_values) == 1:
+                        parts.append(': ')
+                        parts.append(repr_values[0])
+                    else:
+                        parts.append(':\n')
+                        parts.append('\n'.join(repr_values))
+
+                err = ViolationError("".join(parts))
+                raise err
 
             return func(*args, **kwargs)
 
@@ -148,11 +144,11 @@ class post:  # pylint: disable=invalid-name
 
         self._condition_args = list(inspect.signature(condition).parameters.keys())  # type: List[str]
         self._condition_arg_set = set(self._condition_args)  # type: Set[str]
-        self._condition_as_text = _condition_as_text(condition=condition)
+        self._condition_as_text = icontract.represent.condition_as_text(condition=condition)
 
         self.description = description
 
-        self._repr_args = repr_args
+        self._repr_func = repr_args
         if repr_args is not None:
             got = list(inspect.signature(repr_args).parameters.keys())
 
@@ -205,17 +201,28 @@ class post:  # pylint: disable=invalid-name
                 parts = ["Post-condition violated"]  # type: List[str]
 
                 if self.description is not None:
+                    parts.append(": ")
                     parts.append(self.description)
 
+                parts.append(": ")
                 parts.append(self._condition_as_text)
 
-                if self._repr_args:
-                    parts.append(self._repr_args(**condition_kwargs))
+                if self._repr_func:
+                    parts.append(': ')
+                    parts.append(self._repr_func(**condition_kwargs))
                 else:
-                    for key in self._condition_args:
-                        parts.append("{} was {!r}".format(key, condition_kwargs[key]))
+                    repr_values = icontract.represent.repr_values(
+                        condition=self.condition, condition_kwargs=condition_kwargs)
 
-                raise ViolationError(": ".join(parts))
+                    if len(repr_values) == 1:
+                        parts.append(': ')
+                        parts.append(repr_values[0])
+                    else:
+                        parts.append(':\n')
+                        parts.append('\n'.join(repr_values))
+
+                err = ViolationError("".join(parts))
+                raise err
 
             return result
 
