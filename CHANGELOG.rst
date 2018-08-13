@@ -1,3 +1,9 @@
+1.1.0
+=====
+* Fixed unit tests to set actual and expected arguments correctly.
+* Made ViolationError an AssertionError
+* Added representation of values by re-executing the abstract syntax tree of the function
+
 1.0.3
 =====
 * ``pre`` and ``post`` decorators use ``functools.update_wrapper`` to allow for doctests
