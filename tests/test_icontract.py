@@ -210,7 +210,7 @@ class TestPrecondition(unittest.TestCase):
             pre_err = err
 
         self.assertIsNotNone(pre_err)
-        self.assertEqual(str(pre_err), "Precondition violated: x > 3: x was 1")
+        self.assertEqual("Precondition violated: x > 3: x was 1", str(pre_err))
 
         # Test method with self
         pre_err = None  # type: Optional[icontract.ViolationError]
@@ -220,7 +220,7 @@ class TestPrecondition(unittest.TestCase):
             pre_err = err
 
         self.assertIsNotNone(pre_err)
-        self.assertEqual(str(pre_err), "Precondition violated: self.y > 10: self.y was 5")
+        self.assertEqual("Precondition violated: self.y > 10: self.y was 5", str(pre_err))
 
     def test_repr_nested_property(self):
         class B:
@@ -417,7 +417,7 @@ class TestPostcondition(unittest.TestCase):
             post_err = err
 
         self.assertIsNotNone(post_err)
-        self.assertEqual(str(post_err), "Post-condition violated: result > x: result was -0004, x was 00001")
+        self.assertEqual("Post-condition violated: result > x: result was -0004, x was 00001", str(post_err))
 
 
 if __name__ == '__main__':
