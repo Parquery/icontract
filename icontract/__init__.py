@@ -2,6 +2,7 @@
 import ast
 import functools
 import inspect
+import reprlib
 from typing import Callable, MutableMapping, Any, Optional, Set, List, Mapping  # pylint: disable=unused-import
 
 import meta.decompiler
@@ -16,6 +17,22 @@ class ViolationError(AssertionError):
     pass
 
 
+# Default representation instance.
+#
+# The limits are set way higher than reprlib.aRepr since the default reprlib limits are not suitable for
+# the production systems.
+aRepr = reprlib.Repr()  # pylint: disable=invalid-name
+aRepr.maxdict = 50
+aRepr.maxlist = 50
+aRepr.maxtuple = 50
+aRepr.maxset = 50
+aRepr.maxfrozenset = 50
+aRepr.maxdeque = 50
+aRepr.maxarray = 50
+aRepr.maxstring = 256
+aRepr.maxother = 256
+
+
 class pre:  # pylint: disable=invalid-name
     """
     Decorate a function with a pre-condition.
@@ -26,7 +43,8 @@ class pre:  # pylint: disable=invalid-name
     def __init__(self,
                  condition: Callable[..., bool],
                  description: Optional[str] = None,
-                 repr_args: Optional[Callable[..., str]] = None) -> None:
+                 repr_args: Optional[Callable[..., str]] = None,
+                 a_repr: Optional[reprlib.Repr] = None) -> None:
         """
         Initialize.
 
@@ -36,8 +54,16 @@ class pre:  # pylint: disable=invalid-name
             function to represent arguments in the message on a failed pre-condition. The repr_func needs to take the
             same arguments as the condition function.
 
-            If not specified, a concatenation of __repr__'s called on each argument respectively is used.
+            If not specified, all the involved values are represented by re-traversing the AST.
+        :param a_repr:
+            representation instance that defines how the values are represented.
+
+            If ``repr_args`` is specified, ``repr_instance`` should be None.
+            If no ``repr_args`` is specified, the default ``aRepr`` is used.
         """
+        if repr_args is not None and a_repr is not None:
+            raise ValueError("Expected no repr_instance if repr_args is given.")
+
         self.condition = condition
 
         self._condition_args = list(inspect.signature(condition).parameters.keys())  # type: List[str]
@@ -53,6 +79,8 @@ class pre:  # pylint: disable=invalid-name
             if got != self._condition_args:
                 raise ValueError("Unexpected argument(s) of repr_args. Expected {}, got {}".format(
                     self._condition_args, got))
+
+        self._a_repr = a_repr if a_repr is not None else aRepr
 
     def __call__(self, func: Callable[..., Any]):
         """
@@ -96,7 +124,7 @@ class pre:  # pylint: disable=invalid-name
                     parts.append(self._repr_func(**condition_kwargs))
                 else:
                     repr_values = icontract.represent.repr_values(
-                        condition=self.condition, condition_kwargs=condition_kwargs)
+                        condition=self.condition, condition_kwargs=condition_kwargs, a_repr=self._a_repr)
 
                     if len(repr_values) == 1:
                         parts.append(': ')
@@ -128,7 +156,8 @@ class post:  # pylint: disable=invalid-name
     def __init__(self,
                  condition: Callable[..., bool],
                  description: Optional[str] = None,
-                 repr_args: Optional[Callable[..., str]] = None) -> None:
+                 repr_args: Optional[Callable[..., str]] = None,
+                 a_repr: Optional[reprlib.Repr] = None) -> None:
         """
         Initialize.
 
@@ -138,8 +167,16 @@ class post:  # pylint: disable=invalid-name
             function to represent arguments in the message on a failed post-condition. The repr_func needs to take the
             same arguments as the condition function.
 
-            If not specified, a concatenation of __repr__'s called on each argument respectively is used.
+            If not specified, all the involved values are represented by re-traversing the AST.
+        :param a_repr:
+            representation instance that defines how the values are represented.
+
+            If ``repr_args`` is specified, ``repr_instance`` should be None.
+            If no ``repr_args`` is specified, the default ``reprlib.aRepr`` is used.
         """
+        if repr_args is not None and a_repr is not None:
+            raise ValueError("Expected no repr_instance if repr_args is given.")
+
         self.condition = condition
 
         self._condition_args = list(inspect.signature(condition).parameters.keys())  # type: List[str]
@@ -155,6 +192,8 @@ class post:  # pylint: disable=invalid-name
             if got != self._condition_args:
                 raise ValueError("Unexpected argument(s) of repr_func. Expected {}, got {}".format(
                     self._condition_args, got))
+
+        self._a_repr = a_repr if a_repr is not None else aRepr
 
     def __call__(self, func: Callable[..., Any]):
         """
@@ -212,7 +251,7 @@ class post:  # pylint: disable=invalid-name
                     parts.append(self._repr_func(**condition_kwargs))
                 else:
                     repr_values = icontract.represent.repr_values(
-                        condition=self.condition, condition_kwargs=condition_kwargs)
+                        condition=self.condition, condition_kwargs=condition_kwargs, a_repr=self._a_repr)
 
                     if len(repr_values) == 1:
                         parts.append(': ')

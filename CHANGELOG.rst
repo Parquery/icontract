@@ -1,6 +1,10 @@
+1.2.0
+=====
+* Added reprlib.Repr as an additional parameter to customize representation
+
 1.1.0
 =====
-* Fixed unit tests to set actual and expected arguments correctly.
+* Fixed unit tests to set actual and expected arguments correctly
 * Made ViolationError an AssertionError
 * Added representation of values by re-executing the abstract syntax tree of the function
 
