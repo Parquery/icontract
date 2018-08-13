@@ -21,7 +21,7 @@ programmer the tedious task of repeating the message that was already written in
 
 We want this library to be used mainly in production code and let us spot both development and production bugs with
 enough information. Therefore, we decided to implement only the pre-conditions and post-conditions which require
-little overhead, and left out intentionally the class invariants.  Class invariants seem to us tricky to grasp (
+little overhead, and intentionally left out the class invariants.  Class invariants seem to us tricky to grasp (
 for example, depending on the design class invariants may hold only at the first call of the public function, but
 not in the private functions; or they may hold only at the first call to a method of a class, but not in the sequent
 calls to other class methods *etc.*). The invariants hence need to come with an overhead which is generally impractical
@@ -41,11 +41,17 @@ Whenever a violation occurs, ``ViolationError`` is raised. Its message includes:
 
 * the human-readable representation of the condition,
 * description (if supplied) and
-* representation of all the arguments.
+* representation of all the values.
 
 You can provide a custom representation function with the argument ``repr_args`` that needs to cover all the input
 arguments (including ``result`` in post-conditions) of the condition function and return a string. If no representation
 function was specified, the input arguments are represented by concatenation of ``__repr__`` on each one of them.
+
+If no custom representation function has been supplied, the representation of the values is obtained by re-executing
+the condition function programmatically by traversing its abstract syntax tree and filling the tree leaves with
+values held in the function frame. Mind that this re-execution will also re-execute all the functions.
+Therefore you need to make sure that all the function calls involved in the condition functions do not have any side
+effects.
 
 .. code-block:: python
 
@@ -84,6 +90,41 @@ function was specified, the input arguments are represented by concatenation of 
       ...
     icontract.ViolationError: Precondition violated: x > 3: x was 001
 
+
+    # Pre-condition violation with more complex values
+    >>> class B:
+    ...     def __init__(self) -> None:
+    ...         self.x = 7
+    ...
+    ...     def y(self) -> int:
+    ...         return 2
+    ...
+    ...     def __repr__(self) -> str:
+    ...         return "instance of B"
+    ...
+    >>> class A:
+    ...     def __init__(self)->None:
+    ...         self.b = B()
+    ...
+    ...     def __repr__(self) -> str:
+    ...         return "instance of A"
+    ...
+    >>> SOME_GLOBAL_VAR = 13
+    >>> @icontract.pre(lambda a: a.b.x + a.b.y() > SOME_GLOBAL_VAR)
+    ... def some_func(a: A) -> None:
+    ...     pass
+    ...
+    >>> an_a = A()
+    >>> some_func(an_a)
+    Traceback (most recent call last):
+      ...
+    icontract.ViolationError: Precondition violated: (a.b.x + a.b.y()) > SOME_GLOBAL_VAR:
+    SOME_GLOBAL_VAR was 13
+    a was instance of A
+    a.b was instance of B
+    a.b.x was 7
+    a.b.y() was 2
+
     # Post-condition
     >>> @icontract.post(lambda result, x: result > x)
     ... def some_func(x: int, y: int = 5) -> int:
@@ -92,7 +133,9 @@ function was specified, the input arguments are represented by concatenation of 
     >>> some_func(x=10)
     Traceback (most recent call last):
       ...
-    icontract.ViolationError: Post-condition violated: result > x: result was 5: x was 10
+    icontract.ViolationError: Post-condition violated: result > x:
+    result was 5
+    x was 10
 
 Installation
 ============
