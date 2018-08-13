@@ -2,9 +2,10 @@
 
 # pylint: disable=missing-docstring, invalid-name, unused-argument,no-self-use,unnecessary-lambda
 import pathlib
+import reprlib
 import time
 import unittest
-from typing import Optional  # pylint: disable=unused-import
+from typing import Optional, List  # pylint: disable=unused-import
 
 import icontract
 
@@ -186,6 +187,25 @@ class TestPrecondition(unittest.TestCase):
 
         self.assertIsNotNone(value_err)
         self.assertEqual(str(value_err), "Unexpected argument(s) of repr_args. Expected ['x'], got ['z']")
+
+    def test_repr(self):
+        a_repr = reprlib.Repr()
+        a_repr.maxlist = 3
+
+        @icontract.pre(lambda x: len(x) < 10, a_repr=a_repr)
+        def some_func(x: List[int]) -> None:
+            pass
+
+        pre_err = None  # type: Optional[icontract.ViolationError]
+        try:
+            some_func(x=list(range(10 * 1000)))
+        except icontract.ViolationError as err:
+            pre_err = err
+
+        self.assertIsNotNone(pre_err)
+        self.assertEqual("Precondition violated: len(x) < 10:\n"
+                         "len(x) was 10000\n"
+                         "x was [0, 1, 2, ...]", str(pre_err))
 
     def test_class(self):
         class A:
@@ -404,7 +424,7 @@ class TestPostcondition(unittest.TestCase):
                          "result was -4\n"
                          "x was 1", str(post_err))
 
-    def test_repr(self):
+    def test_repr_args(self):
         @icontract.post(
             lambda result, x: result > x, repr_args=lambda result, x: "result was {:05}, x was {:05}".format(result, x))
         def some_func(x: int, y: int = 5) -> int:
@@ -418,6 +438,26 @@ class TestPostcondition(unittest.TestCase):
 
         self.assertIsNotNone(post_err)
         self.assertEqual("Post-condition violated: result > x: result was -0004, x was 00001", str(post_err))
+
+    def test_repr(self):
+        a_repr = reprlib.Repr()
+        a_repr.maxlist = 3
+
+        @icontract.post(lambda result, x: len(result) > x, a_repr=a_repr)
+        def some_func(x: int) -> List[int]:
+            return list(range(x))
+
+        post_err = None  # type: Optional[icontract.ViolationError]
+        try:
+            some_func(x=10 * 1000)
+        except icontract.ViolationError as err:
+            post_err = err
+
+        self.assertIsNotNone(post_err)
+        self.assertEqual("Post-condition violated: len(result) > x:\n"
+                         "len(result) was 10000\n"
+                         "result was [0, 1, 2, ...]\n"
+                         "x was 10000", str(post_err))
 
 
 if __name__ == '__main__':

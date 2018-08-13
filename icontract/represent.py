@@ -1,6 +1,7 @@
 """Handle representations necessary for informative error messages."""
 import ast
 import inspect
+import reprlib
 from typing import Any, Mapping, MutableMapping, Callable, List  # pylint: disable=unused-import
 
 import meta
@@ -79,12 +80,13 @@ def _is_lambda(condition: Callable[..., bool]) -> bool:
     return condition.__name__ == "<lambda>"
 
 
-def repr_values(condition: Callable[..., bool], condition_kwargs: Mapping[str, Any]) -> List[str]:
+def repr_values(condition: Callable[..., bool], condition_kwargs: Mapping[str, Any], a_repr: reprlib.Repr) -> List[str]:
     """
     Represent function arguments and frame values in the error message on contract breach.
 
     :param condition: contract condition function
     :param condition_kwargs: condition arguments
+    :param a_repr: representation instance that defines how the values are represented.
     :return: list of value representations
     """
     reprs = dict()  # type: MutableMapping[str, Any]
@@ -110,7 +112,7 @@ def repr_values(condition: Callable[..., bool], condition_kwargs: Mapping[str, A
 
     parts = []  # type: List[str]
     for key in sorted(reprs.keys()):
-        parts.append('{} was {!r}'.format(key, reprs[key]))
+        parts.append('{} was {}'.format(key, a_repr.repr(reprs[key])))
 
     return parts
 
