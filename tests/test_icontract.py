@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 # pylint: disable=missing-docstring, invalid-name, unused-argument,no-self-use,unnecessary-lambda
+import functools
 import pathlib
 import reprlib
 import time
@@ -137,6 +138,34 @@ class TestPrecondition(unittest.TestCase):
 
         self.assertIsNotNone(pre_err)
         self.assertEqual(str(pre_err), "Precondition violated: 0 < x < 3: x was 10")
+
+    def test_pre_with_stacked_decorators(self):
+        def mydecorator(f):
+            @functools.wraps(f)
+            def wrapped(*args, **kwargs):
+                result = f(*args, **kwargs)
+                return result
+
+            return wrapped
+
+        some_var = 100
+        another_var = 0
+
+        @mydecorator
+        @icontract.pre(lambda x: x < some_var)
+        @icontract.pre(lambda x: x > another_var)
+        @mydecorator
+        def some_func(x: int) -> str:
+            return str(x)
+
+        pre_err = None  # type: Optional[icontract.ViolationError]
+        try:
+            some_func(x=0)
+        except icontract.ViolationError as err:
+            pre_err = err
+
+        self.assertIsNotNone(pre_err)
+        self.assertEqual("Precondition violated: x > another_var:\n" "another_var was 0\n" "x was 0", str(pre_err))
 
     def test_benchmark(self):
         @icontract.pre(lambda x: x > 3)
