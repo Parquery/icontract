@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 
-# pylint: disable=missing-docstring, invalid-name, unused-argument,no-self-use,unnecessary-lambda
+# pylint: disable=missing-docstring
+# pylint: disable=invalid-name
+# pylint: disable=unused-argument
+# pylint: disable=no-self-use
+# pylint: disable=unnecessary-lambda
+# pylint: disable=too-many-public-methods
+
 import functools
 import pathlib
 import reprlib
@@ -109,7 +115,7 @@ class TestPrecondition(unittest.TestCase):
         self.assertIsNotNone(pre_err)
         self.assertEqual(str(pre_err), "Precondition violated: some_condition: x was 1")
 
-    def test_pre_with_pathlib(self):
+    def test_with_pathlib(self):
         @icontract.pre(lambda path: path.exists())
         def some_func(path: pathlib.Path) -> None:
             pass
@@ -125,7 +131,7 @@ class TestPrecondition(unittest.TestCase):
                          "path was PosixPath('/doesnt/exist/test_contract')\n"
                          "path.exists() was False", str(pre_err))
 
-    def test_pre_with_multiple_comparators(self):
+    def test_with_multiple_comparators(self):
         @icontract.pre(lambda x: 0 < x < 3)
         def some_func(x: int) -> str:
             return str(x)
@@ -139,7 +145,7 @@ class TestPrecondition(unittest.TestCase):
         self.assertIsNotNone(pre_err)
         self.assertEqual(str(pre_err), "Precondition violated: 0 < x < 3: x was 10")
 
-    def test_pre_with_stacked_decorators(self):
+    def test_with_stacked_decorators(self):
         def mydecorator(f):
             @functools.wraps(f)
             def wrapped(*args, **kwargs):
@@ -166,6 +172,22 @@ class TestPrecondition(unittest.TestCase):
 
         self.assertIsNotNone(pre_err)
         self.assertEqual("Precondition violated: x > another_var:\n" "another_var was 0\n" "x was 0", str(pre_err))
+
+    def test_with_default_values(self):
+        @icontract.pre(lambda a: a < 10)
+        @icontract.pre(lambda b: b < 10)
+        @icontract.pre(lambda c: c < 10)
+        def some_func(a: int, b: int = 21, c: int = 22) -> int:
+            return a + b
+
+        pre_err = None  # type: Optional[icontract.ViolationError]
+        try:
+            some_func(a=2)
+        except icontract.ViolationError as err:
+            pre_err = err
+
+        self.assertIsNotNone(pre_err)
+        self.assertEqual("Precondition violated: b < 10: b was 21", str(pre_err))
 
     def test_benchmark(self):
         @icontract.pre(lambda x: x > 3)
@@ -466,6 +488,63 @@ class TestPostcondition(unittest.TestCase):
         self.assertEqual("Post-condition violated: expected summation: result > x:\n"
                          "result was -4\n"
                          "x was 1", str(post_err))
+
+    def test_with_stacked_decorators(self):
+        def mydecorator(f):
+            @functools.wraps(f)
+            def wrapped(*args, **kwargs):
+                result = f(*args, **kwargs)
+                return result
+
+            return wrapped
+
+        some_var = 1
+        another_var = 2
+
+        @mydecorator
+        @icontract.post(lambda result, x: x < result + some_var)
+        @icontract.post(lambda result, y: y > result + another_var)
+        @mydecorator
+        def some_func(x: int, y: int) -> int:
+            return 100
+
+        post_err = None  # type: Optional[icontract.ViolationError]
+        try:
+            some_func(x=0, y=10)
+        except icontract.ViolationError as err:
+            post_err = err
+
+        self.assertIsNotNone(post_err)
+        self.assertEqual("Post-condition violated: y > (result + another_var):\n"
+                         "another_var was 2\n"
+                         "result was 100\n"
+                         "y was 10", str(post_err))
+
+    def test_with_default_values_outer(self):
+        @icontract.post(lambda result, c: result % c == 0)
+        @icontract.post(lambda result, b: result < b)
+        def some_func(a: int, b: int = 21, c: int = 2) -> int:
+            return a
+
+        # Check first the outer post condition
+        post_err = None  # type: Optional[icontract.ViolationError]
+        try:
+            some_func(a=13)
+        except icontract.ViolationError as err:
+            post_err = err
+
+        self.assertIsNotNone(post_err)
+        self.assertEqual("Post-condition violated: (result % c) == 0:\n" "c was 2\n" "result was 13", str(post_err))
+
+        # Check the inner post condition
+        post_err = None  # type: Optional[icontract.ViolationError]
+        try:
+            some_func(a=36)
+        except icontract.ViolationError as err:
+            post_err = err
+
+        self.assertIsNotNone(post_err)
+        self.assertEqual("Post-condition violated: result < b:\n" "b was 21\n" "result was 36", str(post_err))
 
     def test_repr_args(self):
         @icontract.post(
