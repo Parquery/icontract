@@ -1,3 +1,8 @@
+1.2.1
+=====
+* Fixed a bug that fetched the unexpected frame when conditions were stacked
+* Fixed a bug that prevented default function values propagating to the condition function
+
 1.2.0
 =====
 * Added reprlib.Repr as an additional parameter to customize representation
