@@ -124,6 +124,20 @@ class TestPrecondition(unittest.TestCase):
                          "path was PosixPath('/doesnt/exist/test_contract')\n"
                          "path.exists() was False", str(pre_err))
 
+    def test_pre_with_multiple_comparators(self):
+        @icontract.pre(lambda x: 0 < x < 3)
+        def some_func(x: int) -> str:
+            return str(x)
+
+        pre_err = None  # type: Optional[icontract.ViolationError]
+        try:
+            some_func(x=10)
+        except icontract.ViolationError as err:
+            pre_err = err
+
+        self.assertIsNotNone(pre_err)
+        self.assertEqual(str(pre_err), "Precondition violated: 0 < x < 3: x was 10")
+
     def test_benchmark(self):
         @icontract.pre(lambda x: x > 3)
         def pow_with_pre(x: int, y: int) -> int:

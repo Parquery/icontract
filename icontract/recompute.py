@@ -292,5 +292,8 @@ class Visitor(ast.NodeVisitor):
         self.recomputed_values[node] = result
         return result
 
+    def visit_Return(self, node: ast.Return) -> Any:  # pylint: disable=no-self-use
+        raise AssertionError("Unexpected return node during the re-computation: {}".format(ast.dump(node)))
+
     def generic_visit(self, node: ast.AST) -> None:
         raise NotImplementedError("Unhandled recomputation of the node: {} {}".format(type(node), node))
