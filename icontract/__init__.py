@@ -90,7 +90,7 @@ class pre:  # pylint: disable=invalid-name
         :return: return value from 'func'
         """
         sign = inspect.signature(func)
-        params = list(sign.parameters.keys())
+        param_names = list(sign.parameters.keys())
 
         for condition_arg in self._condition_args:
             if condition_arg not in sign.parameters:
@@ -100,9 +100,12 @@ class pre:  # pylint: disable=invalid-name
             """Wrap func by checking the pre-condition first which is passed only the subset of arguments it needs."""
             condition_kwargs = dict()  # type: MutableMapping[str, Any]
 
+            if wrapped.__kwdefaults__ is not None:
+                condition_kwargs.update(wrapped.__kwdefaults__)
+
             for i, func_arg in enumerate(args):
-                if params[i] in self._condition_arg_set:
-                    condition_kwargs[params[i]] = func_arg
+                if param_names[i] in self._condition_arg_set:
+                    condition_kwargs[param_names[i]] = func_arg
 
             for key, val in kwargs.items():
                 if key in self._condition_arg_set:
@@ -140,6 +143,14 @@ class pre:  # pylint: disable=invalid-name
 
         # Copy __doc__ and other properties so that doctests can run
         functools.update_wrapper(wrapped, func)
+
+        # We also need to propagate the defaults.
+        if wrapped.__kwdefaults__ is None:  # type: ignore
+            wrapped.__kwdefaults__ = dict()  # type: ignore
+
+        for param in sign.parameters.values():
+            if not isinstance(param.default, inspect.Parameter.empty) and param.name in self._condition_arg_set:
+                wrapped.__kwdefaults__[param.name] = param.default
 
         return wrapped
 
@@ -207,7 +218,7 @@ class post:  # pylint: disable=invalid-name
         if "result" in sign.parameters.keys():
             raise ValueError("Unexpected argument 'result' in the wrapped function")
 
-        params = list(sign.parameters.keys())
+        param_names = list(sign.parameters.keys())
 
         for condition_arg in self._condition_args:
             if condition_arg != "result" and condition_arg not in sign.parameters:
@@ -222,16 +233,23 @@ class post:  # pylint: disable=invalid-name
             """
             condition_kwargs = dict()  # type: MutableMapping[str, Any]
 
-            for i, func_arg in enumerate(args):
-                if params[i] in self._condition_arg_set:
-                    condition_kwargs[params[i]] = func_arg
+            # Add first the defaults
+            if wrapped.__kwdefaults__ is not None:
+                condition_kwargs.update(wrapped.__kwdefaults__)
 
+            # Collect all the positional arguments
+            for i, func_arg in enumerate(args):
+                if param_names[i] in self._condition_arg_set:
+                    condition_kwargs[param_names[i]] = func_arg
+
+            # Collect the keyword arguments
             for key, val in kwargs.items():
                 if key in self._condition_arg_set:
                     condition_kwargs[key] = val
 
             result = func(*args, **kwargs)
 
+            # Add the special ``result`` argument
             condition_kwargs["result"] = result
 
             check = self.condition(**condition_kwargs)
@@ -267,5 +285,13 @@ class post:  # pylint: disable=invalid-name
 
         # Copy __doc__ and other properties so that doctests can run
         functools.update_wrapper(wrapped, func)
+
+        # Also add the default values
+        if wrapped.__kwdefaults__ is None:  # type: ignore
+            wrapped.__kwdefaults__ = dict()  # type: ignore
+
+        for param in sign.parameters.values():
+            if not isinstance(param.default, inspect.Parameter.empty) and param.name in self._condition_arg_set:
+                wrapped.__kwdefaults__[param.name] = param.default
 
         return wrapped
