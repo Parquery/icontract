@@ -1,6 +1,7 @@
 """Handle recomputation of values of a function given its abstract syntax tree and function frame."""
 
 import ast
+import builtins
 import functools
 from typing import Any, Mapping, Dict, List, Optional  # pylint: disable=unused-import
 
@@ -12,9 +13,13 @@ class Visitor(ast.NodeVisitor):
     # pylint: disable=missing-docstring
     # pylint: disable=too-many-public-methods
 
-    def __init__(self, frame: Any, kwargs: Mapping[str, Any]) -> None:
-        self.frame = frame
-        self.kwargs = kwargs
+    def __init__(self, variable_lookup: List[Mapping[str, Any]]) -> None:
+        """
+        Initialize.
+
+        :param variable_lookup: list of lookup tables to look-up the values of the variables, sorted by precedence
+        """
+        self._variable_lookup = variable_lookup
 
         # value assigned to each visited node
         self.recomputed_values = dict()  # type: Dict[ast.AST, Any]
@@ -78,16 +83,17 @@ class Visitor(ast.NodeVisitor):
             raise NotImplementedError("Can only compute a value of Load on a name {}, but got context: {}".format(
                 node.id, node.ctx))
 
-        if node.id in self.kwargs:
-            result = self.kwargs[node.id]
-        elif node.id in self.frame.f_locals:
-            result = self.frame.f_locals[node.id]
-        elif node.id in self.frame.f_globals:
-            result = self.frame.f_globals[node.id]
-        elif node.id in self.frame.f_builtins:
-            result = self.frame.f_builtins[node.id]
-        else:
-            raise ValueError("Name is neither in locals, globals or built-ins of the frame: {}".format(node.id))
+        result = None  # type: Optional[Any]
+        for lookup in self._variable_lookup:
+            if node.id in lookup:
+                result = lookup[node.id]
+                break
+
+        if result is None and hasattr(builtins, node.id):
+            result = getattr(builtins, node.id)
+
+        if result is None and node.id != "None":
+            raise ValueError("Name not found in the variable lookup: {}".format(node.id))
 
         self.recomputed_values[node] = result
         return result
