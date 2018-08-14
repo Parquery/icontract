@@ -95,14 +95,28 @@ def repr_values(condition: Callable[..., bool], condition_kwargs: Mapping[str, A
         # First f_back refers to def wrapped(), the second f_back refers to the actual condition function
         condition_frame = inspect.currentframe().f_back.f_back
 
-        condition_node = meta.decompiler.decompile_func(condition)
+        # pylint: disable=no-member
+
+        root_node = meta.decompiler.decompile_func(condition)
+        assert isinstance(root_node, ast.Lambda), \
+            "Expected the node of the decompiled condition function to be a Lambda, but got: {}".format(
+                ast.dump(root_node))
+
+        assert isinstance(root_node.body, ast.Return), \
+            "Expected the body of the de-compiled lambda function to be a Return, but got: {}".format(
+                ast.dump(root_node))
+
+        lambda_expression = root_node.body.value
+
+        # pylint: enable=no-member
 
         recompute_visitor = icontract.recompute.Visitor(frame=condition_frame, kwargs=condition_kwargs)
-        recompute_visitor.visit(node=condition_node)
+
+        recompute_visitor.visit(node=lambda_expression)
         recomputed_values = recompute_visitor.recomputed_values
 
         repr_visitor = Visitor(recomputed_values=recomputed_values, frame=condition_frame)
-        repr_visitor.visit(node=condition_node)
+        repr_visitor.visit(node=lambda_expression)
 
         reprs = repr_visitor.reprs
     else:
@@ -130,11 +144,20 @@ def condition_as_text(condition: Callable[..., bool]) -> str:
     if not _is_lambda(condition):
         return condition.__name__
 
-    lambda_node = meta.decompiler.decompile_func(condition)
-    assert isinstance(lambda_node, ast.Lambda)
-
     # pylint: disable=no-member
-    body_txt = str(meta.dump_python_source(lambda_node.body)).strip()  # type: ignore
+
+    lambda_node = meta.decompiler.decompile_func(condition)
+    assert isinstance(lambda_node, ast.Lambda), \
+        "Expected the root node of the de-compiled condition to be a Lambda, but got: {}".format(
+            ast.dump(lambda_node))
+
+    assert isinstance(lambda_node.body, ast.Return), \
+        "Expected the body of the de-compiled condition to be a Return, but got: {}".format(
+            ast.dump(lambda_node.body))
+
+    body_txt = str(meta.dump_python_source(lambda_node.body.value)).strip()  # type: ignore
+
+    # pylint: enable=no-member
 
     # Strip enclosing brackets from the body
     if body_txt.startswith("(") and body_txt.endswith(")"):
