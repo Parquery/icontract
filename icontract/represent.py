@@ -2,7 +2,7 @@
 import ast
 import inspect
 import reprlib
-from typing import Any, Mapping, MutableMapping, Callable, List  # pylint: disable=unused-import
+from typing import Any, Mapping, MutableMapping, Callable, List, Dict  # pylint: disable=unused-import
 
 import meta
 
@@ -19,7 +19,7 @@ def _representable(value: Any) -> bool:
     :return: True if we want to represent it in the violation error
     """
     return not inspect.isclass(value) and not inspect.isfunction(value) and not inspect.ismethod(value) and not \
-        inspect.ismodule(value)
+        inspect.ismodule(value) and not inspect.isbuiltin(value)
 
 
 class Visitor(ast.NodeVisitor):
@@ -28,23 +28,38 @@ class Visitor(ast.NodeVisitor):
     # pylint: disable=invalid-name
     # pylint: disable=missing-docstring
 
-    def __init__(self, recomputed_values: Mapping[ast.AST, Any], frame: Any) -> None:
-        self.recomputed_values = recomputed_values
+    def __init__(self, recomputed_values: Mapping[ast.AST, Any], variable_lookup: List[Mapping[str, Any]]) -> None:
+        """
+        Initialize.
+
+        :param recomputed_values: AST node of a condition function -> value associated with the node
+        :param variable_lookup:
+            list of lookup tables to look-up the values of the variables, sorted by precedence.
+            The visitor needs it here to check whether we overrode a built-in variable (like ``id``).
+
+        """
+        self._recomputed_values = recomputed_values
+        self._variable_lookup = variable_lookup
         self.reprs = dict()  # type: MutableMapping[str, str]
-        self.frame = frame
 
     def visit_Name(self, node: ast.Name) -> None:
-        if node.id not in self.frame.f_builtins:
-            value = self.recomputed_values[node]
+        value = self._recomputed_values[node]
 
-            if _representable(value=value):
-                text = str(meta.dump_python_source(node)).strip()  # type: ignore
-                self.reprs[text] = value
+        # Check if it is a non-built-in
+        is_builtin = True
+        for lookup in self._variable_lookup:
+            if node.id in lookup:
+                is_builtin = False
+                break
+
+        if not is_builtin and _representable(value=value):
+            text = str(meta.dump_python_source(node)).strip()  # type: ignore
+            self.reprs[text] = value
 
         self.generic_visit(node=node)
 
     def visit_Attribute(self, node: ast.Attribute) -> None:
-        value = self.recomputed_values[node]
+        value = self._recomputed_values[node]
 
         if _representable(value=value):
             text = str(meta.dump_python_source(node)).strip()  # type: ignore
@@ -53,7 +68,7 @@ class Visitor(ast.NodeVisitor):
         self.generic_visit(node=node)
 
     def visit_Call(self, node: ast.Call) -> None:
-        value = self.recomputed_values[node]
+        value = self._recomputed_values[node]
 
         # pylint: disable=no-member
         text = str(meta.dump_python_source(node)).strip()  # type: ignore
@@ -89,12 +104,10 @@ def repr_values(condition: Callable[..., bool], condition_kwargs: Mapping[str, A
     :param a_repr: representation instance that defines how the values are represented.
     :return: list of value representations
     """
+    # pylint: disable=too-many-locals
     reprs = dict()  # type: MutableMapping[str, Any]
 
     if _is_lambda(condition=condition):
-        # First f_back refers to def wrapped(), the second f_back refers to the actual condition function
-        condition_frame = inspect.currentframe().f_back.f_back
-
         # pylint: disable=no-member
 
         root_node = meta.decompiler.decompile_func(condition)
@@ -110,12 +123,39 @@ def repr_values(condition: Callable[..., bool], condition_kwargs: Mapping[str, A
 
         # pylint: enable=no-member
 
-        recompute_visitor = icontract.recompute.Visitor(frame=condition_frame, kwargs=condition_kwargs)
+        # Collect the variable lookup of the condition function:
+        # globals, closure, defaults, kwdefaults, arguments
+        variable_lookup = []  # type: List[Dict[str, Any]]
+
+        if condition.__globals__ is not None:
+            variable_lookup.append(condition.__globals__)
+
+        closure_dict = dict()  # type: Dict[str, Any]
+
+        if condition.__closure__ is not None:
+            closure_cells = condition.__closure__
+            freevars = condition.__code__.co_freevars
+
+            assert len(closure_cells) == len(freevars), \
+                "Number of closure cells of a condition function ({}) == number of free vars ({})".format(
+                    len(closure_cells), len(freevars))
+
+            for cell, freevar in zip(closure_cells, freevars):
+                closure_dict[freevar] = cell.cell_contents
+
+        variable_lookup.append(closure_dict)
+
+        if condition.__kwdefaults__ is not None:
+            variable_lookup.append(condition.__kwdefaults__)
+
+        variable_lookup.append(condition_kwargs)
+
+        recompute_visitor = icontract.recompute.Visitor(variable_lookup=variable_lookup)
 
         recompute_visitor.visit(node=lambda_expression)
         recomputed_values = recompute_visitor.recomputed_values
 
-        repr_visitor = Visitor(recomputed_values=recomputed_values, frame=condition_frame)
+        repr_visitor = Visitor(recomputed_values=recomputed_values, variable_lookup=variable_lookup)
         repr_visitor.visit(node=lambda_expression)
 
         reprs = repr_visitor.reprs
