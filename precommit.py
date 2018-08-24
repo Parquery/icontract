@@ -56,6 +56,11 @@ def main() -> int:
 
     subprocess.check_call(["coverage", "report"])
 
+    print("Doctesting...")
+    subprocess.check_call(["python3", "-m", "doctest", "README.rst"])
+    for pth in (repo_root / "icontract").glob("**/*.py"):
+        subprocess.check_call(["python3", "-m", "doctest", pth.as_posix()])
+
     return 0
 
 

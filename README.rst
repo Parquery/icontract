@@ -86,14 +86,14 @@ effects.
     icontract.ViolationError: Precondition violated: x must not be small: x > 3: x was 1
 
     # Pre-condition violation with a custom representation function
-    >>> @icontract.pre(lambda x: x > 3, repr_args=lambda x: "x was {:03}".format(x))
+    >>> @icontract.pre(lambda x: x > 3, repr_args=lambda x: "x was 0x{:x}".format(x))
     ... def some_func(x: int, y: int = 5) -> None:
     ...     pass
     ...
     >>> some_func(x=1)
     Traceback (most recent call last):
       ...
-    icontract.ViolationError: Precondition violated: x > 3: x was 001
+    icontract.ViolationError: Precondition violated: x > 3: x was 0x1
 
 
     # Pre-condition violation with more complex values
