@@ -1,5 +1,10 @@
 icontract
 =========
+.. image:: https://travis-ci.com/Parquery/icontract.svg?branch=master
+    :target: https://travis-ci.com/Parquery/icontract
+
+.. image:: https://coveralls.io/repos/github/Parquery/icontract/badge.svg?branch=master
+    :target: https://coveralls.io/github/Parquery/icontract
 
 icontract provides `design-by-contract <https://en.wikipedia.org/wiki/Design_by_contract>`_ to Python3 with informative
 violation messages.

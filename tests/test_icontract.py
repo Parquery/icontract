@@ -189,6 +189,7 @@ class TestPrecondition(unittest.TestCase):
         self.assertIsNotNone(pre_err)
         self.assertEqual("Precondition violated: b < 10: b was 21", str(pre_err))
 
+    @unittest.skip("Skipped the benchmark, execute manually on a prepared benchmark machine.")
     def test_benchmark(self):
         @icontract.pre(lambda x: x > 3)
         def pow_with_pre(x: int, y: int) -> int:
@@ -580,6 +581,20 @@ class TestPostcondition(unittest.TestCase):
                          "len(result) was 10000\n"
                          "result was [0, 1, 2, ...]\n"
                          "x was 10000", str(post_err))
+
+    def test_only_result(self):
+        @icontract.post(lambda result: result > 3)
+        def some_func(x: int) -> int:
+            return 0
+
+        post_err = None  # type: Optional[icontract.ViolationError]
+        try:
+            some_func(x=10 * 1000)
+        except icontract.ViolationError as err:
+            post_err = err
+
+        self.assertIsNotNone(post_err)
+        self.assertEqual("Post-condition violated: result > 3: result was 0", str(post_err))
 
 
 if __name__ == '__main__':

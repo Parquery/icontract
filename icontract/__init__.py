@@ -1,13 +1,9 @@
 """Decorate functions with contracts."""
-import ast
 import functools
 import inspect
 import reprlib
-from typing import Callable, MutableMapping, Any, Optional, Set, List, Mapping  # pylint: disable=unused-import
+from typing import Callable, MutableMapping, Any, Optional, Set, List  # pylint: disable=unused-import
 
-import meta.decompiler
-
-import icontract.recompute
 import icontract.represent
 
 
