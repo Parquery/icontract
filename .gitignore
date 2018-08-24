@@ -6,3 +6,5 @@ venv3
 *.egg-info
 .tox
 dist/
+.coverage
+htmlcov

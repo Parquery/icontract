@@ -12,12 +12,15 @@ from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))  # pylint: disable=invalid-name
 
-with open(os.path.join(here, 'README.rst'), encoding='utf-8') as f:
-    long_description = f.read()  # pylint: disable=invalid-name
+with open(os.path.join(here, 'README.rst'), encoding='utf-8') as fid:
+    long_description = fid.read()  # pylint: disable=invalid-name
+
+with open(os.path.join(here, 'version.txt'), encoding='utf-8') as fid:
+    version = fid.read().strip()  # pylint: disable=invalid-name
 
 setup(
     name='icontract',
-    version='1.2.1',
+    version=version,
     description='Provide design-by-contract with informative violation messages',
     long_description=long_description,
     url='https://github.com/Parquery/icontract',
@@ -33,7 +36,8 @@ setup(
     packages=find_packages(exclude=['tests']),
     install_requires=['meta>=1,<2'],
     extras_require={
-        'dev': ['mypy==0.570', 'pylint==1.8.2', 'yapf==0.20.2', 'tox>=3.0.0'],
+        'dev':
+        ['mypy==0.620', 'pylint==1.8.2', 'yapf==0.20.2', 'tox>=3.0.0', 'pydocstyle>=2.1.1,<3', 'coverage>=4.5.1,<5'],
         'test': ['tox>=3.0.0']
     },
     py_modules=['icontract'],

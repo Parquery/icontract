@@ -43,22 +43,30 @@ class Visitor(ast.NodeVisitor):
         self.reprs = dict()  # type: MutableMapping[str, str]
 
     def visit_Name(self, node: ast.Name) -> None:
-        value = self._recomputed_values[node]
+        """
+        Resolve the name from the variable look-up and the built-ins.
 
-        # Check if it is a non-built-in
-        is_builtin = True
-        for lookup in self._variable_lookup:
-            if node.id in lookup:
-                is_builtin = False
-                break
+        Due to possible branching (e.g., If-expressions), some nodes might lack the recomputed values. These nodes
+        are ignored.
+        """
+        if node in self._recomputed_values:
+            value = self._recomputed_values[node]
 
-        if not is_builtin and _representable(value=value):
-            text = str(meta.dump_python_source(node)).strip()  # type: ignore
-            self.reprs[text] = value
+            # Check if it is a non-built-in
+            is_builtin = True
+            for lookup in self._variable_lookup:
+                if node.id in lookup:
+                    is_builtin = False
+                    break
+
+            if not is_builtin and _representable(value=value):
+                text = str(meta.dump_python_source(node)).strip()  # type: ignore
+                self.reprs[text] = value
 
         self.generic_visit(node=node)
 
     def visit_Attribute(self, node: ast.Attribute) -> None:
+        """Represent the attribute by dumping its source code."""
         value = self._recomputed_values[node]
 
         if _representable(value=value):
@@ -68,6 +76,7 @@ class Visitor(ast.NodeVisitor):
         self.generic_visit(node=node)
 
     def visit_Call(self, node: ast.Call) -> None:
+        """Represent the call by dumping its source code."""
         value = self._recomputed_values[node]
 
         # pylint: disable=no-member

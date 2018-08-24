@@ -5,6 +5,9 @@ import subprocess
 import tempfile
 from typing import List, BinaryIO, cast  # pylint: disable=unused-import
 
+# We do not want to compute the coverage since visualizing AST graphs is used only for debugging.
+# pragma: no cover
+
 
 class Graph:
     """
@@ -15,6 +18,7 @@ class Graph:
     """
 
     def __init__(self) -> None:
+        """Initialize."""
         self._nodes = []  # type: List[str]
         self._edges = []  # type: List[str]
         self._init = False
@@ -35,7 +39,7 @@ class Graph:
         while stack:
             node = stack.pop()
 
-            label = ["<b>{}</b>".format(type(node).__name__)]
+            label = ["<b>{}<br/>{:x}</b>".format(type(node).__name__, id(node))]
 
             for name, field in ast.iter_fields(node):
                 if isinstance(field, ast.AST):
