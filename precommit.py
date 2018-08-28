@@ -48,10 +48,10 @@ def main() -> int:
     print("Testing...")
     # yapf: disable
     subprocess.check_call(
-        ["coverage", "run",
-         "--source", "icontract",
-         "--omit", "icontract/ast_graph.py",
-         "-m", "unittest", "discover", "tests"], cwd=repo_root.as_posix())
+       ["coverage", "run",
+        "--source", "icontract",
+        "--omit", "icontract/ast_graph.py",
+        "-m", "unittest", "discover", "tests"], cwd=repo_root.as_posix())
     # yapf: enable
 
     subprocess.check_call(["coverage", "report"])

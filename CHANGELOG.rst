@@ -1,3 +1,7 @@
+1.2.3
+=====
+* Removed ``version.txt`` that caused problems with ``setup.py``
+
 1.2.2
 =====
 * Fixed: the ``result`` is passed to the postcondition only if necessary
