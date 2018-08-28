@@ -246,7 +246,8 @@ class post:  # pylint: disable=invalid-name
             result = func(*args, **kwargs)
 
             # Add the special ``result`` argument
-            condition_kwargs["result"] = result
+            if "result" in self._condition_arg_set:
+                condition_kwargs["result"] = result
 
             check = self.condition(**condition_kwargs)
 
