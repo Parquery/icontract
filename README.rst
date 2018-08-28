@@ -6,6 +6,9 @@ icontract
 .. image:: https://coveralls.io/repos/github/Parquery/icontract/badge.svg?branch=master
     :target: https://coveralls.io/github/Parquery/icontract
 
+.. image:: https://badge.fury.io/py/icontract.svg
+    :target: https://badge.fury.io/py/icontract
+
 icontract provides `design-by-contract <https://en.wikipedia.org/wiki/Design_by_contract>`_ to Python3 with informative
 violation messages.
 
