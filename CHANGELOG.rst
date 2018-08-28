@@ -1,3 +1,7 @@
+1.2.2
+=====
+* Fixed: the ``result`` is passed to the postcondition only if necessary
+
 1.2.1
 =====
 * Fixed a bug that fetched the unexpected frame when conditions were stacked
