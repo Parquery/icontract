@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Runs precommit checks on the repository."""
 import argparse
+import os
 import pathlib
 import subprocess
 import sys
@@ -46,12 +47,17 @@ def main() -> int:
     subprocess.check_call(["pydocstyle", "icontract"], cwd=repo_root.as_posix())
 
     print("Testing...")
+    env = os.environ.copy()
+    env['ICONTRACT_SLOW'] = 'true'
+
     # yapf: disable
     subprocess.check_call(
-       ["coverage", "run",
-        "--source", "icontract",
-        "--omit", "icontract/ast_graph.py",
-        "-m", "unittest", "discover", "tests"], cwd=repo_root.as_posix())
+        ["coverage", "run",
+         "--source", "icontract",
+         "--omit", "icontract/ast_graph.py",
+         "-m", "unittest", "discover", "tests"],
+        cwd=repo_root.as_posix(),
+        env=env)
     # yapf: enable
 
     subprocess.check_call(["coverage", "report"])

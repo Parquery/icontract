@@ -213,6 +213,27 @@ class TestPrecondition(unittest.TestCase):
 
         self.assertLess(duration_with_pre / duration_wo_pre, 6)
 
+    @unittest.skip("Skipped the benchmark, execute manually on a prepared benchmark machine.")
+    def test_benchmark_when_disabled(self):
+        @icontract.pre(lambda x: x > 3, enabled=False)
+        def pow_with_pre(x: int, y: int) -> int:
+            return x**y
+
+        def pow_wo_pre(x: int, y: int) -> int:
+            return x**y
+
+        start = time.time()
+        for i in range(5, 10 * 1000):
+            pow_with_pre(x=i, y=2)
+        duration_with_pre = time.time() - start
+
+        start = time.time()
+        for i in range(5, 10 * 1000):
+            pow_wo_pre(x=i, y=2)
+        duration_wo_pre = time.time() - start
+
+        self.assertLess(duration_with_pre / duration_wo_pre, 1.1)
+
     def test_invalid_precondition_arguments(self):
         type_err = None  # type: Optional[TypeError]
         try:
@@ -450,6 +471,20 @@ class TestPrecondition(unittest.TestCase):
                          "x was 100\n"
                          "y was 4", str(pre_err))
 
+    def test_enabled(self):
+        @icontract.pre(lambda x: x > 10, enabled=False)
+        def some_func(x: int) -> int:
+            return 123
+
+        pre_err = None  # type: Optional[icontract.ViolationError]
+        try:
+            result = some_func(x=0)
+            self.assertEqual(123, result)
+        except icontract.ViolationError as err:
+            pre_err = err
+
+        self.assertIsNone(pre_err)
+
 
 class TestPostcondition(unittest.TestCase):
     def test_ok(self):
@@ -595,6 +630,27 @@ class TestPostcondition(unittest.TestCase):
 
         self.assertIsNotNone(post_err)
         self.assertEqual("Post-condition violated: result > 3: result was 0", str(post_err))
+
+    def test_enabled(self):
+        @icontract.post(lambda x, result: x > result, enabled=False)
+        def some_func(x: int) -> int:
+            return 123
+
+        post_err = None  # type: Optional[icontract.ViolationError]
+        try:
+            result = some_func(x=1234)
+            self.assertEqual(123, result)
+        except icontract.ViolationError as err:
+            post_err = err
+
+        self.assertIsNone(post_err)
+
+
+class TestSlow(unittest.TestCase):
+    def test_slow_set(self):
+        self.assertTrue(icontract.SLOW,
+                        "icontract.SLOW was not set. Please check if you set the environment variable ICONTRACT_SLOW "
+                        "before running this test.")
 
 
 if __name__ == '__main__':
