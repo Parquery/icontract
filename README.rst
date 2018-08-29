@@ -27,17 +27,14 @@ This library was strongly inspired by them, but we go a step further and use the
 promote dont-repeat-yourself principle (`DRY <https://en.wikipedia.org/wiki/Don%27t_repeat_yourself>`_) and spare the
 programmer the tedious task of repeating the message that was already written in code.
 
-We want this library to be used mainly in production code and let us spot both development and production bugs with
-enough information. Therefore, we decided to implement only the pre-conditions and post-conditions which require
-little overhead, and intentionally left out the class invariants.  Class invariants seem to us tricky to grasp (
-for example, depending on the design class invariants may hold only at the first call of the public function, but
-not in the private functions; or they may hold only at the first call to a method of a class, but not in the sequent
-calls to other class methods *etc.*). The invariants hence need to come with an overhead which is generally impractical
-for production systems.
+In the long run, we hope that design-by-contract will be adopted and integrated in the language. Consider this library
+a work-around till that happens. An ongoing discussion on how to bring design-by-contract into Python language can
+be followed on `python-ideas mailing list <https://groups.google.com/forum/#!topic/python-ideas/JtMgpSyODTU>`_.
 
 Usage
 =====
-icontract provides two decorators, ``pre`` and ``post`` for pre-conditions and post-conditions, respectively.
+icontract provides two function decorators, ``pre`` and ``post`` for pre-conditions and post-conditions, respectively.
+Additionally, it provides a class decorator, ``inv``, to establish class invariants.
 
 The ``condition`` argument specifies the contract and is usually written in lambda notation. In post-conditions,
 condition function receives a reserved parameter ``result`` corresponding to the result of the function. The condition
@@ -76,7 +73,7 @@ effects.
     >>> some_func(x=1)
     Traceback (most recent call last):
       ...
-    icontract.ViolationError: Precondition violated: x > 3: x was 1
+    icontract.ViolationError: x > 3: x was 1
 
     # Pre-condition violation with a description
     >>> @icontract.pre(lambda x: x > 3, "x must not be small")
@@ -86,7 +83,7 @@ effects.
     >>> some_func(x=1)
     Traceback (most recent call last):
       ...
-    icontract.ViolationError: Precondition violated: x must not be small: x > 3: x was 1
+    icontract.ViolationError: x must not be small: x > 3: x was 1
 
     # Pre-condition violation with a custom representation function
     >>> @icontract.pre(lambda x: x > 3, repr_args=lambda x: "x was 0x{:x}".format(x))
@@ -96,7 +93,7 @@ effects.
     >>> some_func(x=1)
     Traceback (most recent call last):
       ...
-    icontract.ViolationError: Precondition violated: x > 3: x was 0x1
+    icontract.ViolationError: x > 3: x was 0x1
 
 
     # Pre-condition violation with more complex values
@@ -126,7 +123,7 @@ effects.
     >>> some_func(an_a)
     Traceback (most recent call last):
       ...
-    icontract.ViolationError: Precondition violated: (a.b.x + a.b.y()) > SOME_GLOBAL_VAR:
+    icontract.ViolationError: (a.b.x + a.b.y()) > SOME_GLOBAL_VAR:
     SOME_GLOBAL_VAR was 13
     a was instance of A
     a.b was instance of B
@@ -141,7 +138,7 @@ effects.
     >>> some_func(x=10)
     Traceback (most recent call last):
       ...
-    icontract.ViolationError: Post-condition violated: result > x:
+    icontract.ViolationError: result > x:
     result was 5
     x was 10
 
@@ -152,7 +149,7 @@ or ``-OO``, see `Python command-line options <https://docs.python.org/3/using/cm
 
 If you want to override this behavior, you can supply the the ``enabled`` argument to the contract:
 
-.. code-block::python
+.. code-block:: python
 
     >>> @icontract.pre(lambda x: x > 10, enabled=False)
     ... def some_func(x: int) -> int:
@@ -175,7 +172,7 @@ non-empty string.
 
 Here is some example code:
 
-.. code-block::python
+.. code-block:: python
 
     # some_module.py
     @icontract.pre(lambda x: x > 10, enabled=icontract.SLOW)
@@ -194,9 +191,129 @@ Here is some example code:
 
 Run this bash command to execute the unit test with slow contracts:
 
-.. code-block::bash
+.. code-block:: bash
 
     $ ICONTRACT_SLOW=true python test_some_module.py
+
+Invariants
+----------
+Invariants are special contracts associated with an instance of a class. An invariant should hold *after* initialization
+and *before* and *after* a call to any public instance method. The invariants are the pivotal element of
+design-by-contract: they allow you to formally define properties of a data structures that you know will be maintained
+throughout the life time of *every* instance.
+
+We consider the following methods to be "public":
+
+* All methods not prefixed with ``_``
+* All magic methods (prefix ``__`` and suffix ``__``)
+
+Class methods can not observe the invariant since they are not associated with an instance of the class.
+
+We exempt ``__repr__`` method from observing the invariant since that function needs to be called when
+generating error messages.
+
+The icontract invariants are implemented as class decorators.
+
+The following examples shows various cases when an invariant is breached.
+
+After the initialization:
+
+.. code-block:: python
+
+        >>> @icontract.inv(lambda self: self.x > 0)
+        ... class SomeClass:
+        ...     def __init__(self) -> None:
+        ...         self.x = -1
+        ...
+        ...     def __repr__(self) -> str:
+        ...         return "some instance"
+        ...
+        >>> some_instance = SomeClass()
+        Traceback (most recent call last):
+         ...
+        icontract.ViolationError: self.x > 0:
+        self was some instance
+        self.x was -1
+
+
+Before the invocation of a public method:
+
+.. code-block:: python
+
+    >>> @icontract.inv(lambda self: self.x > 0)
+    ... class SomeClass:
+    ...     def __init__(self) -> None:
+    ...         self.x = 100
+    ...
+    ...     def some_method(self) -> None:
+    ...         self.x = 10
+    ...
+    ...     def __repr__(self) -> str:
+    ...         return "some instance"
+    ...
+    >>> some_instance = SomeClass()
+    >>> some_instance.x = -1
+    >>> some_instance.some_method()
+    Traceback (most recent call last):
+     ...
+    icontract.ViolationError: self.x > 0:
+    self was some instance
+    self.x was -1
+
+
+After the invocation of a public method:
+
+.. code-block:: python
+
+    >>> @icontract.inv(lambda self: self.x > 0)
+    ... class SomeClass:
+    ...     def __init__(self) -> None:
+    ...         self.x = 100
+    ...
+    ...     def some_method(self) -> None:
+    ...         self.x = -1
+    ...
+    ...     def __repr__(self) -> str:
+    ...         return "some instance"
+    ...
+    >>> some_instance = SomeClass()
+    >>> some_instance.some_method()
+    Traceback (most recent call last):
+     ...
+    icontract.ViolationError: self.x > 0:
+    self was some instance
+    self.x was -1
+
+
+After the invocation of a magic method:
+
+.. code-block:: python
+
+    >>> @icontract.inv(lambda self: self.x > 0)
+    ... class SomeClass:
+    ...     def __init__(self) -> None:
+    ...         self.x = 100
+    ...
+    ...     def __call__(self) -> None:
+    ...         self.x = -1
+    ...
+    ...     def __repr__(self) -> str:
+    ...         return "some instance"
+    ...
+    >>> some_instance = SomeClass()
+    >>> some_instance()
+    Traceback (most recent call last):
+     ...
+    icontract.ViolationError: self.x > 0:
+    self was some instance
+    self.x was -1
+
+
+Inheritance
+-----------
+Python 3 does not allow inheritance of function and class decorators. This makes it impossible to elegantly implement
+inheritance of invariants, pre and postconditions. We are still experimenting with approaches how to achieve that
+as painlessly as possible. Please let us know if you know how to deal with inheritance and contracts in a nice way.
 
 Installation
 ============

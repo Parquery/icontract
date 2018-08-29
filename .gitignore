@@ -8,3 +8,4 @@ venv3
 dist/
 .coverage
 htmlcov
+README.html
