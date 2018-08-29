@@ -1,8 +1,12 @@
+1.4.0
+=====
+* Added invariants as `icontract.inv`
+
 1.3.0
 =====
 * Added ``icontract.SLOW`` to mark contracts which are slow and should only be 
-  enabled during development.
-* Added ``enabled`` flag to toggle contracts for development, production __etc__.
+  enabled during development
+* Added ``enabled`` flag to toggle contracts for development, production __etc.__
 
 1.2.3
 =====
