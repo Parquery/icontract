@@ -1,6 +1,7 @@
 """Decorate functions with contracts."""
 import functools
 import inspect
+import os
 import reprlib
 from typing import Callable, MutableMapping, Any, Optional, Set, List  # pylint: disable=unused-import
 
@@ -28,6 +29,14 @@ aRepr.maxarray = 50
 aRepr.maxstring = 256
 aRepr.maxother = 256
 
+# SLOW provides a unified environment variable (ICONTRACT_SLOW) to enable the contracts which are slow to execute.
+#
+# Use SLOW to mark any contracts that are even too slow to make it to the normal (__debug__) execution of
+# the interpreted program.
+#
+# Contracts marked with SLOW are also disabled if the interpreter is run in optimized mode (``-O`` or ``-OO``).
+SLOW = __debug__ and os.environ.get("ICONTRACT_SLOW", "") != ""
+
 
 class pre:  # pylint: disable=invalid-name
     """
@@ -36,11 +45,13 @@ class pre:  # pylint: disable=invalid-name
     The arguments of the pre-condition are expected to be a subset of the arguments of the wrapped function.
     """
 
+    # pylint: disable=too-many-instance-attributes
     def __init__(self,
                  condition: Callable[..., bool],
                  description: Optional[str] = None,
                  repr_args: Optional[Callable[..., str]] = None,
-                 a_repr: Optional[reprlib.Repr] = None) -> None:
+                 a_repr: Optional[reprlib.Repr] = None,
+                 enabled: bool = __debug__) -> None:
         """
         Initialize.
 
@@ -56,7 +67,16 @@ class pre:  # pylint: disable=invalid-name
 
             If ``repr_args`` is specified, ``repr_instance`` should be None.
             If no ``repr_args`` is specified, the default ``aRepr`` is used.
+        :param enabled:
+            The decorator is applied only if this argument is set.
+
+            Otherwise, the condition check is disabled and there is no run-time overhead.
+
+            The default is to always check the condition unless the interpreter runs in optimized mode (``-O`` or
+            ``-OO``).
+
         """
+        # pylint: disable=too-many-arguments
         if repr_args is not None and a_repr is not None:
             raise ValueError("Expected no repr_instance if repr_args is given.")
 
@@ -78,13 +98,18 @@ class pre:  # pylint: disable=invalid-name
 
         self._a_repr = a_repr if a_repr is not None else aRepr
 
-    def __call__(self, func: Callable[..., Any]):
+        self.enabled = enabled
+
+    def __call__(self, func: Callable[..., Any]) -> Callable[..., Any]:
         """
-        Check the pre-condition before calling the function 'func'.
+        Check the pre-condition before calling the function ``func``.
 
         :param func: function to be wrapped
-        :return: return value from 'func'
+        :return: wrapped ``func``
         """
+        if not self.enabled:
+            return func
+
         sign = inspect.signature(func)
         param_names = list(sign.parameters.keys())
 
@@ -160,11 +185,13 @@ class post:  # pylint: disable=invalid-name
     not have "result" among its arguments.
     """
 
+    # pylint: disable=too-many-instance-attributes
     def __init__(self,
                  condition: Callable[..., bool],
                  description: Optional[str] = None,
                  repr_args: Optional[Callable[..., str]] = None,
-                 a_repr: Optional[reprlib.Repr] = None) -> None:
+                 a_repr: Optional[reprlib.Repr] = None,
+                 enabled: bool = __debug__) -> None:
         """
         Initialize.
 
@@ -180,7 +207,16 @@ class post:  # pylint: disable=invalid-name
 
             If ``repr_args`` is specified, ``repr_instance`` should be None.
             If no ``repr_args`` is specified, the default ``reprlib.aRepr`` is used.
+        :param enabled:
+            The decorator is applied only if this argument is set.
+
+            Otherwise, the condition check is disabled and there is no run-time overhead.
+
+            The default is to always check the condition unless the interpreter runs in optimized mode (``-O`` or
+            ``-OO``).
+
         """
+        # pylint: disable=too-many-arguments
         if repr_args is not None and a_repr is not None:
             raise ValueError("Expected no repr_instance if repr_args is given.")
 
@@ -202,13 +238,18 @@ class post:  # pylint: disable=invalid-name
 
         self._a_repr = a_repr if a_repr is not None else aRepr
 
-    def __call__(self, func: Callable[..., Any]):
+        self.enabled = enabled
+
+    def __call__(self, func: Callable[..., Any]) -> Callable[..., Any]:
         """
-        Check the post-condition before calling the function 'func'.
+        Check the post-condition before calling the function ``func``.
 
         :param func: function to be wrapped
-        :return: return value from 'func'
+        :return: wrapped ``func``
         """
+        if not self.enabled:
+            return func
+
         sign = inspect.signature(func)
 
         if "result" in sign.parameters.keys():
@@ -222,9 +263,10 @@ class post:  # pylint: disable=invalid-name
 
         def wrapped(*args, **kwargs):
             """
-            Wrap func by checking the post-condition on its inputs and the result.
+            Wrap ``func`` by checking the post-condition on its inputs and the result.
 
-            The post-condition is passed only the subset of arguments it needs.
+            The post-condition is passed only the subset of arguments it needs (including a special ``result``
+            argument representing the result of the wrapped function).
 
             """
             condition_kwargs = dict()  # type: MutableMapping[str, Any]
