@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+# pylint: disable=too-many-lines
 # pylint: disable=missing-docstring
 # pylint: disable=invalid-name
 # pylint: disable=unused-argument
@@ -66,7 +66,7 @@ class TestPrecondition(unittest.TestCase):
             pre_err = err
 
         self.assertIsNotNone(pre_err)
-        self.assertEqual(str(pre_err), "Precondition violated: x > 3: x was 1")
+        self.assertEqual(str(pre_err), "x > 3: x was 1")
 
     def test_fail_with_description(self):
         @icontract.pre(lambda x: x > 3, "x must not be small")
@@ -80,7 +80,7 @@ class TestPrecondition(unittest.TestCase):
             pre_err = err
 
         self.assertIsNotNone(pre_err)
-        self.assertEqual(str(pre_err), "Precondition violated: x must not be small: x > 3: x was 1")
+        self.assertEqual(str(pre_err), "x must not be small: x > 3: x was 1")
 
     def test_fail_multiline(self):
         @icontract.pre(lambda x: x \
@@ -96,7 +96,7 @@ class TestPrecondition(unittest.TestCase):
             pre_err = err
 
         self.assertIsNotNone(pre_err)
-        self.assertEqual(str(pre_err), "Precondition violated: x > 3: x was 1")
+        self.assertEqual(str(pre_err), "x > 3: x was 1")
 
     def test_fail_condition_function(self):
         def some_condition(x: int):
@@ -113,7 +113,7 @@ class TestPrecondition(unittest.TestCase):
             pre_err = err
 
         self.assertIsNotNone(pre_err)
-        self.assertEqual(str(pre_err), "Precondition violated: some_condition: x was 1")
+        self.assertEqual(str(pre_err), "some_condition: x was 1")
 
     def test_with_pathlib(self):
         @icontract.pre(lambda path: path.exists())
@@ -127,7 +127,7 @@ class TestPrecondition(unittest.TestCase):
             pre_err = err
 
         self.assertIsNotNone(pre_err)
-        self.assertEqual("Precondition violated: path.exists():\n"
+        self.assertEqual("path.exists():\n"
                          "path was PosixPath('/doesnt/exist/test_contract')\n"
                          "path.exists() was False", str(pre_err))
 
@@ -143,7 +143,7 @@ class TestPrecondition(unittest.TestCase):
             pre_err = err
 
         self.assertIsNotNone(pre_err)
-        self.assertEqual(str(pre_err), "Precondition violated: 0 < x < 3: x was 10")
+        self.assertEqual(str(pre_err), "0 < x < 3: x was 10")
 
     def test_with_stacked_decorators(self):
         def mydecorator(f):
@@ -171,7 +171,7 @@ class TestPrecondition(unittest.TestCase):
             pre_err = err
 
         self.assertIsNotNone(pre_err)
-        self.assertEqual("Precondition violated: x > another_var:\n" "another_var was 0\n" "x was 0", str(pre_err))
+        self.assertEqual("x > another_var:\n" "another_var was 0\n" "x was 0", str(pre_err))
 
     def test_with_default_values(self):
         @icontract.pre(lambda a: a < 10)
@@ -187,7 +187,7 @@ class TestPrecondition(unittest.TestCase):
             pre_err = err
 
         self.assertIsNotNone(pre_err)
-        self.assertEqual("Precondition violated: b < 10: b was 21", str(pre_err))
+        self.assertEqual("b < 10: b was 21", str(pre_err))
 
     @unittest.skip("Skipped the benchmark, execute manually on a prepared benchmark machine.")
     def test_benchmark(self):
@@ -232,7 +232,7 @@ class TestPrecondition(unittest.TestCase):
             pow_wo_pre(x=i, y=2)
         duration_wo_pre = time.time() - start
 
-        self.assertLess(duration_with_pre / duration_wo_pre, 1.1)
+        self.assertLess(duration_with_pre / duration_wo_pre, 1.2)
 
     def test_invalid_precondition_arguments(self):
         type_err = None  # type: Optional[TypeError]
@@ -259,7 +259,7 @@ class TestPrecondition(unittest.TestCase):
             pre_err = err
 
         self.assertIsNotNone(pre_err)
-        self.assertEqual(str(pre_err), "Precondition violated: x > 3: x was 001")
+        self.assertEqual(str(pre_err), "x > 3: x was 001")
 
     def test_repr_args_unexpected_arguments(self):
         value_err = None  # type: Optional[ValueError]
@@ -290,9 +290,7 @@ class TestPrecondition(unittest.TestCase):
             pre_err = err
 
         self.assertIsNotNone(pre_err)
-        self.assertEqual("Precondition violated: len(x) < 10:\n"
-                         "len(x) was 10000\n"
-                         "x was [0, 1, 2, ...]", str(pre_err))
+        self.assertEqual("len(x) < 10:\n" "len(x) was 10000\n" "x was [0, 1, 2, ...]", str(pre_err))
 
     def test_class(self):
         class A:
@@ -317,7 +315,7 @@ class TestPrecondition(unittest.TestCase):
             pre_err = err
 
         self.assertIsNotNone(pre_err)
-        self.assertEqual("Precondition violated: x > 3: x was 1", str(pre_err))
+        self.assertEqual("x > 3: x was 1", str(pre_err))
 
         # Test method with self
         pre_err = None  # type: Optional[icontract.ViolationError]
@@ -327,7 +325,7 @@ class TestPrecondition(unittest.TestCase):
             pre_err = err
 
         self.assertIsNotNone(pre_err)
-        self.assertEqual("Precondition violated: self.y > 10: self.y was 5", str(pre_err))
+        self.assertEqual("self.y > 10: self.y was 5", str(pre_err))
 
     def test_repr_nested_property(self):
         class B:
@@ -360,10 +358,7 @@ class TestPrecondition(unittest.TestCase):
             pre_err = err
 
         self.assertIsNotNone(pre_err)
-        self.assertEqual("Precondition violated: self.b.x > 0:\n"
-                         "self was A()\n"
-                         "self.b was B(x=0)\n"
-                         "self.b.x was 0", str(pre_err))
+        self.assertEqual("self.b.x > 0:\n" "self was A()\n" "self.b was B(x=0)\n" "self.b.x was 0", str(pre_err))
 
     def test_repr_nested_method(self):
         z = 10
@@ -408,16 +403,15 @@ class TestPrecondition(unittest.TestCase):
             pre_err = err
 
         self.assertIsNotNone(pre_err)
-        self.assertEqual(
-            "Precondition violated: pathlib.Path(str(gt_zero((self.b.c(x=0).x() + (12.2 * z))))) is None:\n"
-            "gt_zero((self.b.c(x=0).x() + (12.2 * z))) was True\n"
-            "pathlib.Path(str(gt_zero((self.b.c(x=0).x() + (12.2 * z))))) was PosixPath('True')\n"
-            "self was A()\n"
-            "self.b was B()\n"
-            "self.b.c(x=0) was C(x=0)\n"
-            "self.b.c(x=0).x() was 0\n"
-            "str(gt_zero((self.b.c(x=0).x() + (12.2 * z)))) was 'True'\n"
-            "z was 10", str(pre_err))
+        self.assertEqual("pathlib.Path(str(gt_zero((self.b.c(x=0).x() + (12.2 * z))))) is None:\n"
+                         "gt_zero((self.b.c(x=0).x() + (12.2 * z))) was True\n"
+                         "pathlib.Path(str(gt_zero((self.b.c(x=0).x() + (12.2 * z))))) was PosixPath('True')\n"
+                         "self was A()\n"
+                         "self.b was B()\n"
+                         "self.b.c(x=0) was C(x=0)\n"
+                         "self.b.c(x=0).x() was 0\n"
+                         "str(gt_zero((self.b.c(x=0).x() + (12.2 * z)))) was 'True'\n"
+                         "z was 10", str(pre_err))
 
     def test_repr_value_closure(self):
         y = 4
@@ -434,7 +428,7 @@ class TestPrecondition(unittest.TestCase):
             pre_err = err
 
         self.assertIsNotNone(pre_err)
-        self.assertEqual("Precondition violated: x < (y + z):\n" "x was 100\n" "y was 4\n" "z was 5", str(pre_err))
+        self.assertEqual("x < (y + z):\n" "x was 100\n" "y was 4\n" "z was 5", str(pre_err))
 
     def test_repr_value_global(self):
         @icontract.pre(lambda x: x < SOME_GLOBAL_CONSTANT)
@@ -448,9 +442,7 @@ class TestPrecondition(unittest.TestCase):
             pre_err = err
 
         self.assertIsNotNone(pre_err)
-        self.assertEqual("Precondition violated: x < SOME_GLOBAL_CONSTANT:\n"
-                         "SOME_GLOBAL_CONSTANT was 10\n"
-                         "x was 100", str(pre_err))
+        self.assertEqual("x < SOME_GLOBAL_CONSTANT:\n" "SOME_GLOBAL_CONSTANT was 10\n" "x was 100", str(pre_err))
 
     def test_repr_value_closure_and_global(self):
         y = 4
@@ -466,7 +458,7 @@ class TestPrecondition(unittest.TestCase):
             pre_err = err
 
         self.assertIsNotNone(pre_err)
-        self.assertEqual("Precondition violated: x < (y + SOME_GLOBAL_CONSTANT):\n"
+        self.assertEqual("x < (y + SOME_GLOBAL_CONSTANT):\n"
                          "SOME_GLOBAL_CONSTANT was 10\n"
                          "x was 100\n"
                          "y was 4", str(pre_err))
@@ -507,7 +499,7 @@ class TestPostcondition(unittest.TestCase):
             post_err = err
 
         self.assertIsNotNone(post_err)
-        self.assertEqual("Post-condition violated: result > x:\n" "result was -4\n" "x was 1", str(post_err))
+        self.assertEqual("result > x:\n" "result was -4\n" "x was 1", str(post_err))
 
     def test_fail_with_description(self):
         @icontract.post(lambda result, x: result > x, "expected summation")
@@ -521,9 +513,7 @@ class TestPostcondition(unittest.TestCase):
             post_err = err
 
         self.assertIsNotNone(post_err)
-        self.assertEqual("Post-condition violated: expected summation: result > x:\n"
-                         "result was -4\n"
-                         "x was 1", str(post_err))
+        self.assertEqual("expected summation: result > x:\n" "result was -4\n" "x was 1", str(post_err))
 
     def test_with_stacked_decorators(self):
         def mydecorator(f):
@@ -551,7 +541,7 @@ class TestPostcondition(unittest.TestCase):
             post_err = err
 
         self.assertIsNotNone(post_err)
-        self.assertEqual("Post-condition violated: y > (result + another_var):\n"
+        self.assertEqual("y > (result + another_var):\n"
                          "another_var was 2\n"
                          "result was 100\n"
                          "y was 10", str(post_err))
@@ -570,7 +560,7 @@ class TestPostcondition(unittest.TestCase):
             post_err = err
 
         self.assertIsNotNone(post_err)
-        self.assertEqual("Post-condition violated: (result % c) == 0:\n" "c was 2\n" "result was 13", str(post_err))
+        self.assertEqual("(result % c) == 0:\n" "c was 2\n" "result was 13", str(post_err))
 
         # Check the inner post condition
         post_err = None  # type: Optional[icontract.ViolationError]
@@ -580,7 +570,7 @@ class TestPostcondition(unittest.TestCase):
             post_err = err
 
         self.assertIsNotNone(post_err)
-        self.assertEqual("Post-condition violated: result < b:\n" "b was 21\n" "result was 36", str(post_err))
+        self.assertEqual("result < b:\n" "b was 21\n" "result was 36", str(post_err))
 
     def test_repr_args(self):
         @icontract.post(
@@ -595,7 +585,7 @@ class TestPostcondition(unittest.TestCase):
             post_err = err
 
         self.assertIsNotNone(post_err)
-        self.assertEqual("Post-condition violated: result > x: result was -0004, x was 00001", str(post_err))
+        self.assertEqual("result > x: result was -0004, x was 00001", str(post_err))
 
     def test_repr(self):
         a_repr = reprlib.Repr()
@@ -612,7 +602,7 @@ class TestPostcondition(unittest.TestCase):
             post_err = err
 
         self.assertIsNotNone(post_err)
-        self.assertEqual("Post-condition violated: len(result) > x:\n"
+        self.assertEqual("len(result) > x:\n"
                          "len(result) was 10000\n"
                          "result was [0, 1, 2, ...]\n"
                          "x was 10000", str(post_err))
@@ -629,7 +619,7 @@ class TestPostcondition(unittest.TestCase):
             post_err = err
 
         self.assertIsNotNone(post_err)
-        self.assertEqual("Post-condition violated: result > 3: result was 0", str(post_err))
+        self.assertEqual("result > 3: result was 0", str(post_err))
 
     def test_enabled(self):
         @icontract.post(lambda x, result: x > result, enabled=False)
@@ -651,6 +641,382 @@ class TestSlow(unittest.TestCase):
         self.assertTrue(icontract.SLOW,
                         "icontract.SLOW was not set. Please check if you set the environment variable ICONTRACT_SLOW "
                         "before running this test.")
+
+
+class TestInvariant(unittest.TestCase):
+    def test_init_ok(self):
+        @icontract.inv(lambda self: self.x > 0)
+        class SomeClass:
+            def __init__(self) -> None:
+                self.x = 100
+
+        inst = SomeClass()
+        self.assertEqual(100, inst.x)
+
+    def test_method_ok(self):
+        @icontract.inv(lambda self: self.x > 0)
+        class SomeClass:
+            def __init__(self) -> None:
+                self.x = 100
+
+            def some_method(self) -> None:
+                self.x = 1000
+
+        inst = SomeClass()
+        inst.some_method()
+        self.assertEqual(1000, inst.x)
+
+    def test_magic_method_ok(self):
+        @icontract.inv(lambda self: self.x > 0)
+        class SomeClass:
+            def __init__(self) -> None:
+                self.x = 100
+
+            def __call__(self) -> None:
+                self.x = 1000
+
+        inst = SomeClass()
+        inst()
+
+        self.assertEqual(1000, inst.x)
+
+    def test_class_method_ok(self):
+        @icontract.inv(lambda self: self.x > 0)
+        class SomeClass:
+            def __init__(self) -> None:
+                self.x = 100
+
+            @classmethod
+            def some_class_method(cls) -> None:
+                pass
+
+        inst = SomeClass()
+        self.assertEqual(100, inst.x)
+
+    def test_protected_method_may_violate_inv(self):
+        @icontract.inv(lambda self: self.x > 0)
+        class SomeClass:
+            def __init__(self) -> None:
+                self.x = 100
+
+            # A protected method is allowed to break the invariant.
+            def _some_protected_method(self) -> None:
+                self.x = -1
+
+            def some_method(self) -> None:
+                self._some_protected_method()
+                self.x = 10
+
+        inst = SomeClass()
+        inst.some_method()
+
+        self.assertEqual(10, inst.x)
+
+    def test_inv_broken_before_protected_method(self):
+        @icontract.inv(lambda self: self.x > 0)
+        class SomeClass:
+            def __init__(self) -> None:
+                self.x = 100
+
+            # A protected method can not expect the invariant to hold.
+            def _some_protected_method(self) -> None:
+                pass
+
+            def some_method(self) -> None:
+                self.x = -1
+                self._some_protected_method()
+                self.x = 10
+
+        inst = SomeClass()
+        inst.some_method()
+        self.assertEqual(10, inst.x)
+
+    def test_private_method_may_violate_inv(self):
+        @icontract.inv(lambda self: self.x > 0)
+        class SomeClass:
+            def __init__(self) -> None:
+                self.x = 100
+
+            # A private method is allowed to break the invariant.
+            def __some_private_method(self) -> None:
+                self.x = -1
+
+            def some_method(self) -> None:
+                self.__some_private_method()
+                self.x = 10
+
+        inst = SomeClass()
+        inst.some_method()
+        self.assertEqual(10, inst.x)
+
+    def test_inv_broken_before_private_method(self):
+        @icontract.inv(lambda self: self.x > 0)
+        class SomeClass:
+            def __init__(self) -> None:
+                self.x = 100
+
+            # A private method can not expect the invariant to hold.
+            def __some_private_method(self) -> None:
+                pass
+
+            def some_method(self) -> None:
+                self.x = -1
+                self.__some_private_method()
+                self.x = 10
+
+        inst = SomeClass()
+        inst.some_method()
+        self.assertEqual(10, inst.x)
+
+    def test_init_checked(self):
+        @icontract.inv(lambda self: self.x > 0)
+        class SomeClass:
+            def __init__(self) -> None:
+                self.x = -1
+
+            def __repr__(self) -> str:
+                return "some instance"
+
+        ass_err = None  # type: Optional[AssertionError]
+        try:
+            _ = SomeClass()
+        except AssertionError as err:
+            ass_err = err
+
+        self.assertIsNotNone(ass_err)
+        self.assertEqual("self.x > 0:\n" "self was some instance\n" "self.x was -1", str(ass_err))
+
+    def test_inv_as_precondition(self):
+        @icontract.inv(lambda self: self.x > 0)
+        class SomeClass:
+            def __init__(self) -> None:
+                self.x = 100
+
+            def some_method(self) -> None:
+                self.x = 10
+
+            def __repr__(self) -> str:
+                return "some instance"
+
+        ass_err = None  # type: Optional[AssertionError]
+        try:
+            inst = SomeClass()
+            inst.x = -1
+            inst.some_method()
+        except AssertionError as err:
+            ass_err = err
+
+        self.assertIsNotNone(ass_err)
+        self.assertEqual("self.x > 0:\n" "self was some instance\n" "self.x was -1", str(ass_err))
+
+    def test_method_checked(self):
+        @icontract.inv(lambda self: self.x > 0)
+        class SomeClass:
+            def __init__(self) -> None:
+                self.x = 100
+
+            def some_method(self) -> None:
+                self.x = -1
+
+            def __repr__(self) -> str:
+                return "some instance"
+
+        ass_err = None  # type: Optional[AssertionError]
+        try:
+            inst = SomeClass()
+            inst.some_method()
+        except AssertionError as err:
+            ass_err = err
+
+        self.assertIsNotNone(ass_err)
+        self.assertEqual("self.x > 0:\n" "self was some instance\n" "self.x was -1", str(ass_err))
+
+    def test_magic_method_checked(self):
+        @icontract.inv(lambda self: self.x > 0)
+        class SomeClass:
+            def __init__(self) -> None:
+                self.x = 100
+
+            def __call__(self) -> None:
+                self.x = -1
+
+            def __repr__(self) -> str:
+                return "some instance"
+
+        ass_err = None  # type: Optional[AssertionError]
+        try:
+            inst = SomeClass()
+            inst()
+        except AssertionError as err:
+            ass_err = err
+
+        self.assertIsNotNone(ass_err)
+        self.assertEqual("self.x > 0:\n" "self was some instance\n" "self.x was -1", str(ass_err))
+
+    def test_multiple_invs_first_checked(self):
+        @icontract.inv(lambda self: self.x > 0)
+        @icontract.inv(lambda self: self.x < 10)
+        class SomeClass:
+            def __init__(self) -> None:
+                self.x = -1
+
+            def __repr__(self) -> str:
+                return "some instance"
+
+        ass_err = None  # type: Optional[AssertionError]
+        try:
+            _ = SomeClass()
+        except AssertionError as err:
+            ass_err = err
+
+        self.assertIsNotNone(ass_err)
+        self.assertEqual("self.x > 0:\n" "self was some instance\n" "self.x was -1", str(ass_err))
+
+    def test_multiple_invs_last_checked(self):
+        @icontract.inv(lambda self: self.x > 0)
+        @icontract.inv(lambda self: self.x < 10)
+        class SomeClass:
+            def __init__(self) -> None:
+                self.x = 100
+
+            def __repr__(self) -> str:
+                return "some instance"
+
+        ass_err = None  # type: Optional[AssertionError]
+        try:
+            _ = SomeClass()
+        except AssertionError as err:
+            ass_err = err
+
+        self.assertIsNotNone(ass_err)
+        self.assertEqual("self.x < 10:\n" "self was some instance\n" "self.x was 100", str(ass_err))
+
+    def test_inv_checked_after_pre(self):
+        @icontract.inv(lambda self: self.x > 0)
+        class SomeClass:
+            def __init__(self) -> None:
+                self.x = 100
+
+            @icontract.pre(lambda y: y > 0)
+            def some_method(self, y: int) -> None:
+                self.x = -1
+
+            def __repr__(self) -> str:
+                return "some instance"
+
+        ass_err = None  # type: Optional[AssertionError]
+        try:
+            inst = SomeClass()
+            inst.some_method(y=-1)
+        except AssertionError as err:
+            ass_err = err
+
+        self.assertIsNotNone(ass_err)
+        self.assertEqual("y > 0: y was -1", str(ass_err))
+
+        ass_err = None  # type: Optional[AssertionError]
+        try:
+            inst = SomeClass()
+            inst.some_method(y=100)
+        except AssertionError as err:
+            ass_err = err
+
+        self.assertIsNotNone(ass_err)
+        self.assertEqual("self.x > 0:\n" "self was some instance\n" "self.x was -1", str(ass_err))
+
+    def test_inv_ok_but_post_violated(self):
+        @icontract.inv(lambda self: self.x > 0)
+        class SomeClass:
+            def __init__(self) -> None:
+                self.x = 100
+
+            @icontract.post(lambda result: result > 0)
+            def some_method(self) -> int:
+                self.x = 10
+                return -1
+
+            def __repr__(self) -> str:
+                return "some instance"
+
+        ass_err = None  # type: Optional[AssertionError]
+        try:
+            inst = SomeClass()
+            inst.some_method()
+        except AssertionError as err:
+            ass_err = err
+
+        self.assertIsNotNone(ass_err)
+        self.assertEqual("result > 0: result was -1", str(ass_err))
+
+    def test_inv_violated_but_post_ok(self):
+        @icontract.inv(lambda self: self.x > 0)
+        class SomeClass:
+            def __init__(self) -> None:
+                self.x = 100
+
+            @icontract.post(lambda result: result > 0)
+            def some_method(self) -> int:
+                self.x = -1
+                return 10
+
+            def __repr__(self) -> str:
+                return "some instance"
+
+        ass_err = None  # type: Optional[AssertionError]
+        try:
+            inst = SomeClass()
+            inst.some_method()
+        except AssertionError as err:
+            ass_err = err
+
+        self.assertIsNotNone(ass_err)
+        self.assertEqual("self.x > 0:\n" "self was some instance\n" "self.x was -1", str(ass_err))
+
+    def test_inv_with_invalid_arguments(self):
+        val_err = None  # type: Optional[ValueError]
+        try:
+
+            @icontract.inv(lambda self, z: self.x > z)
+            class _:
+                def __init__(self) -> None:
+                    self.x = 100
+
+        except ValueError as err:
+            val_err = err
+
+        self.assertIsNotNone(val_err)
+        self.assertEqual("Expected a condition function with a single argument 'self', but got: ['self', 'z']",
+                         str(val_err))
+
+    def test_inv_disabled(self):
+        @icontract.inv(lambda self: self.x > 0, enabled=False)
+        class SomeClass:
+            def __init__(self) -> None:
+                self.x = -1
+
+        inst = SomeClass()
+        self.assertEqual(-1, inst.x)
+
+    @unittest.skip("Skipped the benchmark, execute manually on a prepared benchmark machine.")
+    def test_benchmark_when_disabled(self):
+        @icontract.inv(lambda self: bool(time.sleep(5)), enabled=False)
+        class SomeClass:
+            def __init__(self) -> None:
+                self.x = 100
+
+        class AnotherClass:
+            def __init__(self) -> None:
+                self.x = 100
+
+        start = time.time()
+        _ = SomeClass()
+        duration_with_inv = time.time() - start
+
+        start = time.time()
+        _ = AnotherClass()
+        duration_wo_inv = time.time() - start
+
+        self.assertLess(duration_with_inv / duration_wo_inv, 1.2)
 
 
 if __name__ == '__main__':

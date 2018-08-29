@@ -1,9 +1,10 @@
 """Decorate functions with contracts."""
+
 import functools
 import inspect
 import os
 import reprlib
-from typing import Callable, MutableMapping, Any, Optional, Set, List  # pylint: disable=unused-import
+from typing import Callable, MutableMapping, Any, Optional, Set, List, Type  # pylint: disable=unused-import
 
 import icontract.represent
 
@@ -55,7 +56,7 @@ class pre:  # pylint: disable=invalid-name
         """
         Initialize.
 
-        :param condition: pre-condition function
+        :param condition: pre-condition predicate
         :param description: textual description of the pre-condition
         :param repr_args:
             function to represent arguments in the message on a failed pre-condition. The repr_func needs to take the
@@ -135,12 +136,11 @@ class pre:  # pylint: disable=invalid-name
             check = self.condition(**condition_kwargs)
 
             if not check:
-                parts = ["Precondition violated"]
+                parts = []  # type: List[str]
 
                 if self.description is not None:
-                    parts.append(': ' + self.description)
+                    parts.append("{}: ".format(self.description))
 
-                parts.append(": ")
                 parts.append(self._condition_as_text)
 
                 if self._repr_func:
@@ -195,7 +195,7 @@ class post:  # pylint: disable=invalid-name
         """
         Initialize.
 
-        :param condition: post-condition function
+        :param condition: post-condition predicate
         :param description: textual description of the post-condition
         :param repr_args:
             function to represent arguments in the message on a failed post-condition. The repr_func needs to take the
@@ -294,13 +294,11 @@ class post:  # pylint: disable=invalid-name
             check = self.condition(**condition_kwargs)
 
             if not check:
-                parts = ["Post-condition violated"]  # type: List[str]
+                parts = []  # type: List[str]
 
                 if self.description is not None:
-                    parts.append(": ")
-                    parts.append(self.description)
+                    parts.append("{}: ".format(self.description))
 
-                parts.append(": ")
                 parts.append(self._condition_as_text)
 
                 if self._repr_func:
@@ -334,3 +332,93 @@ class post:  # pylint: disable=invalid-name
                 wrapped.__kwdefaults__[param.name] = param.default
 
         return wrapped
+
+
+def inv(condition: Callable[..., bool],
+        description: Optional[str] = None,
+        repr_args: Optional[Callable[..., str]] = None,
+        a_repr: Optional[reprlib.Repr] = None,
+        enabled: bool = __debug__) -> Callable[[Type], Type]:
+    """
+    Create a class decorator to establish the invariant on all the public methods.
+
+    Class method as well as "private" (prefix ``__``) and "protected" methods (prefix ``_``) may violate the invariant.
+    Note that all magic methods (prefix ``__`` and suffix ``__``) are considered public and hence also need to establish
+    the invariant. To avoid endless loops when generating the error message on an invariant breach, the method
+    ``__repr__`` is deliberately exempt from observing the invariant.
+
+    The invariant is checked *before* and *after* the method invocation.
+
+    :param condition: invariant predicate
+    :param description: textual description of the invariant
+    :param repr_args:
+            function to represent arguments in the message on a breached invariant. The repr_func takes only ``self``
+            as a single argument.
+
+            If not specified, all the involved values are represented by re-traversing the AST.
+
+    :param a_repr:
+            representation instance that defines how the values are represented.
+
+            If ``repr_args`` is specified, ``repr_instance`` should be None.
+            If no ``repr_args`` is specified, the default ``icontract.aRepr`` is used.
+    :param enabled:
+            The decorator is applied only if this argument is set.
+
+            Otherwise, the condition check is disabled and there is no run-time overhead.
+
+            The default is to always check the condition unless the interpreter runs in optimized mode (``-O`` or
+            ``-OO``).
+
+    :return: class decorator
+
+    """
+    parameter_names = sorted(inspect.signature(condition).parameters.keys())
+    if parameter_names != ["self"]:
+        raise ValueError(
+            "Expected a condition function with a single argument 'self', but got: {}".format(parameter_names))
+
+    def decorator(cls: Type) -> Type:
+        """Decorate each of the public methods with the invariant as a pre and a postcondition, respectively."""
+        if not enabled:
+            return cls
+
+        for name, value in [(name, getattr(cls, name)) for name in dir(cls)]:
+            if not inspect.ismethod(value) and not inspect.isfunction(value):
+                continue
+
+            # Ignore class methods
+            if getattr(value, "__self__", None) is cls:
+                continue
+
+            # Ignore __repre__ to avoid endless loops when generating the error message on invariant breach.
+            if name == "__repr__":
+                continue
+
+            if name == "__init__":
+                post_decorator = post(
+                    condition=condition, description=description, repr_args=repr_args, a_repr=a_repr, enabled=enabled)
+
+                wrapped = post_decorator(func=value)
+                setattr(cls, name, wrapped)
+
+            elif not name.startswith("_") or (name.startswith("__") and name.endswith("__")):
+                pre_decorator = pre(
+                    condition=condition, description=description, repr_args=repr_args, a_repr=a_repr, enabled=enabled)
+
+                post_decorator = post(
+                    condition=condition, description=description, repr_args=repr_args, a_repr=a_repr, enabled=enabled)
+
+                wrapped = pre_decorator(post_decorator(func=value))
+                setattr(cls, name, wrapped)
+
+            elif name.startswith("_"):
+                # It is a private or a protected method or function, do not enforce any pre and postconditions.
+                pass
+
+            else:
+                raise NotImplementedError("Unhandled method or function of class {}: {}".format(cls.__name__, name))
+
+        return cls
+
+    return decorator
