@@ -1,10 +1,11 @@
 """Decorate functions with contracts."""
-
+import abc
 import functools
 import inspect
 import os
 import reprlib
-from typing import Callable, MutableMapping, Any, Optional, Set, List, Type  # pylint: disable=unused-import
+from typing import Callable, MutableMapping, Any, Optional, Set, List, Type, Dict, \
+    Tuple, Mapping, Iterable  # pylint: disable=unused-import
 
 import icontract.represent
 
@@ -39,11 +40,269 @@ aRepr.maxother = 256
 SLOW = __debug__ and os.environ.get("ICONTRACT_SLOW", "") != ""
 
 
+class _Contract:
+    """Represent a contract to be enforced as a precondition, postcondition or as an invariant."""
+
+    def __init__(self,
+                 condition: Callable[..., bool],
+                 description: Optional[str] = None,
+                 repr_args: Optional[Callable[..., str]] = None,
+                 a_repr: Optional[reprlib.Repr] = None) -> None:
+        """
+        Initialize.
+
+        :param condition: condition predicate
+        :param description: textual description of the contract
+        :param repr_args:
+            function to represent arguments in the message on a failed condition. The repr_func needs to take the
+            same arguments as the condition function.
+
+            If not specified, all the involved values are represented by re-traversing the AST.
+        :param a_repr:
+            representation instance that defines how the values are represented.
+
+            If ``repr_args`` is specified, ``repr_instance`` should be None.
+            If no ``repr_args`` is specified, the default ``aRepr`` is used.
+
+        """
+        # pylint: disable=too-many-arguments
+        if repr_args is not None and a_repr is not None:
+            raise ValueError("Expected no repr_instance if repr_args is given.")
+
+        self.condition = condition
+
+        self.condition_args = list(inspect.signature(condition).parameters.keys())  # type: List[str]
+        self.condition_arg_set = set(self.condition_args)  # type: Set[str]
+        self.condition_as_text = icontract.represent.condition_as_text(condition=condition)
+
+        self.description = description
+
+        self._repr_func = repr_args
+        if repr_args is not None:
+            got = list(inspect.signature(repr_args).parameters.keys())
+
+            if got != self.condition_args:
+                raise ValueError("Unexpected argument(s) of repr_args. Expected {}, got {}".format(
+                    self.condition_args, got))
+
+        self._a_repr = a_repr if a_repr is not None else aRepr
+
+    def __repr__(self) -> str:
+        return "{} at {:x} on {}".format(type(self), id(self), self.condition_as_text)
+
+
+def _generate_message(contract: _Contract, condition_kwargs: Mapping[str, Any]) -> str:
+    """Generate the message upon contract violation."""
+    # pylint: disable=protected-access
+    parts = []  # type: List[str]
+
+    if contract.description is not None:
+        parts.append("{}: ".format(contract.description))
+
+    parts.append(contract.condition_as_text)
+
+    if contract._repr_func:
+        parts.append(': ')
+        parts.append(contract._repr_func(**condition_kwargs))
+    else:
+        repr_values = icontract.represent.repr_values(
+            condition=contract.condition, condition_kwargs=condition_kwargs, a_repr=contract._a_repr)
+
+        if len(repr_values) == 1:
+            parts.append(': ')
+            parts.append(repr_values[0])
+        else:
+            parts.append(':\n')
+            parts.append('\n'.join(repr_values))
+
+    msg = "".join(parts)
+    return msg
+
+
+def _assert_precondition(contract: _Contract, param_names: List[str], kwdefaults: Dict[str, Any], args: Tuple[Any, ...],
+                         kwargs: Dict[str, Any]) -> None:
+    """Assert that the contract holds as a precondition to the function ``func``."""
+    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-locals
+    condition_kwargs = dict()  # type: MutableMapping[str, Any]
+
+    # Set the default argument values as condition parameters.
+    for param_name, param_value in kwdefaults.items():
+        if param_name in contract.condition_arg_set:
+            condition_kwargs[param_name] = param_value
+
+    # Override the defaults with the values actually suplied to the function.
+    for i, func_arg in enumerate(args):
+        if param_names[i] in contract.condition_arg_set:
+            condition_kwargs[param_names[i]] = func_arg
+
+    for key, val in kwargs.items():
+        if key in contract.condition_arg_set:
+            condition_kwargs[key] = val
+
+    # Check that all arguments to the condition function have been set.
+    for arg_name in contract.condition_args:
+        if arg_name not in condition_kwargs:
+            raise TypeError(("The argument of the contract condition has not been set: {}. "
+                             "Does the function define it?").format(arg_name))
+
+    check = contract.condition(**condition_kwargs)
+
+    if not check:
+        msg = _generate_message(contract=contract, condition_kwargs=condition_kwargs)
+        raise ViolationError(msg)
+
+
+def _assert_invariant(contract: _Contract, instance: Any) -> None:
+    """Assert that the contract holds as a class invariant given the instance of the class."""
+    check = contract.condition(self=instance)
+
+    if not check:
+        msg = _generate_message(contract=contract, condition_kwargs={"self": instance})
+        raise ViolationError(msg)
+
+
+def _assert_postcondition(contract: _Contract, param_names: List[str], kwdefaults: Dict[str, Any],
+                          args: Tuple[Any, ...], kwargs: Dict[str, Any], result: Any) -> None:
+    """Assert that the contract holds as a postcondition given the arguments and the result of a function."""
+    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-locals
+    condition_kwargs = dict()  # type: MutableMapping[str, Any]
+
+    # Set the default argument values as condition parameters.
+    for param_name, param_value in kwdefaults.items():
+        if param_name in contract.condition_arg_set:
+            condition_kwargs[param_name] = param_value
+
+    # Override the default argument values with the values actually supplied to the function.
+    for i, func_arg in enumerate(args):
+        if param_names[i] in contract.condition_arg_set:
+            condition_kwargs[param_names[i]] = func_arg
+
+    # Collect the keyword arguments
+    for key, val in kwargs.items():
+        if key in contract.condition_arg_set:
+            condition_kwargs[key] = val
+
+    # Add the special ``result`` argument
+    if "result" in contract.condition_arg_set:
+        condition_kwargs["result"] = result
+
+    # Check that all arguments to the condition function have been set.
+    for arg_name in contract.condition_args:
+        if arg_name not in condition_kwargs:
+            raise TypeError(("The argument of the contract condition has not been set: {}. "
+                             "Does the function define it?").format(arg_name))
+
+    check = contract.condition(**condition_kwargs)
+
+    if not check:
+        msg = _generate_message(contract=contract, condition_kwargs=condition_kwargs)
+        raise ViolationError(msg)
+
+
+def _decorate_with_checker(func: Callable[..., Any]) -> Callable[..., Any]:
+    """Decorate the function with a checker that verifies the preconditions and postconditions."""
+    assert not hasattr(func, "__preconditions__"), \
+        "Expected func to have no list of preconditions (there should be only a single contract checker per function)."
+
+    assert not hasattr(func, "__postconditions__"), \
+        "Expected func to have no list of postconditions (there should be only a single contract checker per function)."
+
+    sign = inspect.signature(func)
+    param_names = list(sign.parameters.keys())
+
+    # Determine the default argument values.
+    kwdefaults = dict()  # type: Dict[str, Any]
+
+    # Add to the defaults all the values that are needed by the contracts.
+    for param in sign.parameters.values():
+        if param.default != inspect.Parameter.empty:
+            kwdefaults[param.name] = param.default
+
+    def wrapper(*args, **kwargs):
+        """Wrap func by checking the preconditions and postconditions."""
+        preconditions = getattr(wrapper, "__preconditions__")
+        postconditions = getattr(wrapper, "__postconditions__")
+
+        # Assert the preconditions in groups. This is necessary to implement "require else" logic when a class
+        # weakens the preconditions of its base class.
+        violation_err = None  # type: Optional[ViolationError]
+        for group in preconditions:
+            violation_err = None
+            try:
+                for contract in group:
+                    _assert_precondition(
+                        contract=contract, param_names=param_names, kwdefaults=kwdefaults, args=args, kwargs=kwargs)
+                break
+            except ViolationError as err:
+                violation_err = err
+
+        if violation_err is not None:
+            raise violation_err  # pylint: disable=raising-bad-type
+
+        # Execute the wrapped function
+        result = func(*args, **kwargs)
+
+        # Assert the postconditions as a conjunction
+        for contract in postconditions:
+            _assert_postcondition(
+                contract=contract,
+                param_names=param_names,
+                kwdefaults=kwdefaults,
+                args=args,
+                kwargs=kwargs,
+                result=result)
+
+        return result
+
+    # Copy __doc__ and other properties so that doctests can run
+    functools.update_wrapper(wrapper=wrapper, wrapped=func)
+
+    assert not hasattr(wrapper, "__preconditions__"), "Expected no preconditions set on a pristine contract checker."
+    assert not hasattr(wrapper, "__postconditions__"), "Expected no postconditions set on a pristine contract checker."
+
+    # Precondition is a list of condition groups (i.e. disjunctive normal form):
+    # each group consists of AND'ed preconditions, while the groups are OR'ed.
+    #
+    # This is necessary in order to implement "require else" logic when a class weakens the preconditions of
+    # its base class.
+    setattr(wrapper, "__preconditions__", [[]])
+
+    setattr(wrapper, "__postconditions__", [])
+
+    return wrapper
+
+
+def _unwind_decorator_stack(func: Callable[..., Any]) -> Iterable[Callable[..., Any]]:
+    """
+    Iterate through the stack of decorated functions and return the original function.
+
+    Assume that all decorators used functools.update_wrapper.
+    """
+    while hasattr(func, "__wrapped__"):
+        yield func
+
+        func = getattr(func, "__wrapped__")
+
+    yield func
+
+
+def _find_checker(func: Callable[..., Any]) -> Optional[Callable[..., Any]]:
+    """Iterate through the decorator stack till we find the contract checker."""
+    contract_checker = None  # type: Optional[Callable[..., Any]]
+    for a_wrapper in _unwind_decorator_stack(func):
+        if hasattr(a_wrapper, "__preconditions__") or hasattr(a_wrapper, "__postconditions__"):
+            contract_checker = a_wrapper
+
+    return contract_checker
+
+
 class pre:  # pylint: disable=invalid-name
     """
-    Decorate a function with a pre-condition.
+    Decorate a function with a precondition.
 
-    The arguments of the pre-condition are expected to be a subset of the arguments of the wrapped function.
+    The arguments of the precondition are expected to be a subset of the arguments of the wrapped function.
     """
 
     # pylint: disable=too-many-instance-attributes
@@ -56,10 +315,10 @@ class pre:  # pylint: disable=invalid-name
         """
         Initialize.
 
-        :param condition: pre-condition predicate
-        :param description: textual description of the pre-condition
+        :param condition: precondition predicate
+        :param description: textual description of the precondition
         :param repr_args:
-            function to represent arguments in the message on a failed pre-condition. The repr_func needs to take the
+            function to represent arguments in the message on a failed precondition. The repr_func needs to take the
             same arguments as the condition function.
 
             If not specified, all the involved values are represented by re-traversing the AST.
@@ -79,112 +338,56 @@ class pre:  # pylint: disable=invalid-name
         """
         # pylint: disable=too-many-arguments
         self.enabled = enabled
+        self._contract = None  # type: Optional[_Contract]
+
         if not enabled:
             return
 
-        if repr_args is not None and a_repr is not None:
-            raise ValueError("Expected no repr_instance if repr_args is given.")
-
-        self.condition = condition
-
-        self._condition_args = list(inspect.signature(condition).parameters.keys())  # type: List[str]
-        self._condition_arg_set = set(self._condition_args)  # type: Set[str]
-        self._condition_as_text = icontract.represent.condition_as_text(condition=condition)
-
-        self.description = description
-
-        self._repr_func = repr_args
-        if repr_args is not None:
-            got = list(inspect.signature(repr_args).parameters.keys())
-
-            if got != self._condition_args:
-                raise ValueError("Unexpected argument(s) of repr_args. Expected {}, got {}".format(
-                    self._condition_args, got))
-
-        self._a_repr = a_repr if a_repr is not None else aRepr
-
-        self.enabled = enabled
+        self._contract = _Contract(condition=condition, description=description, repr_args=repr_args, a_repr=a_repr)
 
     def __call__(self, func: Callable[..., Any]) -> Callable[..., Any]:
         """
-        Check the pre-condition before calling the function ``func``.
+        Add the precondition to the list of preconditions of the function ``func``.
+
+        The function ``func`` is decorated with a contract checker if there is no contract checker in
+        the decorator stack.
 
         :param func: function to be wrapped
-        :return: wrapped ``func``
+        :return: contract checker around ``func`` if no contract checker on the decorator stack, or ``func`` otherwise
         """
         if not self.enabled:
             return func
 
-        sign = inspect.signature(func)
-        param_names = list(sign.parameters.keys())
+        # Find a contract checker
+        contract_checker = _find_checker(func=func)
 
-        for condition_arg in self._condition_args:
-            if condition_arg not in sign.parameters:
-                raise TypeError("Unexpected condition argument: {}".format(condition_arg))
+        if contract_checker is not None:
+            # Do not add an additional wrapper since the function has been already wrapped with a contract checker
+            result = func
+        else:
+            # Wrap the function with a contract checker
+            contract_checker = _decorate_with_checker(func=func)
+            result = contract_checker
 
-        def wrapped(*args, **kwargs):
-            """Wrap func by checking the pre-condition first which is passed only the subset of arguments it needs."""
-            condition_kwargs = dict()  # type: MutableMapping[str, Any]
+        # Add the precondition to the list of preconditions stored at the checker
+        assert hasattr(contract_checker, "__preconditions__")
+        preconditions = getattr(contract_checker, "__preconditions__")
+        assert isinstance(preconditions, list)
+        assert len(preconditions) == 1, \
+            "A single group of preconditions expected when wrapping with a contract checker. " \
+            "The preconditions are merged only in the DBC metaclass."
 
-            if wrapped.__kwdefaults__ is not None:
-                condition_kwargs.update(wrapped.__kwdefaults__)
+        assert isinstance(preconditions[0], list)
+        preconditions[0].append(self._contract)
 
-            for i, func_arg in enumerate(args):
-                if param_names[i] in self._condition_arg_set:
-                    condition_kwargs[param_names[i]] = func_arg
-
-            for key, val in kwargs.items():
-                if key in self._condition_arg_set:
-                    condition_kwargs[key] = val
-
-            check = self.condition(**condition_kwargs)
-
-            if not check:
-                parts = []  # type: List[str]
-
-                if self.description is not None:
-                    parts.append("{}: ".format(self.description))
-
-                parts.append(self._condition_as_text)
-
-                if self._repr_func:
-                    parts.append(': ')
-                    parts.append(self._repr_func(**condition_kwargs))
-                else:
-                    repr_values = icontract.represent.repr_values(
-                        condition=self.condition, condition_kwargs=condition_kwargs, a_repr=self._a_repr)
-
-                    if len(repr_values) == 1:
-                        parts.append(': ')
-                        parts.append(repr_values[0])
-                    else:
-                        parts.append(':\n')
-                        parts.append('\n'.join(repr_values))
-
-                err = ViolationError("".join(parts))
-                raise err
-
-            return func(*args, **kwargs)
-
-        # Copy __doc__ and other properties so that doctests can run
-        functools.update_wrapper(wrapped, func)
-
-        # We also need to propagate the defaults.
-        if wrapped.__kwdefaults__ is None:  # type: ignore
-            wrapped.__kwdefaults__ = dict()  # type: ignore
-
-        for param in sign.parameters.values():
-            if not isinstance(param.default, inspect.Parameter.empty) and param.name in self._condition_arg_set:
-                wrapped.__kwdefaults__[param.name] = param.default
-
-        return wrapped
+        return result
 
 
 class post:  # pylint: disable=invalid-name
     """
-    Decorate a function with a post-condition.
+    Decorate a function with a postcondition.
 
-    The arguments of the post-condition are expected to be a subset of the arguments of the wrapped function.
+    The arguments of the postcondition are expected to be a subset of the arguments of the wrapped function.
     Additionally, the argument "result" is reserved for the result of the wrapped function. The wrapped function must
     not have "result" among its arguments.
     """
@@ -199,10 +402,10 @@ class post:  # pylint: disable=invalid-name
         """
         Initialize.
 
-        :param condition: post-condition predicate
-        :param description: textual description of the post-condition
+        :param condition: postcondition predicate
+        :param description: textual description of the postcondition
         :param repr_args:
-            function to represent arguments in the message on a failed post-condition. The repr_func needs to take the
+            function to represent arguments in the message on a failed postcondition. The repr_func needs to take the
             same arguments as the condition function.
 
             If not specified, all the involved values are represented by re-traversing the AST.
@@ -222,122 +425,140 @@ class post:  # pylint: disable=invalid-name
         """
         # pylint: disable=too-many-arguments
         self.enabled = enabled
+        self._contract = None  # type: Optional[_Contract]
+
         if not enabled:
             return
 
-        if repr_args is not None and a_repr is not None:
-            raise ValueError("Expected no repr_instance if repr_args is given.")
-
-        self.condition = condition
-
-        self._condition_args = list(inspect.signature(condition).parameters.keys())  # type: List[str]
-        self._condition_arg_set = set(self._condition_args)  # type: Set[str]
-        self._condition_as_text = icontract.represent.condition_as_text(condition=condition)
-
-        self.description = description
-
-        self._repr_func = repr_args
-        if repr_args is not None:
-            got = list(inspect.signature(repr_args).parameters.keys())
-
-            if got != self._condition_args:
-                raise ValueError("Unexpected argument(s) of repr_func. Expected {}, got {}".format(
-                    self._condition_args, got))
-
-        self._a_repr = a_repr if a_repr is not None else aRepr
+        self._contract = _Contract(condition=condition, description=description, repr_args=repr_args, a_repr=a_repr)
 
     def __call__(self, func: Callable[..., Any]) -> Callable[..., Any]:
         """
-        Check the post-condition before calling the function ``func``.
+        Add the postcondition to the list of postconditions of the function ``func``.
+
+        The function ``func`` is decorated with a contract checker if there is no contract checker in
+        the decorator stack.
 
         :param func: function to be wrapped
-        :return: wrapped ``func``
+        :return: contract checker around ``func`` if no contract checker on the decorator stack, or ``func`` otherwise
         """
         if not self.enabled:
             return func
 
-        sign = inspect.signature(func)
+        # Find a contract checker
+        contract_checker = _find_checker(func=func)
 
-        if "result" in sign.parameters.keys():
-            raise ValueError("Unexpected argument 'result' in the wrapped function")
+        if contract_checker is not None:
+            # Do not add an additional wrapper since the function has been already wrapped with a contract checker
+            result = func
+        else:
+            # Wrap the function with a contract checker
+            contract_checker = _decorate_with_checker(func=func)
+            result = contract_checker
 
-        param_names = list(sign.parameters.keys())
+        # Add the precondition to the list of preconditions stored at the checker
+        assert hasattr(contract_checker, "__postconditions__")
+        assert isinstance(getattr(contract_checker, "__postconditions__"), list)
+        getattr(contract_checker, "__postconditions__").append(self._contract)
 
-        for condition_arg in self._condition_args:
-            if condition_arg != "result" and condition_arg not in sign.parameters:
-                raise TypeError("Unexpected condition argument: {}".format(condition_arg))
+        return result
 
-        def wrapped(*args, **kwargs):
-            """
-            Wrap ``func`` by checking the post-condition on its inputs and the result.
 
-            The post-condition is passed only the subset of arguments it needs (including a special ``result``
-            argument representing the result of the wrapped function).
+def _find_self(param_names: List[str], args: Tuple[Any, ...], kwargs: Dict[str, Any]) -> Any:
+    """Find the instance of ``self`` in the arguments."""
+    instance_i = param_names.index("self")
+    if instance_i < len(args):
+        instance = args[instance_i]
+    else:
+        instance = kwargs["self"]
 
-            """
-            condition_kwargs = dict()  # type: MutableMapping[str, Any]
+    return instance
 
-            # Add first the defaults
-            if wrapped.__kwdefaults__ is not None:
-                condition_kwargs.update(wrapped.__kwdefaults__)
 
-            # Collect all the positional arguments
-            for i, func_arg in enumerate(args):
-                if param_names[i] in self._condition_arg_set:
-                    condition_kwargs[param_names[i]] = func_arg
+def _decorate_with_invariants(cls: Type, func: Callable[..., Any], is_init: bool) -> Callable[..., Any]:
+    """
+    Decorate the function ``func`` of the class ``cls`` with invariant checks.
 
-            # Collect the keyword arguments
-            for key, val in kwargs.items():
-                if key in self._condition_arg_set:
-                    condition_kwargs[key] = val
+    :param cls: class to be decorated
+    :param func: function to be wrapped
+    :param is_init: True if the ``func`` is __init__
+    :return: function wrapped with invariant checks
+    """
+    sign = inspect.signature(func)
+    param_names = list(sign.parameters.keys())
+
+    if is_init:
+
+        def wrapper(*args, **kwargs):
+            """Wrap __init__ method of a class by checking the invariants *after* the invocation."""
+            result = func(*args, **kwargs)
+            instance = _find_self(param_names=param_names, args=args, kwargs=kwargs)
+
+            for contract in cls.__invariants__:
+                _assert_invariant(contract=contract, instance=instance)
+
+            return result
+    else:
+
+        def wrapper(*args, **kwargs):
+            """Wrap a function of a class by checking the invariants *before* and *after* the invocation."""
+            instance = _find_self(param_names=param_names, args=args, kwargs=kwargs)
+
+            for contract in cls.__invariants__:
+                _assert_invariant(contract=contract, instance=instance)
 
             result = func(*args, **kwargs)
 
-            # Add the special ``result`` argument
-            if "result" in self._condition_arg_set:
-                condition_kwargs["result"] = result
-
-            check = self.condition(**condition_kwargs)
-
-            if not check:
-                parts = []  # type: List[str]
-
-                if self.description is not None:
-                    parts.append("{}: ".format(self.description))
-
-                parts.append(self._condition_as_text)
-
-                if self._repr_func:
-                    parts.append(': ')
-                    parts.append(self._repr_func(**condition_kwargs))
-                else:
-                    repr_values = icontract.represent.repr_values(
-                        condition=self.condition, condition_kwargs=condition_kwargs, a_repr=self._a_repr)
-
-                    if len(repr_values) == 1:
-                        parts.append(': ')
-                        parts.append(repr_values[0])
-                    else:
-                        parts.append(':\n')
-                        parts.append('\n'.join(repr_values))
-
-                err = ViolationError("".join(parts))
-                raise err
+            for contract in cls.__invariants__:
+                _assert_invariant(contract=contract, instance=instance)
 
             return result
 
-        # Copy __doc__ and other properties so that doctests can run
-        functools.update_wrapper(wrapped, func)
+    functools.update_wrapper(wrapper=wrapper, wrapped=func)
 
-        # Also add the default values
-        if wrapped.__kwdefaults__ is None:  # type: ignore
-            wrapped.__kwdefaults__ = dict()  # type: ignore
+    setattr(wrapper, "__is_invariant_check__", True)
 
-        for param in sign.parameters.values():
-            if not isinstance(param.default, inspect.Parameter.empty) and param.name in self._condition_arg_set:
-                wrapped.__kwdefaults__[param.name] = param.default
+    return wrapper
 
-        return wrapped
+
+def _add_invariant_checks(cls: Type) -> None:
+    """Decorate each of the class functions with invariant checks if not already decorated."""
+    for name, value in [(name, getattr(cls, name)) for name in dir(cls)]:
+        if not inspect.ismethod(value) and not inspect.isfunction(value):
+            continue
+
+        # Ignore class methods
+        if getattr(value, "__self__", None) is cls:
+            continue
+
+        # Ignore __repr__ to avoid endless loops when generating the error message on invariant breach.
+        if name == "__repr__":
+            continue
+
+        func = value
+        for a_decorator in _unwind_decorator_stack(func=func):
+            if getattr(a_decorator, "__is_invariant_check__", False):
+                continue
+
+        if name == "__init__":
+            wrapper = _decorate_with_invariants(cls=cls, func=func, is_init=True)
+            setattr(cls, name, wrapper)
+
+        elif not name.startswith("_") or (name.startswith("__") and name.endswith("__")):
+            wrapper = _decorate_with_invariants(cls=cls, func=func, is_init=False)
+            setattr(cls, name, wrapper)
+
+        elif name.startswith("_"):
+            # It is a private or a protected method or function, do not enforce any pre and postconditions.
+            pass
+
+        else:
+            raise NotImplementedError("Unhandled method or function of class {}: {}".format(cls.__name__, name))
+
+
+def _identity_decorator(cls: Type) -> Type:
+    """Do not decorate the class at all."""
+    return cls
 
 
 def inv(condition: Callable[..., bool],
@@ -379,52 +600,91 @@ def inv(condition: Callable[..., bool],
     :return: class decorator
 
     """
+    if not enabled:
+        return _identity_decorator
+
     parameter_names = sorted(inspect.signature(condition).parameters.keys())
     if parameter_names != ["self"]:
         raise ValueError(
             "Expected a condition function with a single argument 'self', but got: {}".format(parameter_names))
 
+    contract = _Contract(condition=condition, description=description, repr_args=repr_args, a_repr=a_repr)
+
     def decorator(cls: Type) -> Type:
-        """Decorate each of the public methods with the invariant as a pre and a postcondition, respectively."""
-        if not enabled:
-            return cls
+        """
+        Decorate each of the public methods with the invariant.
 
-        for name, value in [(name, getattr(cls, name)) for name in dir(cls)]:
-            if not inspect.ismethod(value) and not inspect.isfunction(value):
-                continue
+        Go through the decorator stack of each function and search for a contract checker. If there is one,
+        add the invariant to the checker's invariants. If there is no checker in the stack, wrap the function with a
+        contract checker.
+        """
+        if not hasattr(cls, "__invariants__"):
+            invariants = []  # type: List[_Contract]
+            setattr(cls, "__invariants__", invariants)
+        else:
+            invariants = getattr(cls, "__invariants__")
+            assert isinstance(invariants, list), \
+                "Expected invariants of class {} to be a list, but got: {}".format(cls, type(invariants))
 
-            # Ignore class methods
-            if getattr(value, "__self__", None) is cls:
-                continue
+        invariants.append(contract)
 
-            # Ignore __repre__ to avoid endless loops when generating the error message on invariant breach.
-            if name == "__repr__":
-                continue
-
-            if name == "__init__":
-                post_decorator = post(
-                    condition=condition, description=description, repr_args=repr_args, a_repr=a_repr, enabled=enabled)
-
-                wrapped = post_decorator(func=value)
-                setattr(cls, name, wrapped)
-
-            elif not name.startswith("_") or (name.startswith("__") and name.endswith("__")):
-                pre_decorator = pre(
-                    condition=condition, description=description, repr_args=repr_args, a_repr=a_repr, enabled=enabled)
-
-                post_decorator = post(
-                    condition=condition, description=description, repr_args=repr_args, a_repr=a_repr, enabled=enabled)
-
-                wrapped = pre_decorator(post_decorator(func=value))
-                setattr(cls, name, wrapped)
-
-            elif name.startswith("_"):
-                # It is a private or a protected method or function, do not enforce any pre and postconditions.
-                pass
-
-            else:
-                raise NotImplementedError("Unhandled method or function of class {}: {}".format(cls.__name__, name))
+        _add_invariant_checks(cls=cls)
 
         return cls
 
     return decorator
+
+
+class DBCMeta(abc.ABCMeta):
+    """
+    Define a meta class that allows inheritance of the contracts.
+
+    The preconditions are weakned ("require else"), while postconditions ("ensure then") and invariants are
+    strengthened according to the inheritance rules of the design-by-contract.
+    """
+
+    def __new__(mcs, name, bases, namespace):
+        """Create a class with inherited preconditions, postconditions and invariants."""
+        cls = super().__new__(mcs, name, bases, namespace)
+
+        if hasattr(cls, "__invariants__"):
+            _add_invariant_checks(cls=cls)
+
+        for key, value in namespace.items():
+            for base in bases:
+                if hasattr(base, key):
+                    # Ignore non-functions
+                    if not inspect.ismethod(value) and not inspect.isfunction(value):
+                        continue
+
+                    func = value
+
+                    # Check if there is a checker function in the base class
+                    base_func = getattr(base, key)
+                    base_contract_checker = _find_checker(func=base_func)
+
+                    # Ignore functions which don't have preconditions or postconditions
+                    if base_contract_checker is None:
+                        continue
+
+                    # Create a contract checker if it has not been defined already
+                    contract_checker = _find_checker(func=func)
+
+                    if contract_checker is None:
+                        # Inherit the preconditions and postconditions from the base function
+                        contract_checker = _decorate_with_checker(func=func)
+                        contract_checker.__preconditions__ = base_contract_checker.__preconditions__[:]
+                        contract_checker.__postconditions__ = base_contract_checker.__postconditions__[:]
+                        setattr(cls, key, contract_checker)
+                    else:
+                        # Merge the contracts of the base function and this function
+                        contract_checker.__preconditions__.extend(base_contract_checker.__preconditions__)
+                        contract_checker.__postconditions__.extend(base_contract_checker.__postconditions__)
+
+        return cls
+
+
+class DBC(metaclass=DBCMeta):
+    """Provide a standard way to create a class which can inherit the contracts."""
+
+    pass
