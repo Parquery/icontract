@@ -1,3 +1,7 @@
+1.4.1
+=====
+* Contract's constructor immediately returns if the contract is disabled.
+
 1.4.0
 =====
 * Added invariants as `icontract.inv`
