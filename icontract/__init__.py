@@ -78,6 +78,10 @@ class pre:  # pylint: disable=invalid-name
 
         """
         # pylint: disable=too-many-arguments
+        self.enabled = enabled
+        if not enabled:
+            return
+
         if repr_args is not None and a_repr is not None:
             raise ValueError("Expected no repr_instance if repr_args is given.")
 
@@ -217,6 +221,10 @@ class post:  # pylint: disable=invalid-name
 
         """
         # pylint: disable=too-many-arguments
+        self.enabled = enabled
+        if not enabled:
+            return
+
         if repr_args is not None and a_repr is not None:
             raise ValueError("Expected no repr_instance if repr_args is given.")
 
@@ -237,8 +245,6 @@ class post:  # pylint: disable=invalid-name
                     self._condition_args, got))
 
         self._a_repr = a_repr if a_repr is not None else aRepr
-
-        self.enabled = enabled
 
     def __call__(self, func: Callable[..., Any]) -> Callable[..., Any]:
         """
