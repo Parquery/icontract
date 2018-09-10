@@ -10,9 +10,11 @@ icontract
     :target: https://badge.fury.io/py/icontract
 
 icontract provides `design-by-contract <https://en.wikipedia.org/wiki/Design_by_contract>`_ to Python3 with informative
-violation messages.
+violation messages and inheritance.
 
-There exist a couple of contract libraries. However, at the time of this writing (July 2018), they all required the
+Reladed Projects
+----------------
+There exist a couple of contract libraries. However, at the time of this writing (September 2018), they all required the
 programmer either to learn a new syntax (`PyContracts <https://pypi.org/project/PyContracts/>`_) or to write
 redundant condition descriptions (
 *e.g.*,
@@ -26,6 +28,11 @@ This library was strongly inspired by them, but we go a step further and use the
 `meta <https://github.com/srossross/Meta>`_ programming library to infer violation messages from the code in order to
 promote dont-repeat-yourself principle (`DRY <https://en.wikipedia.org/wiki/Don%27t_repeat_yourself>`_) and spare the
 programmer the tedious task of repeating the message that was already written in code.
+
+To the best of our knowledge, there is currently no Python library that supports inheritance of the contracts in a
+correct way. icontract allows inheritance of the contracts and supports weakining of the preconditions
+as well as strengthening of the postconditions and invariants. Notably, weakining and strengthening of the contracts
+is a feature indispensable for modeling many non-trivial class hierarchies. Please see Section `Inheritance`_.
 
 In the long run, we hope that design-by-contract will be adopted and integrated in the language. Consider this library
 a work-around till that happens. An ongoing discussion on how to bring design-by-contract into Python language can
@@ -311,9 +318,160 @@ After the invocation of a magic method:
 
 Inheritance
 -----------
-Python 3 does not allow inheritance of function and class decorators. This makes it impossible to elegantly implement
-inheritance of invariants, pre and postconditions. We are still experimenting with approaches how to achieve that
-as painlessly as possible. Please let us know if you know how to deal with inheritance and contracts in a nice way.
+To inherit the contracts of the parent class, the child class needs to either inherit from ``icontract.DBC`` or have
+a meta class set to ``icontract.DBCMeta``.
+
+When no contracts are specified in the child class, all contracts are inherited from the parent class as-are.
+
+When the child class introduces additional preconditions or postconditions and invariants, these contracts are
+*strengthened* or *weakened*, respectively. ``icontract.DBCMeta`` allows you to specify the contracts not only on the
+concrete classes, but also on abstract classes.
+
+**Strengthening**. If you specify additional invariants in the child class then the child class will need to satisfy
+all the invariants of its parent class as well as its own additional invariants. Analogously, if you specify additional
+postconditions to a function of the class, that function will need to satisfy both its own postconditions and
+the postconditions of the original parent function that it overrides.
+
+**Weakining**. Adding preconditions to a function in the child class weakens the preconditions. The caller needs to
+provide either arguments that satisfy the preconditions associated with the function of the parent class *or*
+arguments that satisfy the preconditions of the function of the child class.
+
+**Abstract Classes**. Since Python 3 does not allow multiple meta classes, ``icontract.DBCMeta`` inherits from
+``abc.ABCMeta`` to allow combining contracts with abstract base classes.
+
+The following example shows an abstract parent class and a child class that inherits and strengthens parent's contracts:
+
+.. code-block:: python
+
+        >>> import abc
+        >>> import icontract
+
+        >>> @icontract.inv(lambda self: self.x > 0)
+        ... class A(icontract.DBC):
+        ...     def __init__(self) -> None:
+        ...         self.x = 10
+        ...
+        ...     @abc.abstractmethod
+        ...     @icontract.post(lambda y, result: result < y)
+        ...     def func(self, y: int) -> int:
+        ...         pass
+        ...
+        ...     def __repr__(self) -> str:
+        ...         return "instance of A"
+
+        >>> @icontract.inv(lambda self: self.x < 100)
+        ... class B(A):
+        ...     def func(self, y: int) -> int:
+        ...         # Break intentionally the postcondition
+        ...         # for an illustration
+        ...         return y + 1
+        ...
+        ...     def break_parent_invariant(self):
+        ...         self.x = -1
+        ...
+        ...     def break_my_invariant(self):
+        ...         self.x = 101
+        ...
+        ...     def __repr__(self) -> str:
+        ...         return "instance of B"
+
+        # Break the parent's postcondition
+        >>> some_b = B()
+        >>> some_b.func(y=0)
+        Traceback (most recent call last):
+            ...
+        icontract.ViolationError: result < y:
+        result was 1
+        y was 0
+
+        # Break the parent's invariant
+        >>> another_b = B()
+        >>> another_b.break_parent_invariant()
+        Traceback (most recent call last):
+            ...
+        icontract.ViolationError: self.x > 0:
+        self was instance of B
+        self.x was -1
+
+        # Break the child's invariant
+        >>> yet_another_b = B()
+        >>> yet_another_b.break_my_invariant()
+        Traceback (most recent call last):
+            ...
+        icontract.ViolationError: self.x < 100:
+        self was instance of B
+        self.x was 101
+
+The following example shows how preconditions are weakened:
+
+.. code-block:: python
+
+        >>> class A(icontract.DBC):
+        ...     @icontract.pre(lambda x: x % 2 == 0)
+        ...     def func(self, x: int) -> None:
+        ...         pass
+
+        >>> class B(A):
+        ...     @icontract.pre(lambda x: x % 3 == 0)
+        ...     def func(self, x: int) -> None:
+        ...         pass
+
+        >>> b = B()
+
+        # The precondition of the parent is satisfied.
+        >>> b.func(x=2)
+
+        # The precondition of the child is satisfied,
+        # while the precondition of the parent is not.
+        # This is OK since the precondition has been
+        # weakened.
+        >>> b.func(x=3)
+
+        # None of the preconditions have been satisfied.
+        >>> b.func(x=5)
+        Traceback (most recent call last):
+            ...
+        icontract.ViolationError: (x % 2) == 0: x was 5
+
+Implementation Details
+----------------------
+
+**Decorator stack**. The precondition and postcondition decorators have to be stacked together to allow for inheritance.
+Hence, when multiple precondition and postcondition decorators are given, the function is actually decorated only once
+with a precondition/postcondition checker while the contracts are stacked to the checker's ``__preconditions__`` and
+``__postconditions__`` attribute, respectively. The checker functions iterates through these two attributes to verify
+the contracts at run-time.
+
+All the decorators in the function's decorator stack are expected to call ``functools.update_wrapper()``.
+Notably, we use ``__wrapped__`` attribute to iterate through the decorator stack and find the checker function which is
+set with ``functools.update_wrapper()``. Mind that this implies that preconditions and postconditions are verified at
+the inner-most decorator and *not* when outer preconditios and postconditions are defined.
+
+Consider the following example:
+
+.. code-block:: python
+
+    @some_custom_decorator
+    @icontract.pre(lambda x: x > 0)
+    @another_custom_decorator
+    @icontract.pre(lambda x, y: y < x)
+    def some_func(x: int, y: int) -> None:
+      # ...
+
+The checker function will verify the two preconditions after both ``some_custom_decorator`` and
+``another_custom_decorator`` have been applied, whily you would expect that the outer precondition (``x > 0``)
+is verified immediately after ``some_custom_decorator`` is applied.
+
+To prevent bugs due to unexpected behavior, we recommend to always group preconditions and postconditions together.
+
+**Invariants**. Since invariants are handled by a class decorator (in contrast to function decorators that handle
+preconditions and postconditions), they do not need to be stacked. The first invariant decorator wraps each public
+method of a class with a checker function. The invariants are added to the class' ``__invariants__`` attribute.
+At run-time, the checker function iterates through the ``__invariants__`` attribute when it needs to actually verify the
+invariants.
+
+Mind that we still expect each class decorator that decorates the class functions to use ``functools.update_wrapper()``
+in order to be able to iterate through decorator stacks of the individual functions.
 
 Installation
 ============
