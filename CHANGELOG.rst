@@ -1,3 +1,7 @@
+1.5.0
+=====
+* Added inheritance of contracts
+
 1.4.1
 =====
 * Contract's constructor immediately returns if the contract is disabled.
@@ -8,7 +12,7 @@
 
 1.3.0
 =====
-* Added ``icontract.SLOW`` to mark contracts which are slow and should only be 
+* Added ``icontract.SLOW`` to mark contracts which are slow and should only be
   enabled during development
 * Added ``enabled`` flag to toggle contracts for development, production __etc.__
 
