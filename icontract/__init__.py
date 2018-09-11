@@ -5,7 +5,7 @@ import inspect
 import os
 import reprlib
 from typing import Callable, MutableMapping, Any, Optional, Set, List, Type, Dict, \
-    Tuple, Mapping, Iterable  # pylint: disable=unused-import
+    Tuple, Iterable, Mapping  # pylint: disable=unused-import
 
 import icontract.represent
 
@@ -87,7 +87,7 @@ class _Contract:
         self._a_repr = a_repr if a_repr is not None else aRepr
 
 
-def _generate_message(contract: _Contract, condition_kwargs: Mapping[str, Any]) -> str:
+def _generate_message(contract: icontract._Contract, condition_kwargs: Mapping[str, Any]) -> str:
     """Generate the message upon contract violation."""
     # pylint: disable=protected-access
     parts = []  # type: List[str]
@@ -95,21 +95,32 @@ def _generate_message(contract: _Contract, condition_kwargs: Mapping[str, Any]) 
     if contract.description is not None:
         parts.append("{}: ".format(contract.description))
 
-    parts.append(icontract.represent.condition_as_text(condition=contract.condition))
+    lambda_inspection = icontract.represent.inspect_lambda_condition(condition=contract.condition)
+
+    parts.append(
+        icontract.represent.condition_as_text(condition=contract.condition, lambda_inspection=lambda_inspection))
 
     if contract._repr_func:
         parts.append(': ')
         parts.append(contract._repr_func(**condition_kwargs))
     else:
-        repr_values = icontract.represent.repr_values(
-            condition=contract.condition, condition_kwargs=condition_kwargs, a_repr=contract._a_repr)
+        repr_vals = icontract.represent.repr_values(
+            condition=contract.condition,
+            lambda_inspection=lambda_inspection,
+            condition_kwargs=condition_kwargs,
+            a_repr=contract._a_repr)
 
-        if len(repr_values) == 1:
+        if len(repr_vals) == 0:
+            # Do not append anything since no value could be represented as a string.
+            # This could appear in case we have, for example, a generator expression as the return value of a lambda.
+            pass
+
+        elif len(repr_vals) == 1:
             parts.append(': ')
-            parts.append(repr_values[0])
+            parts.append(repr_vals[0])
         else:
             parts.append(':\n')
-            parts.append('\n'.join(repr_values))
+            parts.append('\n'.join(repr_vals))
 
     msg = "".join(parts)
     return msg
@@ -117,7 +128,7 @@ def _generate_message(contract: _Contract, condition_kwargs: Mapping[str, Any]) 
 
 def _assert_precondition(contract: _Contract, param_names: List[str], kwdefaults: Dict[str, Any], args: Tuple[Any, ...],
                          kwargs: Dict[str, Any]) -> None:
-    """Assert that the contract holds as a precondition to the function ``func``."""
+    """Assert that the contract holds as a precondition."""
     # pylint: disable=too-many-arguments
     # pylint: disable=too-many-locals
     condition_kwargs = dict()  # type: MutableMapping[str, Any]
