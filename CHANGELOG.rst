@@ -1,3 +1,8 @@
+1.5.1
+=====
+* Quoted ellipsis in ``icontract._unwind_decorator_stack`` to comply with a bug
+  in Python 3.5.2 (see https://github.com/python/typing/issues/259)
+
 1.5.0
 =====
 * Added inheritance of contracts
