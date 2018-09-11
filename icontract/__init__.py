@@ -73,7 +73,6 @@ class _Contract:
 
         self.condition_args = list(inspect.signature(condition).parameters.keys())  # type: List[str]
         self.condition_arg_set = set(self.condition_args)  # type: Set[str]
-        self.condition_as_text = icontract.represent.condition_as_text(condition=condition)
 
         self.description = description
 
@@ -87,9 +86,6 @@ class _Contract:
 
         self._a_repr = a_repr if a_repr is not None else aRepr
 
-    def __repr__(self) -> str:
-        return "{} at {:x} on {}".format(type(self), id(self), self.condition_as_text)
-
 
 def _generate_message(contract: _Contract, condition_kwargs: Mapping[str, Any]) -> str:
     """Generate the message upon contract violation."""
@@ -99,7 +95,7 @@ def _generate_message(contract: _Contract, condition_kwargs: Mapping[str, Any]) 
     if contract.description is not None:
         parts.append("{}: ".format(contract.description))
 
-    parts.append(contract.condition_as_text)
+    parts.append(icontract.represent.condition_as_text(condition=contract.condition))
 
     if contract._repr_func:
         parts.append(': ')
