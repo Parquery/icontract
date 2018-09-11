@@ -270,7 +270,7 @@ def _decorate_with_checker(func: Callable[..., Any]) -> Callable[..., Any]:
     return wrapper
 
 
-def _unwind_decorator_stack(func: Callable[..., Any]) -> Iterable[Callable[..., Any]]:
+def _unwind_decorator_stack(func: Callable[..., Any]) -> Iterable['Callable[..., Any]']:
     """
     Iterate through the stack of decorated functions and return the original function.
 
