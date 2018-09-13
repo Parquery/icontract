@@ -1,3 +1,8 @@
+1.5.3
+=====
+* Fixed different signatures of ``DBCMeta`` depending on Python version (<=3.5 and >3.5) due to differing signatures
+  of ``__new__`` in ``abc.ABCMeta``
+
 1.5.2
 =====
 * Removed dependency on ``meta`` package and replaced it with re-parsing the file containing the condition
