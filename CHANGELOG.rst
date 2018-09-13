@@ -1,3 +1,8 @@
+1.5.2
+=====
+* Removed dependency on ``meta`` package and replaced it with re-parsing the file containing the condition
+  to represent the comprehensions
+
 1.5.1
 =====
 * Quoted ellipsis in ``icontract._unwind_decorator_stack`` to comply with a bug
