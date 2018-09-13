@@ -3,6 +3,7 @@ import abc
 import functools
 import inspect
 import os
+import platform
 import reprlib
 from typing import Callable, MutableMapping, Any, Optional, Set, List, Type, Dict, \
     Tuple, Iterable, Mapping  # pylint: disable=unused-import
@@ -642,6 +643,43 @@ def inv(condition: Callable[..., bool],
     return decorator
 
 
+def _dbc_init_class(bases, namespace, cls) -> None:
+    """Initialize a class with inherited contracts."""
+    if hasattr(cls, "__invariants__"):
+        _add_invariant_checks(cls=cls)
+
+    for key, value in namespace.items():
+        for base in bases:
+            if hasattr(base, key):
+                # Ignore non-functions
+                if not inspect.ismethod(value) and not inspect.isfunction(value):
+                    continue
+
+                func = value
+
+                # Check if there is a checker function in the base class
+                base_func = getattr(base, key)
+                base_contract_checker = _find_checker(func=base_func)
+
+                # Ignore functions which don't have preconditions or postconditions
+                if base_contract_checker is None:
+                    continue
+
+                # Create a contract checker if it has not been defined already
+                contract_checker = _find_checker(func=func)
+
+                if contract_checker is None:
+                    # Inherit the preconditions and postconditions from the base function
+                    contract_checker = _decorate_with_checker(func=func)
+                    contract_checker.__preconditions__ = base_contract_checker.__preconditions__[:]  # type: ignore
+                    contract_checker.__postconditions__ = base_contract_checker.__postconditions__[:]  # type: ignore
+                    setattr(cls, key, contract_checker)
+                else:
+                    # Merge the contracts of the base function and this function
+                    contract_checker.__preconditions__.extend(base_contract_checker.__preconditions__)  # type: ignore
+                    contract_checker.__postconditions__.extend(base_contract_checker.__postconditions__)  # type: ignore
+
+
 class DBCMeta(abc.ABCMeta):
     """
     Define a meta class that allows inheritance of the contracts.
@@ -650,45 +688,27 @@ class DBCMeta(abc.ABCMeta):
     strengthened according to the inheritance rules of the design-by-contract.
     """
 
-    def __new__(mcs, name, bases, namespace):
-        """Create a class with inherited preconditions, postconditions and invariants."""
-        cls = super().__new__(mcs, name, bases, namespace)
+    # We need to disable mcs check since ABCMeta doesn't follow the convention and calls the first argument ``mlcs``
+    # instead of ``mcs``.
+    # pylint: disable=bad-mcs-classmethod-argument
 
-        if hasattr(cls, "__invariants__"):
-            _add_invariant_checks(cls=cls)
+    if int(platform.python_version_tuple()[0]) < 3:
+        raise NotImplementedError("Python versions below not supported, got: {}".format(platform.python_version()))
 
-        for key, value in namespace.items():
-            for base in bases:
-                if hasattr(base, key):
-                    # Ignore non-functions
-                    if not inspect.ismethod(value) and not inspect.isfunction(value):
-                        continue
+    if int(platform.python_version_tuple()[1]) <= 5:
 
-                    func = value
+        def __new__(mlcs, name, bases, namespace):  # pylint: disable=arguments-differ
+            """Create a class with inherited preconditions, postconditions and invariants."""
+            cls = super().__new__(mlcs, name, bases, namespace)
+            _dbc_init_class(bases, namespace, cls)
+            return cls
+    else:
 
-                    # Check if there is a checker function in the base class
-                    base_func = getattr(base, key)
-                    base_contract_checker = _find_checker(func=base_func)
-
-                    # Ignore functions which don't have preconditions or postconditions
-                    if base_contract_checker is None:
-                        continue
-
-                    # Create a contract checker if it has not been defined already
-                    contract_checker = _find_checker(func=func)
-
-                    if contract_checker is None:
-                        # Inherit the preconditions and postconditions from the base function
-                        contract_checker = _decorate_with_checker(func=func)
-                        contract_checker.__preconditions__ = base_contract_checker.__preconditions__[:]
-                        contract_checker.__postconditions__ = base_contract_checker.__postconditions__[:]
-                        setattr(cls, key, contract_checker)
-                    else:
-                        # Merge the contracts of the base function and this function
-                        contract_checker.__preconditions__.extend(base_contract_checker.__preconditions__)
-                        contract_checker.__postconditions__.extend(base_contract_checker.__postconditions__)
-
-        return cls
+        def __new__(mlcs, name, bases, namespace, **kwargs):  # type: ignore  # pylint: disable=arguments-differ
+            """Create a class with inherited preconditions, postconditions and invariants."""
+            cls = super().__new__(mlcs, name, bases, namespace, **kwargs)
+            _dbc_init_class(bases, namespace, cls)
+            return cls
 
 
 class DBC(metaclass=DBCMeta):
