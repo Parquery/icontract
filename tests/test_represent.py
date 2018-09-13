@@ -1,139 +1,283 @@
 #!/usr/bin/env python3
 # pylint: disable=missing-docstring,invalid-name,too-many-public-methods,no-self-use
 
-import reprlib
 import unittest
+from typing import Optional  # pylint: disable=unused-import
 
 import icontract.represent
 
 
 class TestReprValues(unittest.TestCase):
     def test_num(self):
-        result = icontract.represent.repr_values(
-            condition=lambda x: x < 5, condition_kwargs={"x": 3}, a_repr=reprlib.aRepr)
-        self.assertListEqual(['x was 3'], result)
+        @icontract.pre(lambda x: x < 5)
+        def func(x: int) -> int:
+            return x
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(x=100)
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual("x < 5: x was 100", str(icontract_violation_error))
 
     def test_str(self):
-        result = icontract.represent.repr_values(
-            condition=lambda x: x != 'noi', condition_kwargs={"x": 'oi'}, a_repr=reprlib.aRepr)
-        self.assertListEqual(["x was 'oi'"], result)
+        @icontract.pre(lambda x: x != "oi")
+        def func(x: str) -> str:
+            return x
 
-    @unittest.skip("Skipped due to an upstream bug in meta module.")
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(x="oi")
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual("""x != "oi": x was 'oi'""", str(icontract_violation_error))
+
     def test_bytes(self):
-        result = icontract.represent.repr_values(
-            condition=lambda x: x != b'noi', condition_kwargs={"x": b'oi'}, a_repr=reprlib.aRepr)
-        self.assertListEqual(["x was b'oi'"], result)
+        @icontract.pre(lambda x: x != b"oi")
+        def func(x: bytes) -> bytes:
+            return x
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(x=b"oi")
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual("""x != b"oi": x was b'oi'""", str(icontract_violation_error))
 
     def test_bool(self):
-        result = icontract.represent.repr_values(
-            condition=lambda x: x, condition_kwargs={"x": False}, a_repr=reprlib.aRepr)
-        self.assertListEqual(["x was False"], result)
+        @icontract.pre(lambda x: x != False)
+        def func(x: bool) -> bool:
+            return x
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(x=False)
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('x != False: x was False', str(icontract_violation_error))
 
     def test_list(self):
         y = 1
-        result = icontract.represent.repr_values(
-            condition=lambda x: sum([1, y, x]) == 6, condition_kwargs={"x": 3}, a_repr=reprlib.aRepr)
-        self.assertListEqual(['sum([1, y, x]) was 5', 'x was 3', 'y was 1'], result)
+
+        @icontract.pre(lambda x: sum([1, y, x]) == 1)
+        def func(x: int) -> int:
+            return x
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(x=3)
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('sum([1, y, x]) == 1:\n'
+                         'sum([1, y, x]) was 5\n'
+                         'x was 3\n'
+                         'y was 1', str(icontract_violation_error))
 
     def test_tuple(self):
         y = 1
-        result = icontract.represent.repr_values(
-            condition=lambda x: sum((1, y, x)) == 6, condition_kwargs={"x": 3}, a_repr=reprlib.aRepr)
-        self.assertListEqual(['sum((1, y, x)) was 5', 'x was 3', 'y was 1'], result)
+
+        @icontract.pre(lambda x: sum((1, y, x)) == 1)
+        def func(x: int) -> int:
+            return x
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(x=3)
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('sum((1, y, x)) == 1:\n'
+                         'sum((1, y, x)) was 5\n'
+                         'x was 3\n'
+                         'y was 1', str(icontract_violation_error))
 
     def test_set(self):
-        # Mind that 1 is also contained in the set.
-        y = 1
-        result = icontract.represent.repr_values(
-            condition=lambda x: sum({1, y, x}) == 6, condition_kwargs={"x": 3}, a_repr=reprlib.aRepr)
-        self.assertListEqual(['sum({1, y, x}) was 4', 'x was 3', 'y was 1'], result)
+        y = 2
 
-    @unittest.skip("Skipped due to an upstream bug in meta module.")
+        @icontract.pre(lambda x: sum({1, y, x}) == 1)
+        def func(x: int) -> int:
+            return x
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(x=3)
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('sum({1, y, x}) == 1:\n'
+                         'sum({1, y, x}) was 6\n'
+                         'x was 3\n'
+                         'y was 2', str(icontract_violation_error))
+
     def test_dict(self):
         y = "someKey"
-        _ = icontract.represent.repr_values(
-            condition=lambda x: len({y: 3, x: 8}) == 6, condition_kwargs={"x": "anotherKey"}, a_repr=reprlib.aRepr)
 
-        raise NotImplementedError("Test not implemented due to an upstream bug in meta module.")
+        @icontract.pre(lambda x: len({y: 3, x: 8}) == 6)
+        def func(x: str) -> str:
+            return x
 
-    def test_name_constant(self):
-        result = icontract.represent.repr_values(
-            condition=lambda x: x is None, condition_kwargs={"x": 3}, a_repr=reprlib.aRepr)
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(x="oi")
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
 
-        self.assertListEqual(['x was 3'], result)
-
-    def test_name(self):
-        result = icontract.represent.repr_values(
-            condition=lambda x: x > 3, condition_kwargs={"x": 3}, a_repr=reprlib.aRepr)
-
-        self.assertListEqual(['x was 3'], result)
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual("len({y: 3, x: 8}) == 6:\n"
+                         "len({y: 3, x: 8}) was 2\n"
+                         "x was 'oi'\n"
+                         "y was 'someKey'", str(icontract_violation_error))
 
     def test_unary_op(self):
-        result = icontract.represent.repr_values(
-            condition=lambda x: not (-x + 10 > 3), condition_kwargs={"x": 3}, a_repr=reprlib.aRepr)
+        @icontract.pre(lambda x: not -x + 10 > 3)
+        def func(x: int) -> int:
+            return x
 
-        self.assertListEqual(['x was 3'], result)
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(x=1)
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('not -x + 10 > 3: x was 1', str(icontract_violation_error))
 
     def test_binary_op(self):
-        result = icontract.represent.repr_values(
-            condition=lambda x: -x + x - x * x / x // x**x % x > 3, condition_kwargs={"x": 3}, a_repr=reprlib.aRepr)
+        @icontract.pre(lambda x: -x + x - x * x / x // x**x % x > 3)
+        def func(x: int) -> int:
+            return x
 
-        self.assertListEqual(['x was 3'], result)
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(x=1)
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('-x + x - x * x / x // x**x % x > 3: x was 1', str(icontract_violation_error))
 
     def test_binary_op_bit(self):
-        result = icontract.represent.repr_values(
-            condition=lambda x: ~(x << x | x & x ^ x) >> x > x, condition_kwargs={"x": 3}, a_repr=reprlib.aRepr)
+        @icontract.pre(lambda x: ~(x << x | x & x ^ x) >> x > x)
+        def func(x: int) -> int:
+            return x
 
-        self.assertListEqual(['x was 3'], result)
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(x=1)
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
 
-    def test_bool_op(self):
-        # single "and" and "or"
-        result = icontract.represent.repr_values(
-            condition=lambda x: x > 3 and x < 10, condition_kwargs={"x": 3}, a_repr=reprlib.aRepr)
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('~(x << x | x & x ^ x) >> x > x: x was 1', str(icontract_violation_error))
 
-        self.assertListEqual(['x was 3'], result)
+    def test_bool_op_single(self):
+        @icontract.pre(lambda x: x > 3 and x < 10)
+        def func(x: int) -> int:
+            return x
 
-        result = icontract.represent.repr_values(
-            condition=lambda x: x > 3 or x < 10, condition_kwargs={"x": 3}, a_repr=reprlib.aRepr)
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(x=1)
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
 
-        self.assertListEqual(['x was 3'], result)
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('x > 3 and x < 10: x was 1', str(icontract_violation_error))
 
-        # multiple "and"
-        result = icontract.represent.repr_values(
-            condition=lambda x: x > 3 and x < 10 and x % 2 == 0, condition_kwargs={"x": 3}, a_repr=reprlib.aRepr)
+    def test_bool_op_multiple(self):
+        @icontract.pre(lambda x: x > 3 and x < 10 and x % 2 == 0)
+        def func(x: int) -> int:
+            return x
 
-        self.assertListEqual(['x was 3'], result)
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(x=1)
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('x > 3 and x < 10 and x % 2 == 0: x was 1', str(icontract_violation_error))
 
     def test_compare(self):
         # Chain the compare operators in a meaningless order and semantics
-        result = icontract.represent.repr_values(
-            condition=lambda x: 0 < x < 3 and x > 10 and x != 7 and x >= 10 and x <= 11 and x is not None and
-                                x in [1, 2, 3] and x not in [1, 2, 3], condition_kwargs={"x": 3}, a_repr=reprlib.aRepr)
 
-        self.assertListEqual(['x was 3'], result)
+        @icontract.pre(
+            lambda x: 0 < x < 3 and x > 10 and x != 7 and x >= 10 and x <= 11 and x is not None and
+                      x in [1, 2, 3] and x not in [1, 2, 3])
+        def func(x: int) -> int:
+            return x
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(x=1)
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('0 < x < 3 and x > 10 and x != 7 and x >= 10 and x <= 11 and x is not None and\n'
+                         '                      x in [1, 2, 3] and x not in [1, 2, 3]: x was 1',
+                         str(icontract_violation_error))
 
     def test_call(self):
         def y() -> int:
             return 1
 
-        result = icontract.represent.repr_values(
-            condition=lambda x: x < y(), condition_kwargs={"x": 3}, a_repr=reprlib.aRepr)
+        @icontract.pre(lambda x: x < y())
+        def func(x: int) -> int:
+            return x
 
-        self.assertListEqual(['x was 3', 'y() was 1'], result)
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(x=1)
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('x < y():\n' 'x was 1\n' 'y() was 1', str(icontract_violation_error))
 
     def test_if_exp_body(self):
         y = 5
-        result = icontract.represent.repr_values(
-            condition=lambda x: x < (x**2 if y == 5 else x**3), condition_kwargs={"x": 3}, a_repr=reprlib.aRepr)
 
-        self.assertListEqual(['x was 3', 'y was 5'], result)
+        @icontract.pre(lambda x: x < (x**2 if y == 5 else x**3))
+        def func(x: int) -> int:
+            return x
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(x=1)
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('x < (x**2 if y == 5 else x**3):\n' 'x was 1\n' 'y was 5', str(icontract_violation_error))
 
     def test_if_exp_orelse(self):
         y = 5
-        result = icontract.represent.repr_values(
-            condition=lambda x: x < (x**2 if y != 5 else x**3), condition_kwargs={"x": 3}, a_repr=reprlib.aRepr)
 
-        self.assertListEqual(['x was 3', 'y was 5'], result)
+        @icontract.pre(lambda x: x < (x**2 if y != 5 else x**3))
+        def func(x: int) -> int:
+            return x
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(x=1)
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('x < (x**2 if y != 5 else x**3):\nx was 1\ny was 5', str(icontract_violation_error))
 
     def test_attr(self):
         class A:
@@ -144,39 +288,229 @@ class TestReprValues(unittest.TestCase):
                 return "A()"
 
         a = A()
-        result = icontract.represent.repr_values(
-            condition=lambda x: x < a.y, condition_kwargs={"x": 3}, a_repr=reprlib.aRepr)
 
-        self.assertListEqual(['a was A()', 'a.y was 3', 'x was 3'], result)
+        @icontract.pre(lambda x: x > a.y)
+        def func(x: int) -> int:
+            return x
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(x=1)
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('x > a.y:\n' 'a was A()\n' 'a.y was 3\n' 'x was 1', str(icontract_violation_error))
 
     def test_index(self):
         lst = [1, 2, 3]
-        result = icontract.represent.repr_values(
-            condition=lambda x: x < lst[1], condition_kwargs={"x": 3}, a_repr=reprlib.aRepr)
 
-        self.assertListEqual(['lst was [1, 2, 3]', 'x was 3'], result)
+        @icontract.pre(lambda x: x > lst[1])
+        def func(x: int) -> int:
+            return x
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(x=1)
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('x > lst[1]:\n' 'lst was [1, 2, 3]\n' 'x was 1', str(icontract_violation_error))
 
     def test_slice(self):
         lst = [1, 2, 3]
-        result = icontract.represent.repr_values(
-            condition=lambda x: x < sum(lst[1:2:1]), condition_kwargs={"x": 3}, a_repr=reprlib.aRepr)
 
-        self.assertListEqual(['lst was [1, 2, 3]', 'sum(lst[1:2:1]) was 2', 'x was 3'], result)
+        @icontract.pre(lambda x: x > sum(lst[1:2:1]))
+        def func(x: int) -> int:
+            return x
 
-    @unittest.skip("Skipped due to an upstream bug in meta module.")
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(x=1)
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('x > sum(lst[1:2:1]):\n'
+                         'lst was [1, 2, 3]\n'
+                         'sum(lst[1:2:1]) was 2\n'
+                         'x was 1', str(icontract_violation_error))
+
     def test_lambda(self):
-        _ = icontract.represent.repr_values(
-            condition=lambda x: x < (lambda: 4).__call__(), condition_kwargs={"x": 3}, a_repr=reprlib.aRepr)
+        @icontract.pre(lambda x: x > (lambda y: y + 4).__call__(y=7))
+        def func(x: int) -> int:
+            return x
 
-        raise NotImplementedError("Test not implemented due to an upstream bug in meta module.")
+        not_implemented_err = None  # type: Optional[NotImplementedError]
+        try:
+            func(x=1)
+        except NotImplementedError as err:
+            not_implemented_err = err
 
-    @unittest.skip("Skipped due to an upstream bug in meta module.")
+        self.assertIsNotNone(not_implemented_err)
+
+    def test_generator_expression(self):
+        lst = [1, 2, 3]
+        another_lst = [4, 5, 6]
+
+        # yapf: disable
+        @icontract.pre(
+            lambda x: all(item == x or another_item == x
+                          for item in lst if item % 2 == 0
+                          for another_item in another_lst if another_item % 3 == 0)
+        )
+        # yapf: enable
+        def func(x: int) -> int:
+            return x
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(x=0)
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual(
+            'all(item == x or another_item == x\n'
+            '                          for item in lst if item % 2 == 0\n'
+            '                          for another_item in another_lst if another_item % 3 == 0): '
+            'all(item == x or another_item == x\n'
+            '                          for item in lst if item % 2 == 0\n'
+            '                          for another_item in another_lst if another_item % 3 == 0) was False',
+            str(icontract_violation_error))
+
     def test_list_comprehension(self):
         lst = [1, 2, 3]
-        _ = icontract.represent.repr_values(
-            condition=lambda x: x < sum([i**2 for i in lst]), condition_kwargs={"x": 3}, a_repr=reprlib.aRepr)
 
-        raise NotImplementedError("Test not implemented due to an upstream bug in meta module.")
+        @icontract.pre(lambda x: [item < x for item in lst if item % x == 0] == [])
+        def func(x: int) -> int:
+            return x
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(x=2)
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('[item < x for item in lst if item % x == 0] == []: '
+                         '[item < x for item in lst if item % x == 0] was [False]', str(icontract_violation_error))
+
+    def test_set_comprehension(self):
+        lst = [1, 2, 3]
+
+        @icontract.pre(lambda x: len({item < x for item in lst if item % x == 0}) == 0)
+        def func(x: int) -> int:
+            return x
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(x=2)
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('len({item < x for item in lst if item % x == 0}) == 0:\n'
+                         'len({item < x for item in lst if item % x == 0}) was 1\n'
+                         '{item < x for item in lst if item % x == 0} was {False}', str(icontract_violation_error))
+
+    def test_dict_comprehension(self):
+        @icontract.pre(lambda x: len({i: i**2 for i in range(x)}) == 0)
+        def func(x: int) -> int:
+            return x
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(x=2)
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('len({i: i**2 for i in range(x)}) == 0:\n'
+                         'len({i: i**2 for i in range(x)}) was 2\n'
+                         '{i: i**2 for i in range(x)} was {0: 0, 1: 1}', str(icontract_violation_error))
+
+
+class TestConditionAsText(unittest.TestCase):
+    """Test decompilation of the condition."""
+
+    def test_single_line(self):
+        # yapf: disable
+        @icontract.pre(lambda x: x > 3)
+        def func(x: int) -> int:
+            return x
+
+        # yapf: enable
+
+        violation_err = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(x=0)
+        except icontract.ViolationError as err:
+            violation_err = err
+
+        self.assertIsNotNone(violation_err)
+        self.assertEqual("x > 3: x was 0", str(violation_err))
+
+    def test_condition_on_next_line(self):
+        # yapf: disable
+        @icontract.pre(
+            lambda x: x > 3)
+        def func(x: int) -> int:
+            return x
+
+        # yapf: enable
+
+        violation_err = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(x=0)
+        except icontract.ViolationError as err:
+            violation_err = err
+
+        self.assertIsNotNone(violation_err)
+        self.assertEqual("x > 3: x was 0", str(violation_err))
+
+    def test_condition_on_multiple_lines(self):
+        # yapf: disable
+        @icontract.pre(
+            lambda x:
+            x
+            >
+            3)
+        def func(x: int) -> int:
+            return x
+
+        # yapf: enable
+
+        violation_err = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(x=0)
+        except icontract.ViolationError as err:
+            violation_err = err
+
+        self.assertIsNotNone(violation_err)
+        self.assertEqual('x\n            >\n            3: x was 0', str(violation_err))
+
+    def test_with_repr_args_and_multiple_conditions(self):
+        # pylint: disable=unnecessary-lambda
+        # yapf: disable
+        @icontract.pre(
+            repr_args=lambda x: "x was {}".format(x), condition=lambda x: x > 0)
+        @icontract.pre(
+            repr_args=lambda x: "x was {}".format(x), condition=lambda x: x < 100)
+        def func(x: int) -> int:
+            return x
+
+        # yapf: enable
+
+        violation_err = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(x=101)
+        except icontract.ViolationError as err:
+            violation_err = err
+
+        self.assertIsNotNone(violation_err)
+        self.assertEqual("x < 100: x was 101", str(violation_err))
 
 
 if __name__ == '__main__':

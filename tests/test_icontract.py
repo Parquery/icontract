@@ -70,32 +70,6 @@ class TestPrecondition(unittest.TestCase):
         some_func(x=5)
         some_func(x=5, y=10)
 
-    def test_condition_in_different_code_positions(self):
-        # pylint: disable=unused-variable
-        @icontract.pre(lambda x: x > 3)
-        def func1(x: int, y: int = 5) -> None:
-            pass
-
-        @icontract.pre(condition=lambda x: x > 3)
-        def func2(x: int, y: int = 5) -> None:
-            pass
-
-        @icontract.pre(condition=lambda x: x > 3)
-        def func3(x: int, y: int = 5) -> None:
-            pass
-
-        @icontract.pre(condition=lambda x: x > 3, description="some description")
-        def func4(x: int, y: int = 5) -> None:
-            pass
-
-        @icontract.pre(lambda x: x > 3, description="some description")
-        def func5(x: int, y: int = 5) -> None:
-            pass
-
-        @icontract.pre(lambda x: x > 3, description="some description")
-        def func6(x: int, y: int = 5) -> None:
-            pass
-
     def test_fail(self):
         @icontract.pre(lambda x: x > 3)
         def some_func(x: int, y: int = 5) -> None:
@@ -123,22 +97,6 @@ class TestPrecondition(unittest.TestCase):
 
         self.assertIsNotNone(pre_err)
         self.assertEqual(str(pre_err), "x must not be small: x > 3: x was 1")
-
-    def test_fail_multiline(self):
-        @icontract.pre(lambda x: x \
-                                 > \
-                                 3)
-        def some_func(x: int, y: int = 5) -> str:
-            return str(x)
-
-        pre_err = None  # type: Optional[icontract.ViolationError]
-        try:
-            some_func(x=1)
-        except icontract.ViolationError as err:
-            pre_err = err
-
-        self.assertIsNotNone(pre_err)
-        self.assertEqual(str(pre_err), "x > 3: x was 1")
 
     def test_fail_condition_function(self):
         def some_condition(x: int):
@@ -456,14 +414,14 @@ class TestPrecondition(unittest.TestCase):
             pre_err = err
 
         self.assertIsNotNone(pre_err)
-        self.assertEqual("pathlib.Path(str(gt_zero((self.b.c(x=0).x() + (12.2 * z))))) is None:\n"
-                         "gt_zero((self.b.c(x=0).x() + (12.2 * z))) was True\n"
-                         "pathlib.Path(str(gt_zero((self.b.c(x=0).x() + (12.2 * z))))) was PosixPath('True')\n"
+        self.assertEqual("pathlib.Path(str(gt_zero(self.b.c(x=0).x() + 12.2 * z))) is None:\n"
+                         "gt_zero(self.b.c(x=0).x() + 12.2 * z) was True\n"
+                         "pathlib.Path(str(gt_zero(self.b.c(x=0).x() + 12.2 * z))) was PosixPath('True')\n"
                          "self was A()\n"
                          "self.b was B()\n"
                          "self.b.c(x=0) was C(x=0)\n"
                          "self.b.c(x=0).x() was 0\n"
-                         "str(gt_zero((self.b.c(x=0).x() + (12.2 * z)))) was 'True'\n"
+                         "str(gt_zero(self.b.c(x=0).x() + 12.2 * z)) was 'True'\n"
                          "z was 10", str(pre_err))
 
     def test_repr_value_closure(self):
@@ -481,7 +439,7 @@ class TestPrecondition(unittest.TestCase):
             pre_err = err
 
         self.assertIsNotNone(pre_err)
-        self.assertEqual("x < (y + z):\n" "x was 100\n" "y was 4\n" "z was 5", str(pre_err))
+        self.assertEqual("x < y + z:\n" "x was 100\n" "y was 4\n" "z was 5", str(pre_err))
 
     def test_repr_value_global(self):
         @icontract.pre(lambda x: x < SOME_GLOBAL_CONSTANT)
@@ -511,7 +469,7 @@ class TestPrecondition(unittest.TestCase):
             pre_err = err
 
         self.assertIsNotNone(pre_err)
-        self.assertEqual("x < (y + SOME_GLOBAL_CONSTANT):\n"
+        self.assertEqual("x < y + SOME_GLOBAL_CONSTANT:\n"
                          "SOME_GLOBAL_CONSTANT was 10\n"
                          "x was 100\n"
                          "y was 4", str(pre_err))
@@ -594,7 +552,7 @@ class TestPostcondition(unittest.TestCase):
             post_err = err
 
         self.assertIsNotNone(post_err)
-        self.assertEqual("y > (result + another_var):\n"
+        self.assertEqual("y > result + another_var:\n"
                          "another_var was 2\n"
                          "result was 100\n"
                          "y was 10", str(post_err))
@@ -613,7 +571,7 @@ class TestPostcondition(unittest.TestCase):
             post_err = err
 
         self.assertIsNotNone(post_err)
-        self.assertEqual("(result % c) == 0:\n" "c was 2\n" "result was 13", str(post_err))
+        self.assertEqual("result % c == 0:\n" "c was 2\n" "result was 13", str(post_err))
 
         # Check the inner post condition
         post_err = None  # type: Optional[icontract.ViolationError]
@@ -1162,7 +1120,7 @@ class TestPreconditionInheritance(unittest.TestCase):
             violation_err = err
 
         self.assertIsNotNone(violation_err)
-        self.assertEqual("(x % 2) == 0: x was 5", str(violation_err))
+        self.assertEqual("x % 2 == 0: x was 5", str(violation_err))
 
     def test_triple_inheritance_wo_implementation(self):
         class A(icontract.DBC):
@@ -1253,7 +1211,7 @@ class TestPreconditionInheritance(unittest.TestCase):
             violation_err = err
 
         self.assertIsNotNone(violation_err)
-        self.assertEqual("(x % 2) == 0: x was 7", str(violation_err))
+        self.assertEqual("x % 2 == 0: x was 7", str(violation_err))
 
     def test_abstract_method_not_implemented(self):
         # pylint: disable=abstract-method
@@ -1371,7 +1329,7 @@ class TestPostconditionInheritance(unittest.TestCase):
             violation_err = err
 
         self.assertIsNotNone(violation_err)
-        self.assertEqual("(result % 2) == 0: result was 3", str(violation_err))
+        self.assertEqual("result % 2 == 0: result was 3", str(violation_err))
 
     def test_ensure_then_fails_in_child(self):
         class A(icontract.DBC):
@@ -1393,7 +1351,7 @@ class TestPostconditionInheritance(unittest.TestCase):
             violation_err = err
 
         self.assertIsNotNone(violation_err)
-        self.assertEqual("(result % 3) == 0: result was 2", str(violation_err))
+        self.assertEqual("result % 3 == 0: result was 2", str(violation_err))
 
     def test_abstract_method_not_implemented(self):
         # pylint: disable=abstract-method

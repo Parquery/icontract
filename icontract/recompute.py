@@ -7,7 +7,12 @@ from typing import Any, Mapping, Dict, List, Optional, Union, Tuple, Set, Callab
 
 
 class Visitor(ast.NodeVisitor):
-    """Traverse the abstract syntax tree and recompute the values of each node defined by the function frame."""
+    """
+    Traverse the abstract syntax tree and recompute the values of each node defined by the function frame.
+
+    :ivar recomputed_values: mapping node -> value assigned to each visited node
+    :type recomputed_values: Mapping[ast.AST, Any]
+    """
 
     # pylint: disable=invalid-name
     # pylint: disable=missing-docstring
@@ -19,7 +24,12 @@ class Visitor(ast.NodeVisitor):
 
         :param variable_lookup: list of lookup tables to look-up the values of the variables, sorted by precedence
         """
-        self._variable_lookup = variable_lookup
+        # Resolve precedence of variable lookup
+        self._name_to_value = dict()  # type: Dict[str, Any]
+        for lookup in variable_lookup:
+            for name, value in lookup.items():
+                if name not in self._name_to_value:
+                    self._name_to_value[name] = value
 
         # value assigned to each visited node
         self.recomputed_values = dict()  # type: Dict[ast.AST, Any]
@@ -93,10 +103,9 @@ class Visitor(ast.NodeVisitor):
                 node.id, node.ctx))
 
         result = None  # type: Optional[Any]
-        for lookup in self._variable_lookup:
-            if node.id in lookup:
-                result = lookup[node.id]
-                break
+
+        if node.id in self._name_to_value:
+            result = self._name_to_value[node.id]
 
         if result is None and hasattr(builtins, node.id):
             result = getattr(builtins, node.id)
@@ -316,12 +325,64 @@ class Visitor(ast.NodeVisitor):
         self.recomputed_values[node] = result
         return result
 
-    def visit_Lambda(self, node: ast.Lambda) -> Callable:
-        """Visit the lambda's body."""
-        result = self.visit(node.body)
+    def _execute_comprehension(self, node: Union[ast.ListComp, ast.SetComp, ast.GeneratorExp, ast.DictComp]) -> Any:
+        """Compile the generator or comprehension from the node and execute the compiled code."""
+        args = [ast.arg(arg=name) for name in sorted(self._name_to_value.keys())]
+
+        func_def_node = ast.FunctionDef(
+            name="generator_expr",
+            args=ast.arguments(args=args, kwonlyargs=[], kw_defaults=[], defaults=[]),
+            decorator_list=[],
+            body=[ast.Return(node)])
+
+        module_node = ast.Module(body=[func_def_node])
+
+        ast.fix_missing_locations(module_node)
+
+        code = compile(source=module_node, filename='<ast>', mode='exec')
+
+        module_locals = {}  # type: Dict[str, Any]
+        module_globals = {}  # type: Dict[str, Any]
+        exec(code, module_globals, module_locals)  # pylint: disable=exec-used
+
+        generator_expr_func = module_locals["generator_expr"]
+
+        return generator_expr_func(**self._name_to_value)
+
+    def visit_GeneratorExp(self, node: ast.GeneratorExp) -> Any:
+        """Compile the generator expression as a function and call it."""
+        result = self._execute_comprehension(node=node)
+
+        # Do not set the computed value of the node since its representation would be non-informative.
+        return result
+
+    def visit_ListComp(self, node: ast.ListComp) -> Any:
+        """Compile the list comprehension as a function and call it."""
+        result = self._execute_comprehension(node=node)
 
         self.recomputed_values[node] = result
         return result
+
+    def visit_SetComp(self, node: ast.SetComp) -> Any:
+        """Compile the set comprehension as a function and call it."""
+        result = self._execute_comprehension(node=node)
+
+        self.recomputed_values[node] = result
+        return result
+
+    def visit_DictComp(self, node: ast.DictComp) -> Any:
+        """Compile the dictionary comprehension as a function and call it."""
+        result = self._execute_comprehension(node=node)
+
+        self.recomputed_values[node] = result
+        return result
+
+    def visit_Lambda(self, node: ast.Lambda) -> Callable:
+        """Do not support inline lambda until there is a feature request since this is quite tricky to implement."""
+        raise NotImplementedError(
+            "Recomputation of in-line lambda functions is not supported since it is quite tricky to implement and "
+            "we decided to implement it only once there is a real need for it. "
+            "Please make a feature request on https://github.com/Parquery/icontract")
 
     def visit_Return(self, node: ast.Return) -> Any:  # pylint: disable=no-self-use
         """Raise an exception that this node is unexpected."""
