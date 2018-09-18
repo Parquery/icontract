@@ -1,3 +1,7 @@
+1.5.4
+=====
+* Added support for class and static methods
+
 1.5.3
 =====
 * Fixed different signatures of ``DBCMeta`` depending on Python version (<=3.5 and >3.5) due to differing signatures
