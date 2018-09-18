@@ -438,7 +438,7 @@ The following example shows how preconditions are weakened:
         >>> b.func(x=5)
         Traceback (most recent call last):
             ...
-        icontract.ViolationError: x % 2 == 0: x was 5
+        icontract.ViolationError: x % 3 == 0: x was 5
 
 Implementation Details
 ----------------------

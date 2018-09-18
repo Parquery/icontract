@@ -13,7 +13,7 @@ import pathlib
 import reprlib
 import time
 import unittest
-from typing import Optional, List, Callable, Any  # pylint: disable=unused-import
+from typing import Optional, List, Callable, Any, Type  # pylint: disable=unused-import
 
 import icontract
 
@@ -661,6 +661,93 @@ class TestPostcondition(unittest.TestCase):
         self.assertEqual("The argument of the contract condition has not been set: b. Does the function define it?",
                          str(type_err))
 
+    def test_postcondition_in_static_method(self):
+        class SomeClass:
+            @staticmethod
+            @icontract.post(lambda result: result != 0)
+            def some_func(x: int) -> int:
+                return x
+
+        result = SomeClass.some_func(x=1)
+        self.assertEqual(1, result)
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            _ = SomeClass.some_func(x=0)
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('result != 0: result was 0', str(icontract_violation_error))
+
+    def test_postcondition_in_class_method(self):
+        class SomeClass:
+            @classmethod
+            @icontract.post(lambda result: result != 0)
+            def some_func(cls: Type, x: int) -> int:
+                return x
+
+        result = SomeClass.some_func(x=1)
+        self.assertEqual(1, result)
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            _ = SomeClass.some_func(x=0)
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('result != 0: result was 0', str(icontract_violation_error))
+
+    def test_postcondition_in_abstract_static_method(self):
+        class SomeAbstract(icontract.DBC):
+            @staticmethod
+            @icontract.post(lambda result: result != 0)
+            def some_func(x: int) -> int:
+                pass
+
+        class SomeClass(SomeAbstract):
+            @staticmethod
+            def some_func(x: int) -> int:
+                return x
+
+        result = SomeClass.some_func(x=1)
+        self.assertEqual(1, result)
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            _ = SomeClass.some_func(x=0)
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('result != 0: result was 0', str(icontract_violation_error))
+
+    def test_postcondition_in_abstract_class_method(self):
+        class Abstract(icontract.DBC):
+            @classmethod
+            @abc.abstractmethod
+            @icontract.post(lambda result: result != 0)
+            def some_func(cls: Type, x: int) -> int:
+                pass
+
+        class SomeClass(Abstract):
+            @classmethod
+            def some_func(cls: Type, x: int) -> int:
+                return x
+
+        result = SomeClass.some_func(x=1)
+        self.assertEqual(1, result)
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            _ = SomeClass.some_func(x=0)
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('result != 0: result was 0', str(icontract_violation_error))
+
 
 class TestSlow(unittest.TestCase):
     def test_slow_set(self):
@@ -797,20 +884,22 @@ class TestInvariant(unittest.TestCase):
     def test_init_checked(self):
         @icontract.inv(lambda self: self.x > 0)
         class SomeClass:
-            def __init__(self) -> None:
-                self.x = -1
+            def __init__(self, x: int) -> None:
+                self.x = x
 
             def __repr__(self) -> str:
                 return "some instance"
 
+        _ = SomeClass(x=1)
+
         violation_err = None  # type: Optional[icontract.ViolationError]
         try:
-            _ = SomeClass()
+            _ = SomeClass(x=0)
         except icontract.ViolationError as err:
             violation_err = err
 
         self.assertIsNotNone(violation_err)
-        self.assertEqual("self.x > 0:\n" "self was some instance\n" "self.x was -1", str(violation_err))
+        self.assertEqual('self.x > 0:\n' 'self was some instance\n' 'self.x was 0', str(violation_err))
 
     def test_inv_as_precondition(self):
         @icontract.inv(lambda self: self.x > 0)
@@ -1120,7 +1209,7 @@ class TestPreconditionInheritance(unittest.TestCase):
             violation_err = err
 
         self.assertIsNotNone(violation_err)
-        self.assertEqual("x % 2 == 0: x was 5", str(violation_err))
+        self.assertEqual("x % 3 == 0: x was 5", str(violation_err))
 
     def test_triple_inheritance_wo_implementation(self):
         class A(icontract.DBC):
@@ -1211,7 +1300,7 @@ class TestPreconditionInheritance(unittest.TestCase):
             violation_err = err
 
         self.assertIsNotNone(violation_err)
-        self.assertEqual("x % 2 == 0: x was 7", str(violation_err))
+        self.assertEqual("x % 5 == 0: x was 7", str(violation_err))
 
     def test_abstract_method_not_implemented(self):
         # pylint: disable=abstract-method
