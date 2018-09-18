@@ -532,7 +532,7 @@ def _decorate_with_invariants(cls: Type, func: Callable[..., Any], is_init: bool
 def _add_invariant_checks(cls: Type) -> None:
     """Decorate each of the class functions with invariant checks if not already decorated."""
     for name, value in [(name, getattr(cls, name)) for name in dir(cls)]:
-        if not inspect.ismethod(value) and not inspect.isfunction(value):
+        if not inspect.isfunction(value):
             continue
 
         # Ignore class methods
@@ -643,41 +643,81 @@ def inv(condition: Callable[..., bool],
     return decorator
 
 
-def _dbc_init_class(bases, namespace, cls) -> None:
-    """Initialize a class with inherited contracts."""
-    if hasattr(cls, "__invariants__"):
-        _add_invariant_checks(cls=cls)
+def _dbc_decorate_namespace(bases, namespace) -> None:
+    """
+    Collect invariants, preconditions and postconditions from the bases and decorate all the methods.
+
+    Instance methods are simply replaced with the decorated function, while class methods and static methods are
+    overridden with new instances of ``classmethod`` and ``staticmethod``, respectively.
+    """
+    # pylint: disable=too-many-branches
+
+    invariants = []  # type: List[_Contract]
+
+    # Add invariants of the bases
+    for base in bases:
+        if hasattr(base, "__invariants__"):
+            invariants.extend(base.__invariants__)
+
+    # Add invariants in the current namespace
+    if '__invariants__' in namespace:
+        invariants.extend(namespace['__invariants__'])
+
+    # Change the final invariants in the namespace
+    if invariants:
+        namespace["__invariants__"] = invariants
 
     for key, value in namespace.items():
+        # Ignore non-methods
+        if not inspect.isfunction(value) and not isinstance(value, staticmethod) and not isinstance(value, classmethod):
+            continue
+
+        preconditions = []  # type: List[List[_Contract]]
+        postconditions = []  # type: List[_Contract]
+
+        # Collect the preconditions and postconditions from bases
         for base in bases:
             if hasattr(base, key):
-                # Ignore non-functions
-                if not inspect.ismethod(value) and not inspect.isfunction(value):
-                    continue
-
-                func = value
-
                 # Check if there is a checker function in the base class
                 base_func = getattr(base, key)
                 base_contract_checker = _find_checker(func=base_func)
 
                 # Ignore functions which don't have preconditions or postconditions
-                if base_contract_checker is None:
-                    continue
+                if base_contract_checker is not None:
+                    preconditions.extend(base_contract_checker.__preconditions__)  # type: ignore
+                    postconditions.extend(base_contract_checker.__postconditions__)  # type: ignore
 
-                # Create a contract checker if it has not been defined already
-                contract_checker = _find_checker(func=func)
+        # Add preconditions and postconditions of the function
+        if inspect.isfunction(value):
+            func = value
+        elif isinstance(value, (staticmethod, classmethod)):
+            func = value.__func__
+        else:
+            raise NotImplementedError("Unexpected value for a function: {}".format(value))
 
-                if contract_checker is None:
-                    # Inherit the preconditions and postconditions from the base function
-                    contract_checker = _decorate_with_checker(func=func)
-                    contract_checker.__preconditions__ = base_contract_checker.__preconditions__[:]  # type: ignore
-                    contract_checker.__postconditions__ = base_contract_checker.__postconditions__[:]  # type: ignore
-                    setattr(cls, key, contract_checker)
-                else:
-                    # Merge the contracts of the base function and this function
-                    contract_checker.__preconditions__.extend(base_contract_checker.__preconditions__)  # type: ignore
-                    contract_checker.__postconditions__.extend(base_contract_checker.__postconditions__)  # type: ignore
+        contract_checker = _find_checker(func=func)
+
+        if contract_checker is None:
+            contract_checker = _decorate_with_checker(func=func)
+
+            # Replace the function with the function decorated with contract checks
+            if inspect.isfunction(value):
+                namespace[key] = contract_checker
+            elif isinstance(value, staticmethod):
+                namespace[key] = staticmethod(contract_checker)
+
+            elif isinstance(value, classmethod):
+                namespace[key] = classmethod(contract_checker)
+
+            else:
+                raise NotImplementedError("Unexpected value for a function: {}".format(value))
+        else:
+            preconditions.extend(contract_checker.__preconditions__)  # type: ignore
+            postconditions.extend(contract_checker.__postconditions__)  # type: ignore
+
+        # Override the preconditions and postconditions
+        contract_checker.__preconditions__ = preconditions  # type: ignore
+        contract_checker.__postconditions__ = postconditions  # type: ignore
 
 
 class DBCMeta(abc.ABCMeta):
@@ -699,15 +739,25 @@ class DBCMeta(abc.ABCMeta):
 
         def __new__(mlcs, name, bases, namespace):  # pylint: disable=arguments-differ
             """Create a class with inherited preconditions, postconditions and invariants."""
+            _dbc_decorate_namespace(bases, namespace)
+
             cls = super().__new__(mlcs, name, bases, namespace)
-            _dbc_init_class(bases, namespace, cls)
+
+            if hasattr(cls, "__invariants__"):
+                _add_invariant_checks(cls=cls)
+
             return cls
     else:
 
         def __new__(mlcs, name, bases, namespace, **kwargs):  # type: ignore  # pylint: disable=arguments-differ
             """Create a class with inherited preconditions, postconditions and invariants."""
+            _dbc_decorate_namespace(bases, namespace)
+
             cls = super().__new__(mlcs, name, bases, namespace, **kwargs)
-            _dbc_init_class(bases, namespace, cls)
+
+            if hasattr(cls, "__invariants__"):
+                _add_invariant_checks(cls=cls)
+
             return cls
 
 
