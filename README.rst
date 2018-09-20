@@ -480,6 +480,12 @@ invariants.
 Mind that we still expect each class decorator that decorates the class functions to use ``functools.update_wrapper()``
 in order to be able to iterate through decorator stacks of the individual functions.
 
+Linter
+------
+We provide a linter that statically verifies the arguments of the contracts (*i.e.* that they are
+well-defined with respect to the function). The tool is available as a separate package,
+`pyicontract-lint <https://pypi.org/project/pyicontract-lint>`_.
+
 Installation
 ============
 
