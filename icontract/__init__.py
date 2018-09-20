@@ -569,13 +569,9 @@ def _identity_decorator(cls: Type) -> Type:
     return cls
 
 
-def inv(condition: Callable[..., bool],
-        description: Optional[str] = None,
-        repr_args: Optional[Callable[..., str]] = None,
-        a_repr: Optional[reprlib.Repr] = None,
-        enabled: bool = __debug__) -> Callable[[Type], Type]:
+class inv:  # pylint: disable=invalid-name
     """
-    Create a class decorator to establish the invariant on all the public methods.
+    Represent a class decorator to establish the invariant on all the public methods.
 
     Class method as well as "private" (prefix ``__``) and "protected" methods (prefix ``_``) may violate the invariant.
     Note that all magic methods (prefix ``__`` and suffix ``__``) are considered public and hence also need to establish
@@ -584,41 +580,51 @@ def inv(condition: Callable[..., bool],
 
     The invariant is checked *before* and *after* the method invocation.
 
-    :param condition: invariant predicate
-    :param description: textual description of the invariant
-    :param repr_args:
-            function to represent arguments in the message on a breached invariant. The repr_func takes only ``self``
-            as a single argument.
-
-            If not specified, all the involved values are represented by re-traversing the AST.
-
-    :param a_repr:
-            representation instance that defines how the values are represented.
-
-            If ``repr_args`` is specified, ``repr_instance`` should be None.
-            If no ``repr_args`` is specified, the default ``icontract.aRepr`` is used.
-    :param enabled:
-            The decorator is applied only if this argument is set.
-
-            Otherwise, the condition check is disabled and there is no run-time overhead.
-
-            The default is to always check the condition unless the interpreter runs in optimized mode (``-O`` or
-            ``-OO``).
-
-    :return: class decorator
-
     """
-    if not enabled:
-        return _identity_decorator
 
-    parameter_names = sorted(inspect.signature(condition).parameters.keys())
-    if parameter_names != ["self"]:
-        raise ValueError(
-            "Expected a condition function with a single argument 'self', but got: {}".format(parameter_names))
+    def __init__(self,
+                 condition: Callable[..., bool],
+                 description: Optional[str] = None,
+                 repr_args: Optional[Callable[..., str]] = None,
+                 a_repr: Optional[reprlib.Repr] = None,
+                 enabled: bool = __debug__) -> None:
+        """
+        Initialize a class decorator to establish the invariant on all the public methods.
 
-    contract = _Contract(condition=condition, description=description, repr_args=repr_args, a_repr=a_repr)
+        :param condition: invariant predicate
+        :param description: textual description of the invariant
+        :param repr_args:
+                function to represent arguments in the message on a breached invariant. The repr_func takes only
+                ``self`` as a single argument.
 
-    def decorator(cls: Type) -> Type:
+                If not specified, all the involved values are represented by re-traversing the AST.
+
+        :param a_repr:
+                representation instance that defines how the values are represented.
+
+                If ``repr_args`` is specified, ``repr_instance`` should be None.
+                If no ``repr_args`` is specified, the default ``icontract.aRepr`` is used.
+        :param enabled:
+                The decorator is applied only if this argument is set.
+
+                Otherwise, the condition check is disabled and there is no run-time overhead.
+
+                The default is to always check the condition unless the interpreter runs in optimized mode (``-O`` or
+                ``-OO``).
+
+        :return:
+
+        """
+        # pylint: disable=too-many-arguments
+        self.enabled = enabled
+        self._contract = None  # type: Optional[_Contract]
+
+        if not enabled:
+            return
+
+        self._contract = _Contract(condition=condition, description=description, repr_args=repr_args, a_repr=a_repr)
+
+    def __call__(self, cls: Type) -> Type:
         """
         Decorate each of the public methods with the invariant.
 
@@ -626,6 +632,16 @@ def inv(condition: Callable[..., bool],
         add the invariant to the checker's invariants. If there is no checker in the stack, wrap the function with a
         contract checker.
         """
+        if not self.enabled:
+            return cls
+
+        assert self._contract is not None, "self._contract must be set if the contract was enabled."
+
+        parameter_names = sorted(inspect.signature(self._contract.condition).parameters.keys())
+        if parameter_names != ["self"]:
+            raise ValueError(
+                "Expected a condition function with a single argument 'self', but got: {}".format(parameter_names))
+
         if not hasattr(cls, "__invariants__"):
             invariants = []  # type: List[_Contract]
             setattr(cls, "__invariants__", invariants)
@@ -634,13 +650,11 @@ def inv(condition: Callable[..., bool],
             assert isinstance(invariants, list), \
                 "Expected invariants of class {} to be a list, but got: {}".format(cls, type(invariants))
 
-        invariants.append(contract)
+        invariants.append(self._contract)
 
         _add_invariant_checks(cls=cls)
 
         return cls
-
-    return decorator
 
 
 def _dbc_decorate_namespace(bases, namespace) -> None:
