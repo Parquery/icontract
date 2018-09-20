@@ -1,3 +1,8 @@
+1.5.5
+=====
+* Added reference to ``pyicontract-lint`` in the README
+* Made ``inv`` a class
+
 1.5.4
 =====
 * Added support for class and static methods
