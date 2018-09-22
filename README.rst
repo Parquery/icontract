@@ -486,6 +486,11 @@ We provide a linter that statically verifies the arguments of the contracts (*i.
 well-defined with respect to the function). The tool is available as a separate package,
 `pyicontract-lint <https://pypi.org/project/pyicontract-lint>`_.
 
+Sphinx
+------
+We implemented a Sphinx extension to include contracts in the documentation. The extension is available as a package
+`sphinx-icontract <https://pypi.org/project/sphinx-icontract>`_.
+
 Installation
 ============
 
