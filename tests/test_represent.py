@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # pylint: disable=missing-docstring,invalid-name,too-many-public-methods,no-self-use
-
+import pathlib
 import unittest
-from typing import Optional  # pylint: disable=unused-import
+from typing import Optional, List, Tuple  # pylint: disable=unused-import
 
 import icontract.represent
 
@@ -350,7 +350,22 @@ class TestReprValues(unittest.TestCase):
 
         self.assertIsNotNone(not_implemented_err)
 
-    def test_generator_expression(self):
+    def test_generator_expression_with_attr_on_element(self):
+        @icontract.post(lambda result: all(single_res[1].is_absolute() for single_res in result))
+        def some_func() -> List[Tuple[pathlib.Path, pathlib.Path]]:
+            return [(pathlib.Path("/home/file1"), pathlib.Path("home/file2"))]
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            some_func()
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('all(single_res[1].is_absolute() for single_res in result): all(single_res[1].is_absolute() '
+                         'for single_res in result) was False', str(icontract_violation_error))
+
+    def test_generator_expression_multiple_for(self):
         lst = [1, 2, 3]
         another_lst = [4, 5, 6]
 
