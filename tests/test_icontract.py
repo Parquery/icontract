@@ -13,7 +13,7 @@ import pathlib
 import reprlib
 import time
 import unittest
-from typing import Optional, List, Callable, Any, Type  # pylint: disable=unused-import
+from typing import Optional, List, Callable, Any, Tuple, Type  # pylint: disable=unused-import
 
 import icontract
 
