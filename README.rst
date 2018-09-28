@@ -223,8 +223,10 @@ We consider the following methods to be "public":
 
 Class methods can not observe the invariant since they are not associated with an instance of the class.
 
-We exempt ``__repr__`` method from observing the invariant since that function needs to be called when
-generating error messages.
+We exempt ``__getattribute__`` and ``__setattr__`` methods from observing the invariant since
+these functions alter the state of the instance and thus can not be considered "public".
+
+We also excempt ``__repr__`` method to prevent endless loops when generating error messages.
 
 The icontract invariants are implemented as class decorators.
 

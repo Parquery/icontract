@@ -284,7 +284,7 @@ def _decorate_with_checker(func: Callable[..., Any]) -> Callable[..., Any]:
 
 def _unwind_decorator_stack(func: Callable[..., Any]) -> Iterable['Callable[..., Any]']:
     """
-    Iterate through the stack of decorated functions and return the original function.
+    Iterate through the stack of decorated functions until the original function.
 
     Assume that all decorators used functools.update_wrapper.
     """
@@ -483,11 +483,10 @@ def _find_self(param_names: List[str], args: Tuple[Any, ...], kwargs: Dict[str, 
     return instance
 
 
-def _decorate_with_invariants(cls: Type, func: Callable[..., Any], is_init: bool) -> Callable[..., Any]:
+def _decorate_with_invariants(func: Callable[..., Any], is_init: bool) -> Callable[..., Any]:
     """
     Decorate the function ``func`` of the class ``cls`` with invariant checks.
 
-    :param cls: class to be decorated
     :param func: function to be wrapped
     :param is_init: True if the ``func`` is __init__
     :return: function wrapped with invariant checks
@@ -502,7 +501,7 @@ def _decorate_with_invariants(cls: Type, func: Callable[..., Any], is_init: bool
             result = func(*args, **kwargs)
             instance = _find_self(param_names=param_names, args=args, kwargs=kwargs)
 
-            for contract in cls.__invariants__:
+            for contract in instance.__class__.__invariants__:
                 _assert_invariant(contract=contract, instance=instance)
 
             return result
@@ -512,12 +511,12 @@ def _decorate_with_invariants(cls: Type, func: Callable[..., Any], is_init: bool
             """Wrap a function of a class by checking the invariants *before* and *after* the invocation."""
             instance = _find_self(param_names=param_names, args=args, kwargs=kwargs)
 
-            for contract in cls.__invariants__:
+            for contract in instance.__class__.__invariants__:
                 _assert_invariant(contract=contract, instance=instance)
 
             result = func(*args, **kwargs)
 
-            for contract in cls.__invariants__:
+            for contract in instance.__class__.__invariants__:
                 _assert_invariant(contract=contract, instance=instance)
 
             return result
@@ -529,31 +528,50 @@ def _decorate_with_invariants(cls: Type, func: Callable[..., Any], is_init: bool
     return wrapper
 
 
+class _DummyClass:
+    """Represent a dummy class so that we can infer the type of the slot wrapper."""
+
+    pass
+
+
+_SLOT_WRAPPER_TYPE = type(_DummyClass.__init__)
+
+
 def _add_invariant_checks(cls: Type) -> None:
     """Decorate each of the class functions with invariant checks if not already decorated."""
     for name, value in [(name, getattr(cls, name)) for name in dir(cls)]:
-        if not inspect.isfunction(value):
+        if not inspect.isfunction(value) and not isinstance(value, _SLOT_WRAPPER_TYPE):
             continue
 
         # Ignore class methods
         if getattr(value, "__self__", None) is cls:
             continue
 
-        # Ignore __repr__ to avoid endless loops when generating the error message on invariant breach.
-        if name == "__repr__":
+        # These methods change the state of the class and are thus not really considered "public".
+
+        # We need to ignore __repr__ to prevent endless loops when generating error messages.
+        # __getattribute__ and __setattr__ are too invasive and alter the state of the instance. Hence we don't consider
+        # them "public".
+        if name in ["__repr__", "__getattribute__", "__setattr__"]:
             continue
 
         func = value
+
+        already_decorated = False
         for a_decorator in _unwind_decorator_stack(func=func):
             if getattr(a_decorator, "__is_invariant_check__", False):
-                continue
+                already_decorated = True
+                break
+
+        if already_decorated:
+            continue
 
         if name == "__init__":
-            wrapper = _decorate_with_invariants(cls=cls, func=func, is_init=True)
+            wrapper = _decorate_with_invariants(func=func, is_init=True)
             setattr(cls, name, wrapper)
 
         elif not name.startswith("_") or (name.startswith("__") and name.endswith("__")):
-            wrapper = _decorate_with_invariants(cls=cls, func=func, is_init=False)
+            wrapper = _decorate_with_invariants(func=func, is_init=False)
             setattr(cls, name, wrapper)
 
         elif name.startswith("_"):
