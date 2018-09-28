@@ -488,6 +488,83 @@ class TestPrecondition(unittest.TestCase):
 
         self.assertIsNone(pre_err)
 
+    def test_property_getter(self):
+        class SomeClass:
+            def __init__(self) -> None:
+                self._some_prop = -1
+
+            @property
+            @icontract.pre(lambda self: self._some_prop > 0)
+            def some_prop(self) -> int:
+                return self._some_prop
+
+            def __repr__(self):
+                return self.__class__.__name__
+
+        some_inst = SomeClass()
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            _ = some_inst.some_prop
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('self._some_prop > 0:\n'
+                         'self was SomeClass\n'
+                         'self._some_prop was -1', str(icontract_violation_error))
+
+    def test_property_setter(self):
+        class SomeClass:
+            @property
+            def some_prop(self) -> int:
+                return 0
+
+            @some_prop.setter
+            @icontract.pre(lambda value: value > 0)
+            def some_prop(self, value: int) -> None:
+                pass
+
+        some_inst = SomeClass()
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            some_inst.some_prop = -1
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('value > 0: value was -1', str(icontract_violation_error))
+
+    def test_property_deleter(self):
+        class SomeClass:
+            def __init__(self) -> None:
+                self._some_prop = -1
+
+            @property
+            def some_prop(self) -> int:
+                return self._some_prop
+
+            @some_prop.deleter
+            @icontract.pre(lambda self: self.some_prop > 0)
+            def some_prop(self) -> None:
+                pass
+
+            def __repr__(self):
+                return self.__class__.__name__
+
+        some_inst = SomeClass()
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            del some_inst.some_prop
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('self.some_prop > 0:\nself was SomeClass\nself.some_prop was -1',
+                         str(icontract_violation_error))
+
 
 class TestPostcondition(unittest.TestCase):
     def test_ok(self):
@@ -747,6 +824,82 @@ class TestPostcondition(unittest.TestCase):
 
         self.assertIsNotNone(icontract_violation_error)
         self.assertEqual('result != 0: result was 0', str(icontract_violation_error))
+
+    def test_property_getter(self):
+        class SomeClass:
+            def __init__(self) -> None:
+                self._some_prop = -1
+
+            @property
+            @icontract.post(lambda result: result > 0)
+            def some_prop(self) -> int:
+                return self._some_prop
+
+        some_inst = SomeClass()
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            _ = some_inst.some_prop
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('result > 0: result was -1', str(icontract_violation_error))
+
+    def test_property_setter(self):
+        class SomeClass:
+            @property
+            def some_prop(self) -> int:
+                return 0
+
+            @some_prop.setter
+            @icontract.post(lambda self: self.some_prop > 0)
+            def some_prop(self, value: int) -> None:
+                pass
+
+            def __repr__(self):
+                return self.__class__.__name__
+
+        some_inst = SomeClass()
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            some_inst.some_prop = -1
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('self.some_prop > 0:\nself was SomeClass\nself.some_prop was 0',
+                         str(icontract_violation_error))
+
+    def test_property_deleter(self):
+        class SomeClass:
+            def __init__(self) -> None:
+                self._some_prop = -1
+
+            @property
+            def some_prop(self) -> int:
+                return self._some_prop
+
+            @some_prop.deleter
+            @icontract.post(lambda self: self.some_prop > 0)
+            def some_prop(self) -> None:
+                pass
+
+            def __repr__(self):
+                return self.__class__.__name__
+
+        some_inst = SomeClass()
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            del some_inst.some_prop
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('self.some_prop > 0:\nself was SomeClass\nself.some_prop was -1',
+                         str(icontract_violation_error))
 
 
 class TestSlow(unittest.TestCase):
@@ -1483,6 +1636,50 @@ class TestPostconditionInheritance(unittest.TestCase):
         self.assertIsNotNone(violation_err)
         self.assertEqual("result < 100: result was 1000", str(violation_err))
 
+    def test_count_checks(self):
+        class Increment:
+            count = 0
+
+            def __call__(self) -> bool:
+                Increment.count += 1
+                return True
+
+        inc = Increment()
+
+        @icontract.inv(lambda self: inc())
+        class SomeClass:
+            def __init__(self) -> None:
+                pass
+
+            def some_func(self) -> None:
+                return
+
+        inst = SomeClass()
+        self.assertEqual(1, Increment.count)  # Invariant needs to be checked once after the initialization.
+
+        inst.some_func()
+        self.assertEqual(3, Increment.count)  # Invariant needs to be checked before and after some_func.
+
+    def test_count_checks_in_slot_wrappers(self):
+        class Increment:
+            count = 0
+
+            def __call__(self) -> bool:
+                Increment.count += 1
+                return True
+
+        inc = Increment()
+
+        @icontract.inv(lambda self: inc())
+        class SomeClass:
+            pass
+
+        inst = SomeClass()
+        self.assertEqual(1, Increment.count)  # Invariant needs to be checked once after the initialization.
+
+        _ = str(inst)
+        self.assertEqual(3, Increment.count)  # Invariant needs to be checked before and after __str__.
+
 
 class TestInvariantInheritance(unittest.TestCase):
     def test_inherited(self):
@@ -1649,6 +1846,37 @@ class TestInvariantInheritance(unittest.TestCase):
 
         self.assertIsNotNone(violation_err)
         self.assertEqual("self.x > 0:\n" "self was instance of B\n" "self.x was -1", str(violation_err))
+
+    def test_count_checks(self):
+        class Increment:
+            count = 0
+
+            def __call__(self) -> bool:
+                Increment.count += 1
+                return True
+
+        inc = Increment()
+
+        @icontract.inv(lambda self: inc())
+        class A(icontract.DBC):
+            def __repr__(self) -> str:
+                return "instance of A"
+
+            def some_func(self):
+                return 1
+
+        class B(A):
+            def __repr__(self) -> str:
+                return "instance of B"
+
+            def some_func(self):
+                return 2
+
+        inst = B()
+        self.assertEqual(1, Increment.count, "Invariant is expected to run only once at the initializer.")
+
+        inst.some_func()
+        self.assertEqual(3, Increment.count, "Invariant is expected to run before and after the method call.")
 
 
 if __name__ == '__main__':
