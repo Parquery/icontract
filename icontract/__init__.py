@@ -735,8 +735,11 @@ def _dbc_decorate_namespace(bases, namespace) -> None:
         postconditions = []  # type: List[_Contract]
 
         # Collect the preconditions and postconditions from bases
+        bases_have_it = False
         for base in bases:
             if hasattr(base, key):
+                bases_have_it = True
+
                 # Check if there is a checker function in the base class
                 base_func = getattr(base, key)
                 base_contract_checker = _find_checker(func=base_func)
@@ -771,6 +774,16 @@ def _dbc_decorate_namespace(bases, namespace) -> None:
             else:
                 raise NotImplementedError("Unexpected value for a function: {}".format(value))
         else:
+            # Make sure that we can only weaken the preconditions if there are already some.
+            # If there are no preconditions in the base classes for the given function, we can not weaken it any further
+            # since the precondition must be always fulfilled.
+            if not preconditions and bases_have_it:
+                raise TypeError(
+                    ("The function {} can not weaken the preconditions because the bases specify "
+                     "no preconditions at all. Hence this function must accept all possible input since "
+                     "the preconditions are OR'ed and no precondition implies a dummy precondition which is always "
+                     "fulfilled.").format(func.__qualname__))
+
             preconditions.extend(contract_checker.__preconditions__)  # type: ignore
             postconditions.extend(contract_checker.__postconditions__)  # type: ignore
 
