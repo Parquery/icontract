@@ -1,3 +1,12 @@
+1.5.6
+=====
+* Contracts are observed and inherited with property getters, setters and deleters.
+* Weakining of preconditions of a base function without any preconditions raises ``TypeError``.
+* ``__getattribute__``, ``__setattr__` and ``__delattr__`` are exempted from invariants.
+* Slot wrappers are properly handled.
+* Fixed representation of conditions with attributes in generator expressions
+* Added reference to sphinx-contract
+
 1.5.5
 =====
 * Added reference to ``pyicontract-lint`` in the README
