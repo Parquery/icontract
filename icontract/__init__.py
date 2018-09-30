@@ -563,9 +563,9 @@ def _add_invariant_checks(cls: Type) -> None:
     # Filter out entries in the directory which are certainly not candidates for decoration.
     for name, value in [(name, getattr(cls, name)) for name in dir(cls)]:
         # We need to ignore __repr__ to prevent endless loops when generating error messages.
-        # __getattribute__ and __setattr__ are too invasive and alter the state of the instance. Hence we don't consider
-        # them "public".
-        if name in ["__repr__", "__getattribute__", "__setattr__"]:
+        # __getattribute__, __setattr__ and __delattr__ are too invasive and alter the state of the instance.
+        # Hence we don't consider them "public".
+        if name in ["__repr__", "__getattribute__", "__setattr__", "__delattr__"]:
             continue
 
         if name == "__init__":

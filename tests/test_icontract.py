@@ -2118,7 +2118,7 @@ class TestInvariantInheritanceWithProperties(unittest.TestCase):
 
     def test_inherited_invariant_on_deleter(self):
         @icontract.inv(lambda self: not self.toggled)
-        class SomeBase:
+        class SomeBase(icontract.DBC):
             def __init__(self) -> None:
                 self.toggled = False
 

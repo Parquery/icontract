@@ -223,7 +223,7 @@ We consider the following methods to be "public":
 
 Class methods can not observe the invariant since they are not associated with an instance of the class.
 
-We exempt ``__getattribute__`` and ``__setattr__`` methods from observing the invariant since
+We exempt ``__getattribute__``, ``__setattr__`` and ``__delattr__`` methods from observing the invariant since
 these functions alter the state of the instance and thus can not be considered "public".
 
 We also excempt ``__repr__`` method to prevent endless loops when generating error messages.
