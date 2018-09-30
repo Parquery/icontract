@@ -6,7 +6,7 @@ import os
 import platform
 import reprlib
 from typing import Callable, MutableMapping, Any, Optional, Set, List, Type, Dict, \
-    Tuple, Iterable, Mapping  # pylint: disable=unused-import
+    Tuple, Iterable, Mapping, cast  # pylint: disable=unused-import
 
 import icontract.represent
 
@@ -275,8 +275,7 @@ def _decorate_with_checker(func: Callable[..., Any]) -> Callable[..., Any]:
     #
     # This is necessary in order to implement "require else" logic when a class weakens the preconditions of
     # its base class.
-    setattr(wrapper, "__preconditions__", [[]])
-
+    setattr(wrapper, "__preconditions__", [])
     setattr(wrapper, "__postconditions__", [])
 
     return wrapper
@@ -381,11 +380,15 @@ class pre:  # pylint: disable=invalid-name
         assert hasattr(contract_checker, "__preconditions__")
         preconditions = getattr(contract_checker, "__preconditions__")
         assert isinstance(preconditions, list)
-        assert len(preconditions) == 1, \
-            "A single group of preconditions expected when wrapping with a contract checker. " \
-            "The preconditions are merged only in the DBC metaclass."
+        assert len(preconditions) <= 1, \
+            ("At most a single group of preconditions expected when wrapping with a contract checker. "
+             "The preconditions are merged only in the DBC metaclass. "
+             "The current number of precondition groups: {}").format(len(preconditions))
 
-        assert isinstance(preconditions[0], list)
+        if len(preconditions) == 0:
+            # Create the first group if there is no group so far, i.e. this is the first decorator.
+            preconditions.append([])
+
         preconditions[0].append(self._contract)
 
         return result
@@ -702,15 +705,8 @@ class inv:  # pylint: disable=invalid-name
         return cls
 
 
-def _dbc_decorate_namespace(bases, namespace) -> None:
-    """
-    Collect invariants, preconditions and postconditions from the bases and decorate all the methods.
-
-    Instance methods are simply replaced with the decorated function, while class methods and static methods are
-    overridden with new instances of ``classmethod`` and ``staticmethod``, respectively.
-    """
-    # pylint: disable=too-many-branches
-
+def _collapse_invariants(bases: List[Type], namespace: MutableMapping[str, Any]) -> None:
+    """Collect invariants from the bases and merge them with the invariants in the namespace."""
     invariants = []  # type: List[_Contract]
 
     # Add invariants of the bases
@@ -726,39 +722,86 @@ def _dbc_decorate_namespace(bases, namespace) -> None:
     if invariants:
         namespace["__invariants__"] = invariants
 
-    for key, value in namespace.items():
-        # Ignore non-methods
-        if not inspect.isfunction(value) and not isinstance(value, staticmethod) and not isinstance(value, classmethod):
-            continue
 
-        preconditions = []  # type: List[List[_Contract]]
-        postconditions = []  # type: List[_Contract]
+def _collapse_preconditions(base_preconditions: List[List[_Contract]], bases_have_func: bool,
+                            preconditions: List[List[_Contract]], func: Callable[..., Any]) -> List[List[_Contract]]:
+    """
+    Collapse function preconditions with the preconditions collected from the base classes.
 
-        # Collect the preconditions and postconditions from bases
-        bases_have_it = False
-        for base in bases:
-            if hasattr(base, key):
-                bases_have_it = True
+    :param base_preconditions: preconditions collected from the base classes (grouped by base class)
+    :param bases_have_func: True if one of the base classes has the function
+    :param preconditions: preconditions of the function (before the collapse)
+    :param func: function whose preconditions we are collapsing
+    :return: collapsed sequence of precondition groups
+    """
+    if not base_preconditions and bases_have_func and preconditions:
+        raise TypeError(("The function {} can not weaken the preconditions because the bases specify "
+                         "no preconditions at all. Hence this function must accept all possible input since "
+                         "the preconditions are OR'ed and no precondition implies a dummy precondition which is always "
+                         "fulfilled.").format(func.__qualname__))
 
-                # Check if there is a checker function in the base class
-                base_func = getattr(base, key)
-                base_contract_checker = _find_checker(func=base_func)
+    return base_preconditions + preconditions
 
-                # Ignore functions which don't have preconditions or postconditions
-                if base_contract_checker is not None:
-                    preconditions.extend(base_contract_checker.__preconditions__)  # type: ignore
-                    postconditions.extend(base_contract_checker.__postconditions__)  # type: ignore
 
-        # Add preconditions and postconditions of the function
-        if inspect.isfunction(value):
-            func = value
-        elif isinstance(value, (staticmethod, classmethod)):
-            func = value.__func__
-        else:
-            raise NotImplementedError("Unexpected value for a function: {}".format(value))
+def _collapse_postconditions(base_postconditions: List[_Contract], postconditions: List[_Contract]) -> List[_Contract]:
+    """
+    Collapse function postconditions with the postconditions collected from the base classes.
 
-        contract_checker = _find_checker(func=func)
+    :param base_postconditions: postconditions collected from the base classes
+    :param postconditions: postconditions of the function (before the collapse)
+    :return: collapsed sequence of postconditions
+    """
+    return base_postconditions + postconditions
 
+
+def _decorate_namespace_function(bases: List[Type], namespace: MutableMapping[str, Any], key: str) -> None:
+    """Collect preconditions and postconditions from the bases and decorate the function at the ``key``."""
+    # pylint: disable=too-many-branches
+
+    value = namespace[key]
+    assert inspect.isfunction(value) or isinstance(value, (staticmethod, classmethod))
+
+    # Determine the function to be decorated
+    if inspect.isfunction(value):
+        func = value
+    elif isinstance(value, (staticmethod, classmethod)):
+        func = value.__func__
+    else:
+        raise NotImplementedError("Unexpected value for a function: {}".format(value))
+
+    # Collect the preconditions and postconditions from bases
+    base_preconditions = []  # type: List[List[_Contract]]
+    base_postconditions = []  # type: List[_Contract]
+
+    bases_have_func = False
+    for base in bases:
+        if hasattr(base, key):
+            bases_have_func = True
+
+            # Check if there is a checker function in the base class
+            base_func = getattr(base, key)
+            base_contract_checker = _find_checker(func=base_func)
+
+            # Ignore functions which don't have preconditions or postconditions
+            if base_contract_checker is not None:
+                base_preconditions.extend(base_contract_checker.__preconditions__)  # type: ignore
+                base_postconditions.extend(base_contract_checker.__postconditions__)  # type: ignore
+
+    # Add preconditions and postconditions of the function
+    preconditions = []  # type: List[List[_Contract]]
+    postconditions = []  # type: List[_Contract]
+
+    contract_checker = _find_checker(func=func)
+    if contract_checker is not None:
+        preconditions = contract_checker.__preconditions__  # type: ignore
+        postconditions = contract_checker.__postconditions__  # type: ignore
+
+    preconditions = _collapse_preconditions(
+        base_preconditions=base_preconditions, bases_have_func=bases_have_func, preconditions=preconditions, func=func)
+
+    postconditions = _collapse_postconditions(base_postconditions=base_postconditions, postconditions=postconditions)
+
+    if preconditions or postconditions:
         if contract_checker is None:
             contract_checker = _decorate_with_checker(func=func)
 
@@ -773,23 +816,123 @@ def _dbc_decorate_namespace(bases, namespace) -> None:
 
             else:
                 raise NotImplementedError("Unexpected value for a function: {}".format(value))
-        else:
-            # Make sure that we can only weaken the preconditions if there are already some.
-            # If there are no preconditions in the base classes for the given function, we can not weaken it any further
-            # since the precondition must be always fulfilled.
-            if not preconditions and bases_have_it:
-                raise TypeError(
-                    ("The function {} can not weaken the preconditions because the bases specify "
-                     "no preconditions at all. Hence this function must accept all possible input since "
-                     "the preconditions are OR'ed and no precondition implies a dummy precondition which is always "
-                     "fulfilled.").format(func.__qualname__))
-
-            preconditions.extend(contract_checker.__preconditions__)  # type: ignore
-            postconditions.extend(contract_checker.__postconditions__)  # type: ignore
 
         # Override the preconditions and postconditions
         contract_checker.__preconditions__ = preconditions  # type: ignore
         contract_checker.__postconditions__ = postconditions  # type: ignore
+
+
+def _decorate_namespace_property(bases: List[Type], namespace: MutableMapping[str, Any], key: str) -> None:
+    """Collect contracts for all getters/setters/deleters corresponding to ``key`` and decorate them."""
+    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-branches
+    # pylint: disable=too-many-statements
+
+    value = namespace[key]
+    assert isinstance(value, property)
+
+    fget = value.fget  # type: Optional[Callable[..., Any]]
+    fset = value.fset  # type: Optional[Callable[..., Any]]
+    fdel = value.fdel  # type: Optional[Callable[..., Any]]
+
+    for func in [value.fget, value.fset, value.fdel]:
+        func = cast(Callable[..., Any], func)
+
+        if func is None:
+            continue
+
+        # Collect the preconditions and postconditions from bases
+        base_preconditions = []  # type: List[List[_Contract]]
+        base_postconditions = []  # type: List[_Contract]
+
+        bases_have_func = False
+        for base in bases:
+            if hasattr(base, key):
+                base_property = getattr(base, key)
+                assert isinstance(base_property, property), \
+                    "Expected base {} to have {} as property, but got: {}".format(base, key, base_property)
+
+                if func == value.fget:
+                    base_func = getattr(base, key).fget
+                elif func == value.fset:
+                    base_func = getattr(base, key).fset
+                elif func == value.fdel:
+                    base_func = getattr(base, key).fdel
+                else:
+                    raise NotImplementedError("Unhandled case: func neither value.fget, value.fset nor value.fdel")
+
+                if base_func is None:
+                    continue
+
+                bases_have_func = True
+
+                # Check if there is a checker function in the base class
+                base_contract_checker = _find_checker(func=base_func)
+
+                # Ignore functions which don't have preconditions or postconditions
+                if base_contract_checker is not None:
+                    base_preconditions.extend(base_contract_checker.__preconditions__)  # type: ignore
+                    base_postconditions.extend(base_contract_checker.__postconditions__)  # type: ignore
+
+        # Add preconditions and postconditions of the function
+        preconditions = []  # type: List[List[_Contract]]
+        postconditions = []  # type: List[_Contract]
+
+        contract_checker = _find_checker(func=func)
+        if contract_checker is not None:
+            preconditions = contract_checker.__preconditions__  # type: ignore
+            postconditions = contract_checker.__postconditions__  # type: ignore
+
+        preconditions = _collapse_preconditions(
+            base_preconditions=base_preconditions,
+            bases_have_func=bases_have_func,
+            preconditions=preconditions,
+            func=func)
+
+        postconditions = _collapse_postconditions(
+            base_postconditions=base_postconditions, postconditions=postconditions)
+
+        if preconditions or postconditions:
+            if contract_checker is None:
+                contract_checker = _decorate_with_checker(func=func)
+
+                # Replace the function with the function decorated with contract checks
+                if func == value.fget:
+                    fget = contract_checker
+                elif func == value.fset:
+                    fset = contract_checker
+                elif func == value.fdel:
+                    fdel = contract_checker
+                else:
+                    raise NotImplementedError("Unhandled case: func neither fget, fset nor fdel")
+
+            # Override the preconditions and postconditions
+            contract_checker.__preconditions__ = preconditions  # type: ignore
+            contract_checker.__postconditions__ = postconditions  # type: ignore
+
+    if fget != value.fget or fset != value.fset or fdel != value.fdel:
+        namespace[key] = property(fget=fget, fset=fset, fdel=fdel)
+
+
+def _dbc_decorate_namespace(bases: List[Type], namespace: MutableMapping[str, Any]) -> None:
+    """
+    Collect invariants, preconditions and postconditions from the bases and decorate all the methods.
+
+    Instance methods are simply replaced with the decorated function/ Properties, class methods and static methods are
+    overridden with new instances of ``property``, ``classmethod`` and ``staticmethod``, respectively.
+    """
+    _collapse_invariants(bases=bases, namespace=namespace)
+
+    for key, value in namespace.items():
+        if inspect.isfunction(value) or isinstance(value, (staticmethod, classmethod)):
+            _decorate_namespace_function(bases=bases, namespace=namespace, key=key)
+
+        elif isinstance(value, property):
+            _decorate_namespace_property(bases=bases, namespace=namespace, key=key)
+
+        else:
+            # Ignore the value which is neither a function nor a property
+            pass
 
 
 class DBCMeta(abc.ABCMeta):

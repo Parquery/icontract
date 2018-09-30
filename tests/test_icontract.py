@@ -1607,6 +1607,135 @@ class TestPreconditionInheritance(unittest.TestCase):
             "precondition which is always fulfilled.", str(type_error))
 
 
+class TestPreconditionInheritanceProperty(unittest.TestCase):
+    def test_getter_setter_deleter_valid(self):
+        class SomeBase(icontract.DBC):
+            def __init__(self) -> None:
+                self.deleted = False
+                self._some_prop = 1
+
+            @property
+            @icontract.pre(lambda self: self._some_prop > 0)
+            def some_prop(self) -> int:
+                return self._some_prop
+
+            @some_prop.setter
+            @icontract.pre(lambda value: value > 0)
+            def some_prop(self, value: int) -> None:
+                self._some_prop = value
+
+            @some_prop.deleter
+            @icontract.pre(lambda self: not self.deleted)
+            def some_prop(self) -> None:
+                self.deleted = True
+
+        class SomeClass(SomeBase):
+            pass
+
+        some_inst = SomeClass()
+        some_inst.some_prop = 3
+        self.assertEqual(3, some_inst.some_prop)
+
+        del some_inst.some_prop
+        self.assertTrue(some_inst.deleted)
+
+    def test_getter(self):
+        class SomeBase(icontract.DBC):
+            def __init__(self) -> None:
+                self.toggled = True
+
+            @property
+            @icontract.pre(lambda self: not self.toggled)
+            def some_prop(self) -> int:
+                return 0
+
+        class SomeClass(SomeBase):
+            @property
+            def some_prop(self) -> int:
+                return 0
+
+            def __repr__(self):
+                return self.__class__.__name__
+
+        some_inst = SomeClass()
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            _ = some_inst.some_prop
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('not self.toggled:\n'
+                         'self was SomeClass\n'
+                         'self.toggled was True', str(icontract_violation_error))
+
+    def test_setter(self):
+        class SomeBase(icontract.DBC):
+            @property
+            def some_prop(self) -> int:
+                return 0
+
+            @some_prop.setter
+            @icontract.pre(lambda value: value > 0)
+            def some_prop(self, value: int) -> None:
+                pass
+
+        class SomeClass(SomeBase):
+            @SomeBase.some_prop.setter  # pylint: disable=no-member
+            def some_prop(self, value: int) -> None:
+                pass
+
+            def __repr__(self):
+                return self.__class__.__name__
+
+        some_inst = SomeClass()
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            some_inst.some_prop = 0
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('value > 0: value was 0', str(icontract_violation_error))
+
+    def test_deleter(self):
+        class SomeBase(icontract.DBC):
+            def __init__(self):
+                self.toggled = True
+
+            @property
+            def some_prop(self) -> int:
+                return 0
+
+            @some_prop.deleter
+            @icontract.pre(lambda self: not self.toggled)
+            def some_prop(self) -> None:
+                pass
+
+        class SomeClass(SomeBase):
+            def __repr__(self):
+                return self.__class__.__name__
+
+            @SomeBase.some_prop.deleter  # pylint: disable=no-member
+            def some_prop(self) -> None:
+                pass
+
+        some_inst = SomeClass()
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            del some_inst.some_prop
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('not self.toggled:\n'
+                         'self was SomeClass\n'
+                         'self.toggled was True', str(icontract_violation_error))
+
+
 class TestPostconditionInheritance(unittest.TestCase):
     def test_inherited_without_implementation(self):
         class A(icontract.DBC):
@@ -1789,6 +1918,175 @@ class TestPostconditionInheritance(unittest.TestCase):
 
         _ = str(inst)
         self.assertEqual(3, Increment.count)  # Invariant needs to be checked before and after __str__.
+
+
+class TestPostconditionInheritanceProperty(unittest.TestCase):
+    def test_getter_setter_deleter_valid(self):
+        class SomeBase(icontract.DBC):
+            def __init__(self) -> None:
+                self.deleted = False
+                self._some_prop = 1
+
+            @property
+            @icontract.post(lambda self, result: self._some_prop == result)
+            def some_prop(self) -> int:
+                return self._some_prop
+
+            @some_prop.setter
+            @icontract.post(lambda self, value: self.some_prop == value)
+            def some_prop(self, value: int) -> None:
+                self._some_prop = value
+
+            @some_prop.deleter
+            @icontract.post(lambda self: self.deleted)
+            def some_prop(self) -> None:
+                self.deleted = True
+
+        class SomeClass(SomeBase):
+            pass
+
+        some_inst = SomeClass()
+        some_inst.some_prop = 3
+        self.assertEqual(3, some_inst.some_prop)
+
+        del some_inst.some_prop
+        self.assertTrue(some_inst.deleted)
+
+    def test_getter(self):
+        class SomeBase(icontract.DBC):
+            def __init__(self) -> None:
+                self.toggled = True
+
+            @property
+            @icontract.post(lambda self: not self.toggled)
+            def some_prop(self) -> int:
+                return 0
+
+        class SomeClass(SomeBase):
+            @property
+            def some_prop(self) -> int:
+                return 0
+
+            def __repr__(self):
+                return self.__class__.__name__
+
+        some_inst = SomeClass()
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            _ = some_inst.some_prop
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('not self.toggled:\n'
+                         'self was SomeClass\n'
+                         'self.toggled was True', str(icontract_violation_error))
+
+    def test_setter(self):
+        class SomeBase(icontract.DBC):
+            def __init__(self) -> None:
+                self.toggled = True
+
+            @property
+            def some_prop(self) -> int:
+                return 0
+
+            @some_prop.setter
+            @icontract.post(lambda self: not self.toggled)
+            def some_prop(self, value: int) -> None:
+                pass
+
+        class SomeClass(SomeBase):
+            @SomeBase.some_prop.setter  # pylint: disable=no-member
+            def some_prop(self, value: int) -> None:
+                pass
+
+            def __repr__(self):
+                return self.__class__.__name__
+
+        some_inst = SomeClass()
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            some_inst.some_prop = 0
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('not self.toggled:\n'
+                         'self was SomeClass\n'
+                         'self.toggled was True', str(icontract_violation_error))
+
+    def test_deleter(self):
+        class SomeBase(icontract.DBC):
+            def __init__(self):
+                self.toggled = True
+
+            @property
+            def some_prop(self) -> int:
+                return 0
+
+            @some_prop.deleter
+            @icontract.post(lambda self: not self.toggled)
+            def some_prop(self) -> None:
+                pass
+
+        class SomeClass(SomeBase):
+            def __repr__(self):
+                return self.__class__.__name__
+
+            @SomeBase.some_prop.deleter  # pylint: disable=no-member
+            def some_prop(self) -> None:
+                pass
+
+        some_inst = SomeClass()
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            del some_inst.some_prop
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('not self.toggled:\n'
+                         'self was SomeClass\n'
+                         'self.toggled was True', str(icontract_violation_error))
+
+    def test_strengthened(self):
+        class SomeBase(icontract.DBC):
+            def __init__(self) -> None:
+                self.toggled = True
+
+            @property
+            def some_prop(self) -> int:
+                return 0
+
+            @some_prop.setter
+            def some_prop(self, value: int) -> None:
+                pass
+
+        class SomeClass(SomeBase):
+            @SomeBase.some_prop.setter  # pylint: disable=no-member
+            @icontract.post(lambda self: not self.toggled)
+            def some_prop(self, value: int) -> None:
+                pass
+
+            def __repr__(self):
+                return self.__class__.__name__
+
+        some_inst = SomeClass()
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            some_inst.some_prop = 0
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('not self.toggled:\n'
+                         'self was SomeClass\n'
+                         'self.toggled was True', str(icontract_violation_error))
 
 
 class TestInvariantInheritance(unittest.TestCase):
