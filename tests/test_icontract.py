@@ -1583,6 +1583,29 @@ class TestPreconditionInheritance(unittest.TestCase):
         self.assertIsNotNone(violation_err)
         self.assertEqual("x > 0: x was -1", str(violation_err))
 
+    def test_cant_weaken_base_function_without_preconditions(self):
+        class A(icontract.DBC):
+            def func(self, x: int) -> int:
+                pass
+
+        type_error = None  # type: Optional[TypeError]
+        try:
+
+            class B(A):  # pylint: disable=unused-variable
+                @icontract.pre(lambda x: x < 0)
+                def func(self, x: int) -> int:
+                    return 1000
+        except TypeError as err:
+            type_error = err
+
+        self.assertIsNotNone(type_error)
+        self.assertEqual(
+            "The function "
+            "TestPreconditionInheritance.test_cant_weaken_base_function_without_preconditions.<locals>.B.func can not "
+            "weaken the preconditions because the bases specify no preconditions at all. Hence this function must "
+            "accept all possible input since the preconditions are OR'ed and no precondition implies a dummy "
+            "precondition which is always fulfilled.", str(type_error))
+
 
 class TestPostconditionInheritance(unittest.TestCase):
     def test_inherited_without_implementation(self):
