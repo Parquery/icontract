@@ -487,10 +487,15 @@ def _decorate_with_invariants(func: Callable[..., Any], is_init: bool) -> Callab
     """
     Decorate the function ``func`` of the class ``cls`` with invariant checks.
 
+    If the function has been already decorated with invariant checks, the function returns immediately.
+
     :param func: function to be wrapped
     :param is_init: True if the ``func`` is __init__
     :return: function wrapped with invariant checks
     """
+    if _already_decorated_with_invariants(func=func):
+        return func
+
     sign = inspect.signature(func)
     param_names = list(sign.parameters.keys())
 
@@ -537,54 +542,76 @@ class _DummyClass:
 _SLOT_WRAPPER_TYPE = type(_DummyClass.__init__)
 
 
+def _already_decorated_with_invariants(func: Callable[..., Any]) -> bool:
+    """Check if the function has been already decorated with an invariant check by going through its decorator stack."""
+    already_decorated = False
+    for a_decorator in _unwind_decorator_stack(func=func):
+        if getattr(a_decorator, "__is_invariant_check__", False):
+            already_decorated = True
+            break
+
+    return already_decorated
+
+
 def _add_invariant_checks(cls: Type) -> None:
     """Decorate each of the class functions with invariant checks if not already decorated."""
+    # Candidates for the decoration as list of (name, dir() value)
+    init_name_func = None  # type: Optional[Tuple[str, Callable[..., None]]]
+    names_funcs = []  # type: List[Tuple[str, Callable[..., None]]]
+    names_properties = []  # type: List[Tuple[str, property]]
+
+    # Filter out entries in the directory which are certainly not candidates for decoration.
     for name, value in [(name, getattr(cls, name)) for name in dir(cls)]:
-        if not inspect.isfunction(value) and not isinstance(value, _SLOT_WRAPPER_TYPE):
-            continue
-
-        # Ignore class methods
-        if getattr(value, "__self__", None) is cls:
-            continue
-
-        # These methods change the state of the class and are thus not really considered "public".
-
         # We need to ignore __repr__ to prevent endless loops when generating error messages.
         # __getattribute__ and __setattr__ are too invasive and alter the state of the instance. Hence we don't consider
         # them "public".
         if name in ["__repr__", "__getattribute__", "__setattr__"]:
             continue
 
-        func = value
+        if name == "__init__":
+            assert inspect.isfunction(value) or isinstance(value, _SLOT_WRAPPER_TYPE), \
+                "Expected __init__ to be either a function or a slot wrapper, but got: {}".format(type(value))
 
-        already_decorated = False
-        for a_decorator in _unwind_decorator_stack(func=func):
-            if getattr(a_decorator, "__is_invariant_check__", False):
-                already_decorated = True
-                break
-
-        if already_decorated:
+            init_name_func = (name, value)
             continue
 
-        if name == "__init__":
-            wrapper = _decorate_with_invariants(func=func, is_init=True)
-            setattr(cls, name, wrapper)
+        if not inspect.isfunction(value) and not isinstance(value, _SLOT_WRAPPER_TYPE) and \
+                not isinstance(value, property):
+            continue
 
-        elif not name.startswith("_") or (name.startswith("__") and name.endswith("__")):
-            wrapper = _decorate_with_invariants(func=func, is_init=False)
-            setattr(cls, name, wrapper)
+        # Ignore class methods
+        if getattr(value, "__self__", None) is cls:
+            continue
 
-        elif name.startswith("_"):
-            # It is a private or a protected method or function, do not enforce any pre and postconditions.
-            pass
+        # Ignore "protected"/"private" methods
+        if name.startswith("_") and not (name.startswith("__") and name.endswith("__")):
+            continue
+
+        if inspect.isfunction(value) or isinstance(value, _SLOT_WRAPPER_TYPE):
+            names_funcs.append((name, value))
+
+        elif isinstance(value, property):
+            names_properties.append((name, value))
 
         else:
-            raise NotImplementedError("Unhandled method or function of class {}: {}".format(cls.__name__, name))
+            raise NotImplementedError("Unhandled directory entry of class {} for {}: {}".format(cls, name, value))
 
+    if init_name_func:
+        name, func = init_name_func
+        wrapper = _decorate_with_invariants(func=func, is_init=True)
+        setattr(cls, name, wrapper)
 
-def _identity_decorator(cls: Type) -> Type:
-    """Do not decorate the class at all."""
-    return cls
+    for name, func in names_funcs:
+        wrapper = _decorate_with_invariants(func=func, is_init=False)
+        setattr(cls, name, wrapper)
+
+    for name, prop in names_properties:
+        fget = _decorate_with_invariants(func=prop.fget, is_init=False) if prop.fget else None
+        fset = _decorate_with_invariants(func=prop.fset, is_init=False) if prop.fset else None
+        fdel = _decorate_with_invariants(func=prop.fdel, is_init=False) if prop.fdel else None
+
+        new_prop = property(fget=fget, fset=fset, fdel=fdel, doc=prop.__doc__)
+        setattr(cls, name, new_prop)
 
 
 class inv:  # pylint: disable=invalid-name
