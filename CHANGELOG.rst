@@ -1,3 +1,8 @@
+1.5.7
+=====
+* Exempted ``__init__`` from inheritance of preconditions and postconditions if defined in the
+  concrete class.
+
 1.5.6
 =====
 * Contracts are observed and inherited with property getters, setters and deleters.
