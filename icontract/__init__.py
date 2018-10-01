@@ -769,25 +769,7 @@ def _decorate_namespace_function(bases: List[Type], namespace: MutableMapping[st
     else:
         raise NotImplementedError("Unexpected value for a function: {}".format(value))
 
-    # Collect the preconditions and postconditions from bases
-    base_preconditions = []  # type: List[List[_Contract]]
-    base_postconditions = []  # type: List[_Contract]
-
-    bases_have_func = False
-    for base in bases:
-        if hasattr(base, key):
-            bases_have_func = True
-
-            # Check if there is a checker function in the base class
-            base_func = getattr(base, key)
-            base_contract_checker = _find_checker(func=base_func)
-
-            # Ignore functions which don't have preconditions or postconditions
-            if base_contract_checker is not None:
-                base_preconditions.extend(base_contract_checker.__preconditions__)  # type: ignore
-                base_postconditions.extend(base_contract_checker.__postconditions__)  # type: ignore
-
-    # Add preconditions and postconditions of the function
+    # Collect preconditions and postconditions of the function
     preconditions = []  # type: List[List[_Contract]]
     postconditions = []  # type: List[_Contract]
 
@@ -796,10 +778,37 @@ def _decorate_namespace_function(bases: List[Type], namespace: MutableMapping[st
         preconditions = contract_checker.__preconditions__  # type: ignore
         postconditions = contract_checker.__postconditions__  # type: ignore
 
-    preconditions = _collapse_preconditions(
-        base_preconditions=base_preconditions, bases_have_func=bases_have_func, preconditions=preconditions, func=func)
+    # Collect the preconditions and postconditions from bases.
+    #
+    # Preconditions and postconditions of __init__ of base classes are deliberately ignored (and not collapsed) since
+    # initialization is an operation specific to the concrete class and does not relate to the class hierarchy.
+    if key not in ['__init__']:
+        base_preconditions = []  # type: List[List[_Contract]]
+        base_postconditions = []  # type: List[_Contract]
 
-    postconditions = _collapse_postconditions(base_postconditions=base_postconditions, postconditions=postconditions)
+        bases_have_func = False
+        for base in bases:
+            if hasattr(base, key):
+                bases_have_func = True
+
+                # Check if there is a checker function in the base class
+                base_func = getattr(base, key)
+                base_contract_checker = _find_checker(func=base_func)
+
+                # Ignore functions which don't have preconditions or postconditions
+                if base_contract_checker is not None:
+                    base_preconditions.extend(base_contract_checker.__preconditions__)  # type: ignore
+                    base_postconditions.extend(base_contract_checker.__postconditions__)  # type: ignore
+
+        # Collapse preconditions and postconditions from the bases with the the function's own ones
+        preconditions = _collapse_preconditions(
+            base_preconditions=base_preconditions,
+            bases_have_func=bases_have_func,
+            preconditions=preconditions,
+            func=func)
+
+        postconditions = _collapse_postconditions(
+            base_postconditions=base_postconditions, postconditions=postconditions)
 
     if preconditions or postconditions:
         if contract_checker is None:
