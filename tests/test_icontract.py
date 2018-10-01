@@ -1606,6 +1606,48 @@ class TestPreconditionInheritance(unittest.TestCase):
             "accept all possible input since the preconditions are OR'ed and no precondition implies a dummy "
             "precondition which is always fulfilled.", str(type_error))
 
+    def test_that_base_preconditions_apply_to_init_if_not_defined(self):
+        class A(icontract.DBC):
+            @icontract.pre(lambda x: x >= 0)
+            def __init__(self, x: int) -> None:
+                pass
+
+        class B(A):
+            pass
+
+        icontract_violation_error = None  # Optional[icontract.ViolationError]
+        try:
+            _ = B(x=-1)
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual("x >= 0: x was -1", str(icontract_violation_error))
+
+    def test_that_base_preconditions_dont_apply_to_init_if_overridden(self):
+        class A(icontract.DBC):
+            @icontract.pre(lambda x: x >= 0)
+            def __init__(self, x: int) -> None:
+                pass
+
+        class B(A):
+            # pylint: disable=super-init-not-called
+            @icontract.pre(lambda x: x < 0)
+            def __init__(self, x: int) -> None:
+                pass
+
+        # Preconditions of B need to be satisfied, but not from A
+        _ = B(x=-100)
+
+        icontract_violation_error = None  # Optional[icontract.ViolationError]
+        try:
+            _ = B(x=0)
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual("x < 0: x was 0", str(icontract_violation_error))
+
 
 class TestPreconditionInheritanceProperty(unittest.TestCase):
     def test_getter_setter_deleter_valid(self):
@@ -1918,6 +1960,54 @@ class TestPostconditionInheritance(unittest.TestCase):
 
         _ = str(inst)
         self.assertEqual(3, Increment.count)  # Invariant needs to be checked before and after __str__.
+
+    def test_that_base_postconditions_apply_to_init_if_not_defined(self):
+        class A(icontract.DBC):
+            @icontract.post(lambda self: self.x >= 0)
+            def __init__(self, x: int) -> None:
+                self.x = x
+
+            def __repr__(self) -> str:
+                return self.__class__.__name__
+
+        class B(A):
+            pass
+
+        icontract_violation_error = None  # Optional[icontract.ViolationError]
+        try:
+            _ = B(x=-1)
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('self.x >= 0:\n' 'self was B\n' 'self.x was -1', str(icontract_violation_error))
+
+    def test_that_base_postconditions_dont_apply_to_init_if_overridden(self):
+        class A(icontract.DBC):
+            @icontract.post(lambda self: self.x >= 0)
+            def __init__(self, x: int) -> None:
+                self.x = x
+
+        class B(A):
+            # pylint: disable=super-init-not-called
+            @icontract.post(lambda self: self.x < 0)
+            def __init__(self, x: int) -> None:
+                self.x = x
+
+            def __repr__(self) -> str:
+                return self.__class__.__name__
+
+        # postconditions of B need to be satisfied, but not from A
+        _ = B(x=-100)
+
+        icontract_violation_error = None  # Optional[icontract.ViolationError]
+        try:
+            _ = B(x=0)
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual('self.x < 0:\n' 'self was B\n' 'self.x was 0', str(icontract_violation_error))
 
 
 class TestPostconditionInheritanceProperty(unittest.TestCase):
