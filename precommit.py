@@ -28,23 +28,23 @@ def main() -> int:
     if overwrite:
         subprocess.check_call(
             [
-                "yapf", "--in-place", "--style=style.yapf", "--recursive", "tests", "icontract", "setup.py",
+                "yapf", "--in-place", "--style=style.yapf", "--recursive", "tests", "icontract2", "setup.py",
                 "precommit.py"
             ],
             cwd=repo_root.as_posix())
     else:
         subprocess.check_call(
-            ["yapf", "--diff", "--style=style.yapf", "--recursive", "tests", "icontract", "setup.py", "precommit.py"],
+            ["yapf", "--diff", "--style=style.yapf", "--recursive", "tests", "icontract2", "setup.py", "precommit.py"],
             cwd=repo_root.as_posix())
 
     print("Mypy'ing...")
-    subprocess.check_call(["mypy", "icontract", "tests"], cwd=repo_root.as_posix())
+    subprocess.check_call(["mypy", "icontract2", "tests"], cwd=repo_root.as_posix())
 
     print("Pylint'ing...")
-    subprocess.check_call(["pylint", "--rcfile=pylint.rc", "tests", "icontract"], cwd=repo_root.as_posix())
+    subprocess.check_call(["pylint", "--rcfile=pylint.rc", "tests", "icontract2"], cwd=repo_root.as_posix())
 
     print("Pydocstyle'ing...")
-    subprocess.check_call(["pydocstyle", "icontract"], cwd=repo_root.as_posix())
+    subprocess.check_call(["pydocstyle", "icontract2"], cwd=repo_root.as_posix())
 
     print("Testing...")
     env = os.environ.copy()
@@ -53,8 +53,8 @@ def main() -> int:
     # yapf: disable
     subprocess.check_call(
         ["coverage", "run",
-         "--source", "icontract",
-         "--omit", "icontract/ast_graph.py",
+         "--source", "icontract2",
+         "--omit", "icontract2/ast_graph.py",
          "-m", "unittest", "discover", "tests"],
         cwd=repo_root.as_posix(),
         env=env)
@@ -64,7 +64,7 @@ def main() -> int:
 
     print("Doctesting...")
     subprocess.check_call(["python3", "-m", "doctest", "README.rst"])
-    for pth in (repo_root / "icontract").glob("**/*.py"):
+    for pth in (repo_root / "icontract2").glob("**/*.py"):
         subprocess.check_call(["python3", "-m", "doctest", pth.as_posix()])
 
     return 0

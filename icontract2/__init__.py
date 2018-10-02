@@ -8,7 +8,7 @@ import reprlib
 from typing import Callable, MutableMapping, Any, Optional, Set, List, Type, Dict, \
     Tuple, Iterable, Mapping, cast  # pylint: disable=unused-import
 
-import icontract.represent
+import icontract2.represent
 
 
 class ViolationError(AssertionError):
@@ -88,7 +88,7 @@ class _Contract:
         self._a_repr = a_repr if a_repr is not None else aRepr
 
 
-def _generate_message(contract: icontract._Contract, condition_kwargs: Mapping[str, Any]) -> str:
+def _generate_message(contract: icontract2._Contract, condition_kwargs: Mapping[str, Any]) -> str:
     """Generate the message upon contract violation."""
     # pylint: disable=protected-access
     parts = []  # type: List[str]
@@ -96,16 +96,16 @@ def _generate_message(contract: icontract._Contract, condition_kwargs: Mapping[s
     if contract.description is not None:
         parts.append("{}: ".format(contract.description))
 
-    lambda_inspection = icontract.represent.inspect_lambda_condition(condition=contract.condition)
+    lambda_inspection = icontract2.represent.inspect_lambda_condition(condition=contract.condition)
 
     parts.append(
-        icontract.represent.condition_as_text(condition=contract.condition, lambda_inspection=lambda_inspection))
+        icontract2.represent.condition_as_text(condition=contract.condition, lambda_inspection=lambda_inspection))
 
     if contract._repr_func:
         parts.append(': ')
         parts.append(contract._repr_func(**condition_kwargs))
     else:
-        repr_vals = icontract.represent.repr_values(
+        repr_vals = icontract2.represent.repr_values(
             condition=contract.condition,
             lambda_inspection=lambda_inspection,
             condition_kwargs=condition_kwargs,
@@ -305,7 +305,7 @@ def _find_checker(func: Callable[..., Any]) -> Optional[Callable[..., Any]]:
     return contract_checker
 
 
-class pre:  # pylint: disable=invalid-name
+class requires:  # pylint: disable=invalid-name
     """
     Decorate a function with a precondition.
 
@@ -394,7 +394,7 @@ class pre:  # pylint: disable=invalid-name
         return result
 
 
-class post:  # pylint: disable=invalid-name
+class ensures:  # pylint: disable=invalid-name
     """
     Decorate a function with a postcondition.
 
@@ -617,7 +617,7 @@ def _add_invariant_checks(cls: Type) -> None:
         setattr(cls, name, new_prop)
 
 
-class inv:  # pylint: disable=invalid-name
+class invariant:  # pylint: disable=invalid-name
     """
     Represent a class decorator to establish the invariant on all the public methods.
 
@@ -651,7 +651,7 @@ class inv:  # pylint: disable=invalid-name
                 representation instance that defines how the values are represented.
 
                 If ``repr_args`` is specified, ``repr_instance`` should be None.
-                If no ``repr_args`` is specified, the default ``icontract.aRepr`` is used.
+                If no ``repr_args`` is specified, the default ``icontract2.aRepr`` is used.
         :param enabled:
                 The decorator is applied only if this argument is set.
 

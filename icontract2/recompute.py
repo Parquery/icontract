@@ -382,7 +382,7 @@ class Visitor(ast.NodeVisitor):
         raise NotImplementedError(
             "Recomputation of in-line lambda functions is not supported since it is quite tricky to implement and "
             "we decided to implement it only once there is a real need for it. "
-            "Please make a feature request on https://github.com/Parquery/icontract")
+            "Please make a feature request on https://github.com/Parquery/icontract2")
 
     def visit_Return(self, node: ast.Return) -> Any:  # pylint: disable=no-self-use
         """Raise an exception that this node is unexpected."""

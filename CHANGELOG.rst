@@ -1,3 +1,5 @@
+TODO: add version 2
+
 1.5.7
 =====
 * Exempted ``__init__`` from inheritance of preconditions and postconditions if defined in the
