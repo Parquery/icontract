@@ -155,7 +155,7 @@ class TestReprValues(unittest.TestCase):
         self.assertEqual('not -x + 10 > 3: x was 1', str(icontract_violation_error))
 
     def test_binary_op(self):
-        @icontract2.requires(lambda x: -x + x - x * x / x // x ** x % x > 3)
+        @icontract2.requires(lambda x: -x + x - x * x / x // x**x % x > 3)
         def func(x: int) -> int:
             return x
 
@@ -250,7 +250,7 @@ class TestReprValues(unittest.TestCase):
     def test_if_exp_body(self):
         y = 5
 
-        @icontract2.requires(lambda x: x < (x ** 2 if y == 5 else x ** 3))
+        @icontract2.requires(lambda x: x < (x**2 if y == 5 else x**3))
         def func(x: int) -> int:
             return x
 
@@ -266,7 +266,7 @@ class TestReprValues(unittest.TestCase):
     def test_if_exp_orelse(self):
         y = 5
 
-        @icontract2.requires(lambda x: x < (x ** 2 if y != 5 else x ** 3))
+        @icontract2.requires(lambda x: x < (x**2 if y != 5 else x**3))
         def func(x: int) -> int:
             return x
 
@@ -431,7 +431,7 @@ class TestReprValues(unittest.TestCase):
                          '{item < x for item in lst if item % x == 0} was {False}', str(icontract_violation_error))
 
     def test_dict_comprehension(self):
-        @icontract2.requires(lambda x: len({i: i ** 2 for i in range(x)}) == 0)
+        @icontract2.requires(lambda x: len({i: i**2 for i in range(x)}) == 0)
         def func(x: int) -> int:
             return x
 
