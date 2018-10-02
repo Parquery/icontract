@@ -1,1 +1,1 @@
-"""Test icontract."""
+"""Test icontract2."""
