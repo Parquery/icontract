@@ -1,7 +1,10 @@
 """Handle representations necessary for informative error messages."""
 import ast
 import inspect
+import re
 import reprlib
+import textwrap
+import uuid
 from typing import Any, Mapping, MutableMapping, Callable, List, Dict, Iterable  # pylint: disable=unused-import
 from typing import Optional, Tuple  # pylint: disable=unused-import
 
@@ -155,6 +158,10 @@ class LambdaInspection:
         self.text = atok.get_text(node.body)
 
 
+_DECORATOR_RE = re.compile(r'^\s*@[a-zA-Z_]')
+_DEF_CLASS_RE = re.compile(r'^\s*(def |class )')
+
+
 def inspect_lambda_condition(condition: Callable[..., bool]) -> Optional[LambdaInspection]:
     """
     Parse the file in which condition resides and figure out the corresponding lambda AST node.
@@ -165,37 +172,63 @@ def inspect_lambda_condition(condition: Callable[..., bool]) -> Optional[LambdaI
     if not _is_lambda(condition=condition):
         return None
 
-    # Parse the whole file and find the AST node of the condition lambda.
-    # This is necessary, since condition.__code__ gives us only a line number which is too vague to find
-    # the lambda node.
+    # We need to extract the source code corresponding to the decorator since inspect.getsource() is broken with
+    # lambdas.
+
+    # Find the line corresponding to the condition lambda
     lines, condition_lineno = inspect.findsource(condition)
 
-    atok = asttokens.ASTTokens("".join(lines), parse=True)
-
-    parent_of = dict()  # type: Dict[ast.AST, Optional[ast.AST]]
-    for node, parent in _walk_with_parent(atok.tree):
-        parent_of[node] = parent
-
-    # node of the decorator
-    call_node = None  # type: Optional[ast.Call]
-
-    for node in ast.walk(atok.tree):
-        if isinstance(node, ast.Lambda) and node.lineno - 1 == condition_lineno:
-            # Go up all the way to the decorator
-            ancestor = parent_of[node]
-            assert ancestor is not None, "Expected a parent of the condition's lambda AST node, but got None"
-
-            while ancestor is not None and not isinstance(ancestor, ast.Call):
-                ancestor = parent_of[ancestor]
-
-            assert ancestor is not None, \
-                "Expected to find a Call AST node above the the condition's lambda AST node, but found none"
-
-            assert isinstance(ancestor, ast.Call)
-            call_node = ancestor
+    # Assume that the lambda condition lives in a decorator. Go up till a line starts with a decorator
+    decorator_lineno = None  # type: Optional[int]
+    for i in range(condition_lineno, -1, -1):
+        if _DECORATOR_RE.match(lines[i]):
+            decorator_lineno = i
             break
 
-    assert call_node is not None, "Expected call_node to be set in the previous execution."
+    if decorator_lineno is None:
+        raise SyntaxError(
+            "Decorator corresponding to the lambda condition on line {} could not be found in file {}: {!r}".format(
+                condition_lineno + 1, inspect.getsourcefile(condition), lines[condition_lineno]))
+
+    # Find the decorator end -- it's either a function definition, a class definition or another decorator
+    decorator_end_lineno = None  # type: Optional[int]
+    for i in range(condition_lineno + 1, len(lines)):
+        line = lines[i]
+
+        if _DECORATOR_RE.match(line) or _DEF_CLASS_RE.match(line):
+            decorator_end_lineno = i
+            break
+
+    if decorator_end_lineno is None:
+        raise SyntaxError(
+            ("The next statement following the decorator corresponding to the lambda condition on line {} "
+             "could not be found in file {}: {!r}").format(condition_lineno + 1, inspect.getsourcefile(condition),
+                                                           lines[condition_lineno]))
+
+    decorator_lines = lines[decorator_lineno:decorator_end_lineno]
+
+    # We need to dedent the decorator and add a dummy decoratee so that we can parse its text as valid source code.
+    decorator_text = textwrap.dedent("".join(decorator_lines)) + "def dummy_{}(): pass".format(uuid.uuid4().hex)
+
+    atok = asttokens.ASTTokens(decorator_text, parse=True)
+
+    assert isinstance(atok.tree, ast.Module), "Expected the parsed decorator text to live in an AST module."
+
+    module_node = atok.tree
+    assert len(module_node.body) == 1, "Expected the module AST of the decorator text to have a single statement."
+    assert isinstance(module_node.body[0], ast.FunctionDef), \
+        "Expected the only statement in the AST module corresponding to the decorator text to be a function definition."
+
+    func_def_node = module_node.body[0]
+
+    assert len(func_def_node.decorator_list) == 1, \
+        "Expected the function AST node corresponding to the decorator text to have a single decorator."
+
+    assert isinstance(func_def_node.decorator_list[0], ast.Call), \
+        "Expected the only decorator in the function definition AST node corresponding to the decorator text " \
+        "to be a call node."
+
+    call_node = func_def_node.decorator_list[0]
 
     lambda_node = None  # type: Optional[ast.Lambda]
 
@@ -243,7 +276,6 @@ def repr_values(condition: Callable[..., bool], lambda_inspection: Optional[Lamb
     else:
         assert lambda_inspection is None, "Expected no lambda inspection in a condition given as a non-lambda function"
 
-    # pylint: disable=too-many-locals
     reprs = dict()  # type: MutableMapping[str, Any]
 
     if lambda_inspection is not None:

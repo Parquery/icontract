@@ -227,8 +227,7 @@ class TestReprValues(unittest.TestCase):
 
         self.assertIsNotNone(icontract_violation_error)
         self.assertEqual('0 < x < 3 and x > 10 and x != 7 and x >= 10 and x <= 11 and x is not None and\n'
-                         '                      x in [1, 2, 3] and x not in [1, 2, 3]: x was 1',
-                         str(icontract_violation_error))
+                         '              x in [1, 2, 3] and x not in [1, 2, 3]: x was 1', str(icontract_violation_error))
 
     def test_call(self):
         def y() -> int:
@@ -386,14 +385,14 @@ class TestReprValues(unittest.TestCase):
             icontract_violation_error = err
 
         self.assertIsNotNone(icontract_violation_error)
-        self.assertEqual(
-            'all(item == x or another_item == x\n'
-            '                          for item in lst if item % 2 == 0\n'
-            '                          for another_item in another_lst if another_item % 3 == 0): '
-            'all(item == x or another_item == x\n'
-            '                          for item in lst if item % 2 == 0\n'
-            '                          for another_item in another_lst if another_item % 3 == 0) was False',
-            str(icontract_violation_error))
+
+        self.assertEqual('all(item == x or another_item == x\n'
+                         '                  for item in lst if item % 2 == 0\n'
+                         '                  for another_item in another_lst if another_item % 3 == 0): '
+                         'all(item == x or another_item == x\n'
+                         '                  for item in lst if item % 2 == 0\n'
+                         '                  for another_item in another_lst if another_item % 3 == 0) was False',
+                         str(icontract_violation_error))
 
     def test_list_comprehension(self):
         lst = [1, 2, 3]
@@ -504,7 +503,7 @@ class TestConditionAsText(unittest.TestCase):
             violation_err = err
 
         self.assertIsNotNone(violation_err)
-        self.assertEqual('x\n            >\n            3: x was 0', str(violation_err))
+        self.assertEqual('x\n    >\n    3: x was 0', str(violation_err))
 
     def test_with_repr_args_and_multiple_conditions(self):
         # pylint: disable=unnecessary-lambda
@@ -526,6 +525,15 @@ class TestConditionAsText(unittest.TestCase):
 
         self.assertIsNotNone(violation_err)
         self.assertEqual("x < 100: x was 101", str(violation_err))
+
+        violation_err = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(x=-1)
+        except icontract.ViolationError as err:
+            violation_err = err
+
+        self.assertIsNotNone(violation_err)
+        self.assertEqual("x > 0: x was -1", str(violation_err))
 
 
 if __name__ == '__main__':
