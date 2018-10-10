@@ -1,3 +1,8 @@
+1.5.8
+=====
+* ``recompute`` propagates to children of generator expressions and comprehensions
+* Optimized parsing of condition lambdas by considering only lines local to the decorator
+
 1.5.7
 =====
 * Exempted ``__init__`` from inheritance of preconditions and postconditions if defined in the
