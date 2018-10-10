@@ -10,7 +10,6 @@ from typing import Optional, Tuple  # pylint: disable=unused-import
 
 import asttokens
 
-import icontract.ast_graph
 import icontract.recompute
 
 
