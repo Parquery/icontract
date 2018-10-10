@@ -361,18 +361,17 @@ class TestReprValues(unittest.TestCase):
             icontract_violation_error = err
 
         self.assertIsNotNone(icontract_violation_error)
-        self.assertEqual('all(single_res[1].is_absolute() for single_res in result): all(single_res[1].is_absolute() '
-                         'for single_res in result) was False', str(icontract_violation_error))
+        self.assertEqual("all(single_res[1].is_absolute() for single_res in result):\n"
+                         "all(single_res[1].is_absolute() for single_res in result) was False\n"
+                         "result was [(PosixPath('/home/file1'), PosixPath('home/file2'))]",
+                         str(icontract_violation_error))
 
     def test_generator_expression_multiple_for(self):
-        lst = [1, 2, 3]
-        another_lst = [4, 5, 6]
+        lst = [[1, 2], [3]]
 
         # yapf: disable
         @icontract.pre(
-            lambda x: all(item == x or another_item == x
-                          for item in lst if item % 2 == 0
-                          for another_item in another_lst if another_item % 3 == 0)
+            lambda x: all(item == x for sublst in lst for item in sublst)
         )
         # yapf: enable
         def func(x: int) -> int:
@@ -386,13 +385,9 @@ class TestReprValues(unittest.TestCase):
 
         self.assertIsNotNone(icontract_violation_error)
 
-        self.assertEqual('all(item == x or another_item == x\n'
-                         '                  for item in lst if item % 2 == 0\n'
-                         '                  for another_item in another_lst if another_item % 3 == 0): '
-                         'all(item == x or another_item == x\n'
-                         '                  for item in lst if item % 2 == 0\n'
-                         '                  for another_item in another_lst if another_item % 3 == 0) was False',
-                         str(icontract_violation_error))
+        self.assertEqual('all(item == x for sublst in lst for item in sublst):\n'
+                         'all(item == x for sublst in lst for item in sublst) was False\n'
+                         'lst was [[1, 2], [3]]', str(icontract_violation_error))
 
     def test_list_comprehension(self):
         lst = [1, 2, 3]
@@ -408,8 +403,9 @@ class TestReprValues(unittest.TestCase):
             icontract_violation_error = err
 
         self.assertIsNotNone(icontract_violation_error)
-        self.assertEqual('[item < x for item in lst if item % x == 0] == []: '
-                         '[item < x for item in lst if item % x == 0] was [False]', str(icontract_violation_error))
+        self.assertEqual('[item < x for item in lst if item % x == 0] == []:\n'
+                         '[item < x for item in lst if item % x == 0] was [False]\n'
+                         'lst was [1, 2, 3]', str(icontract_violation_error))
 
     def test_set_comprehension(self):
         lst = [1, 2, 3]
@@ -427,6 +423,7 @@ class TestReprValues(unittest.TestCase):
         self.assertIsNotNone(icontract_violation_error)
         self.assertEqual('len({item < x for item in lst if item % x == 0}) == 0:\n'
                          'len({item < x for item in lst if item % x == 0}) was 1\n'
+                         'lst was [1, 2, 3]\n'
                          '{item < x for item in lst if item % x == 0} was {False}', str(icontract_violation_error))
 
     def test_dict_comprehension(self):
@@ -443,6 +440,8 @@ class TestReprValues(unittest.TestCase):
         self.assertIsNotNone(icontract_violation_error)
         self.assertEqual('len({i: i**2 for i in range(x)}) == 0:\n'
                          'len({i: i**2 for i in range(x)}) was 2\n'
+                         'range(x) was range(0, 2)\n'
+                         'x was 2\n'
                          '{i: i**2 for i in range(x)} was {0: 0, 1: 1}', str(icontract_violation_error))
 
 
