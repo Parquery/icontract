@@ -8,7 +8,7 @@ import reprlib
 from typing import Callable, MutableMapping, Any, Optional, Set, List, Type, Dict, \
     Tuple, Iterable, Mapping, cast  # pylint: disable=unused-import
 
-import icontract.represent
+import icontract._represent
 
 
 class ViolationError(AssertionError):
@@ -96,16 +96,16 @@ def _generate_message(contract: icontract._Contract, condition_kwargs: Mapping[s
     if contract.description is not None:
         parts.append("{}: ".format(contract.description))
 
-    lambda_inspection = icontract.represent.inspect_lambda_condition(condition=contract.condition)
+    lambda_inspection = icontract._represent.inspect_lambda_condition(condition=contract.condition)
 
     parts.append(
-        icontract.represent.condition_as_text(condition=contract.condition, lambda_inspection=lambda_inspection))
+        icontract._represent.condition_as_text(condition=contract.condition, lambda_inspection=lambda_inspection))
 
     if contract._repr_func:
         parts.append(': ')
         parts.append(contract._repr_func(**condition_kwargs))
     else:
-        repr_vals = icontract.represent.repr_values(
+        repr_vals = icontract._represent.repr_values(
             condition=contract.condition,
             lambda_inspection=lambda_inspection,
             condition_kwargs=condition_kwargs,
