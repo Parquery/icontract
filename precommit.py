@@ -54,7 +54,6 @@ def main() -> int:
     subprocess.check_call(
         ["coverage", "run",
          "--source", "icontract",
-         "--omit", "icontract/ast_graph.py",
          "-m", "unittest", "discover", "tests"],
         cwd=repo_root.as_posix(),
         env=env)
