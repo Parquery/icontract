@@ -1,3 +1,8 @@
+1.5.9
+=====
+* Removed ``ast_graph`` module which was only used for debugging
+* Prefixed internal modules with an underscore (``_represent`` and ``_recompute``)
+
 1.5.8
 =====
 * ``recompute`` propagates to children of generator expressions and comprehensions
