@@ -6,6 +6,17 @@ import functools
 from typing import Any, Mapping, Dict, List, Optional, Union, Tuple, Set, Callable  # pylint: disable=unused-import
 
 
+class Placeholder:
+    """Represent a placeholder for variables local to the lambda such as targets in generator expressions."""
+
+    def __repr__(self) -> str:
+        """Represent the placeholder as <Placeholder>."""
+        return "<Placeholder>"
+
+
+PLACEHOLDER = Placeholder()
+
+
 class Visitor(ast.NodeVisitor):
     """
     Traverse the abstract syntax tree and recompute the values of each node defined by the function frame.
@@ -111,7 +122,9 @@ class Visitor(ast.NodeVisitor):
             result = getattr(builtins, node.id)
 
         if result is None and node.id != "None":
-            raise ValueError("Name not found in the variable lookup: {}".format(node.id))
+            # The variable refers to a name local of the lambda (e.g., a target in the generator expression).
+            # Since we evaluate generator expressions with runtime compilation, None is returned here as a placeholder.
+            return PLACEHOLDER
 
         self.recomputed_values[node] = result
         return result
@@ -353,12 +366,18 @@ class Visitor(ast.NodeVisitor):
         """Compile the generator expression as a function and call it."""
         result = self._execute_comprehension(node=node)
 
+        for generator in node.generators:
+            self.visit(generator.iter)
+
         # Do not set the computed value of the node since its representation would be non-informative.
         return result
 
     def visit_ListComp(self, node: ast.ListComp) -> Any:
         """Compile the list comprehension as a function and call it."""
         result = self._execute_comprehension(node=node)
+
+        for generator in node.generators:
+            self.visit(generator.iter)
 
         self.recomputed_values[node] = result
         return result
@@ -367,12 +386,18 @@ class Visitor(ast.NodeVisitor):
         """Compile the set comprehension as a function and call it."""
         result = self._execute_comprehension(node=node)
 
+        for generator in node.generators:
+            self.visit(generator.iter)
+
         self.recomputed_values[node] = result
         return result
 
     def visit_DictComp(self, node: ast.DictComp) -> Any:
         """Compile the dictionary comprehension as a function and call it."""
         result = self._execute_comprehension(node=node)
+
+        for generator in node.generators:
+            self.visit(generator.iter)
 
         self.recomputed_values[node] = result
         return result
