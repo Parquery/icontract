@@ -10,7 +10,7 @@ from typing import Optional, Tuple  # pylint: disable=unused-import
 
 import asttokens
 
-import icontract.recompute
+import icontract._recompute
 
 
 def _representable(value: Any) -> bool:
@@ -304,7 +304,8 @@ def repr_values(condition: Callable[..., bool], lambda_inspection: Optional[Lamb
         if condition.__globals__ is not None:  # type: ignore
             variable_lookup.append(condition.__globals__)  # type: ignore
 
-        recompute_visitor = icontract.recompute.Visitor(variable_lookup=variable_lookup)
+        # pylint: disable=protected-access
+        recompute_visitor = icontract._recompute.Visitor(variable_lookup=variable_lookup)
 
         recompute_visitor.visit(node=lambda_inspection.node.body)
         recomputed_values = recompute_visitor.recomputed_values

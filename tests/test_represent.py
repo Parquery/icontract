@@ -4,7 +4,7 @@ import pathlib
 import unittest
 from typing import Optional, List, Tuple  # pylint: disable=unused-import
 
-import icontract.represent
+import icontract._represent
 
 
 class TestReprValues(unittest.TestCase):
