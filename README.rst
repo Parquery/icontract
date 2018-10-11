@@ -156,59 +156,6 @@ effects.
     result was 5
     x was 10
 
-Toggling Contracts
-------------------
-By default, the contracts are always checked at run-time. To disable them, run the interpreter in optimized mode (``-O``
-or ``-OO``, see `Python command-line options <https://docs.python.org/3/using/cmdline.html#cmdoption-o>`_).
-
-If you want to override this behavior, you can supply the the ``enabled`` argument to the contract:
-
-.. code-block:: python
-
-    >>> @icontract.pre(lambda x: x > 10, enabled=False)
-    ... def some_func(x: int) -> int:
-    ...     return 123
-    ...
-
-    # The pre-condition is breached, but the check was disabled:
-    >>> some_func(x=0)
-    123
-
-icontract provides a global ``icontract.SLOW`` to provide a unified way to mark a plethora of contracts in large code
-bases. ``icontract.SLOW`` reflects the environment variable ``ICONTRACT_SLOW``.
-
-While you may want to keep most contracts running both during the development and in the production, contracts
-marked with ``icontract.SLOW`` should run only during the development (since they are too sluggish to execute in a real
-application).
-
-If you want to enable contracts marked with ``icontract.SLOW``, set the environment variable ``ICONTRACT_SLOW`` to a
-non-empty string.
-
-Here is some example code:
-
-.. code-block:: python
-
-    # some_module.py
-    @icontract.pre(lambda x: x > 10, enabled=icontract.SLOW)
-        def some_func(x: int) -> int:
-            return 123
-
-    # in test_some_module.py
-    import unittest
-
-    class TestSomething(unittest.TestCase):
-        def test_some_func(self):
-            self.assertEqual(123, some_func(15))
-
-    if __name__ == '__main__':
-        unittest.main()
-
-Run this bash command to execute the unit test with slow contracts:
-
-.. code-block:: bash
-
-    $ ICONTRACT_SLOW=true python test_some_module.py
-
 Invariants
 ----------
 Invariants are special contracts associated with an instance of a class. An invariant should hold *after* initialization
@@ -446,6 +393,59 @@ The following example shows how preconditions are weakened:
         Traceback (most recent call last):
             ...
         icontract.ViolationError: x % 3 == 0: x was 5
+
+Toggling Contracts
+------------------
+By default, the contracts are always checked at run-time. To disable them, run the interpreter in optimized mode (``-O``
+or ``-OO``, see `Python command-line options <https://docs.python.org/3/using/cmdline.html#cmdoption-o>`_).
+
+If you want to override this behavior, you can supply the the ``enabled`` argument to the contract:
+
+.. code-block:: python
+
+    >>> @icontract.pre(lambda x: x > 10, enabled=False)
+    ... def some_func(x: int) -> int:
+    ...     return 123
+    ...
+
+    # The pre-condition is breached, but the check was disabled:
+    >>> some_func(x=0)
+    123
+
+icontract provides a global ``icontract.SLOW`` to provide a unified way to mark a plethora of contracts in large code
+bases. ``icontract.SLOW`` reflects the environment variable ``ICONTRACT_SLOW``.
+
+While you may want to keep most contracts running both during the development and in the production, contracts
+marked with ``icontract.SLOW`` should run only during the development (since they are too sluggish to execute in a real
+application).
+
+If you want to enable contracts marked with ``icontract.SLOW``, set the environment variable ``ICONTRACT_SLOW`` to a
+non-empty string.
+
+Here is some example code:
+
+.. code-block:: python
+
+    # some_module.py
+    @icontract.pre(lambda x: x > 10, enabled=icontract.SLOW)
+        def some_func(x: int) -> int:
+            return 123
+
+    # in test_some_module.py
+    import unittest
+
+    class TestSomething(unittest.TestCase):
+        def test_some_func(self):
+            self.assertEqual(123, some_func(15))
+
+    if __name__ == '__main__':
+        unittest.main()
+
+Run this bash command to execute the unit test with slow contracts:
+
+.. code-block:: bash
+
+    $ ICONTRACT_SLOW=true python test_some_module.py
 
 Implementation Details
 ----------------------
