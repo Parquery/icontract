@@ -1,3 +1,7 @@
+1.6.0
+=====
+* Added ``error`` argument to the contracts
+
 1.5.9
 =====
 * Removed ``ast_graph`` module which was only used for debugging
