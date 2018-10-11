@@ -62,15 +62,12 @@ Whenever a violation occurs, ``ViolationError`` is raised. Its message includes:
 * description (if supplied) and
 * representation of all the values.
 
-You can provide a custom representation function with the argument ``repr_args`` that needs to cover all the input
-arguments (including ``result`` in post-conditions) of the condition function and return a string. If no representation
-function was specified, the input arguments are represented by concatenation of ``__repr__`` on each one of them.
+The representation of the values is obtained by re-executing the condition function programmatically by traversing
+its abstract syntax tree and filling the tree leaves with values held in the function frame. Mind that this re-execution
+will also re-execute all the functions. Therefore you need to make sure that all the function calls involved
+in the condition functions do not have any side effects.
 
-If no custom representation function has been supplied, the representation of the values is obtained by re-executing
-the condition function programmatically by traversing its abstract syntax tree and filling the tree leaves with
-values held in the function frame. Mind that this re-execution will also re-execute all the functions.
-Therefore you need to make sure that all the function calls involved in the condition functions do not have any side
-effects.
+If you want to customize the error, see Section "Custom Errors".
 
 .. code-block:: python
 
@@ -98,17 +95,6 @@ effects.
     Traceback (most recent call last):
       ...
     icontract.ViolationError: x must not be small: x > 3: x was 1
-
-    # Pre-condition violation with a custom representation function
-    >>> @icontract.pre(lambda x: x > 3, repr_args=lambda x: "x was 0x{:x}".format(x))
-    ... def some_func(x: int, y: int = 5) -> None:
-    ...     pass
-    ...
-    >>> some_func(x=1)
-    Traceback (most recent call last):
-      ...
-    icontract.ViolationError: x > 3: x was 0x1
-
 
     # Pre-condition violation with more complex values
     >>> class B:
@@ -446,6 +432,59 @@ Run this bash command to execute the unit test with slow contracts:
 .. code-block:: bash
 
     $ ICONTRACT_SLOW=true python test_some_module.py
+
+.. _custom-errors:
+
+Custom Errors
+-------------
+
+Icontract raises ``ViolationError`` by default. However, you can also instruct icontract to raise a different error
+by supplying ``error`` argument to the decorator.
+
+The ``error`` argument can either be:
+
+* **An exception class.** The exception is constructed with the violation message and finally raised.
+* **A callable that returns an exception.** The callable accepts the subset of arguments of the original function
+  (including ``result`` for postconditions) or ``self`` in case of invariants, respectively, and returns an exception.
+  The arguments to the condition function can freely differ from the arguments to the error function.
+
+  The exception returned by the given callable is finally raised.
+
+  If you specify the ``error`` argument as callable, the values will not be traced and the condition function will not
+  be parsed. Hence, violation of contracts with ``error`` arguments as callables incur a much smaller overhead
+  compared to the contracts with default messages.
+
+Here is an example of the error given as an exception class:
+
+.. code-block:: python
+
+    >>> @icontract.pre(lambda x: x > 0, error=ValueError)
+    ... def some_func(x: int) -> int:
+    ...     return 123
+    ...
+
+    # Custom Exception class
+    >>> some_func(x=0)
+    Traceback (most recent call last):
+        ...
+    ValueError: x > 0: x was 0
+
+Here is an example of the error given as a callable:
+
+.. code-block:: python
+
+    >>> @icontract.pre(lambda x: x > 0, error=lambda x: ValueError('x must be positive, but got: {}'.format(x)))
+    ... def some_func(x: int) -> int:
+    ...     return 123
+    ...
+
+    # Custom Exception class
+    >>> some_func(x=0)
+    Traceback (most recent call last):
+        ...
+    ValueError: x must be positive, but got: 0
+
+
 
 Implementation Details
 ----------------------

@@ -1,4 +1,8 @@
 """Decorate functions with contracts."""
+
+# pylint: disable=too-many-lines
+# pylint: disable=too-many-instance-attributes
+
 import abc
 import functools
 import inspect
@@ -6,7 +10,7 @@ import os
 import platform
 import reprlib
 from typing import Callable, MutableMapping, Any, Optional, Set, List, Type, Dict, \
-    Tuple, Iterable, Mapping, cast  # pylint: disable=unused-import
+    Tuple, Iterable, Mapping, cast, Union  # pylint: disable=unused-import
 
 import icontract._represent
 
@@ -48,13 +52,16 @@ class _Contract:
                  condition: Callable[..., bool],
                  description: Optional[str] = None,
                  repr_args: Optional[Callable[..., str]] = None,
-                 a_repr: Optional[reprlib.Repr] = None) -> None:
+                 a_repr: Optional[reprlib.Repr] = None,
+                 error: Union[Callable[..., Exception], Type] = None) -> None:
         """
         Initialize.
 
         :param condition: condition predicate
         :param description: textual description of the contract
         :param repr_args:
+            [WILL BE DEPRECATED IN ICONTRACT 2]
+
             function to represent arguments in the message on a failed condition. The repr_func needs to take the
             same arguments as the condition function.
 
@@ -64,6 +71,13 @@ class _Contract:
 
             If ``repr_args`` is specified, ``repr_instance`` should be None.
             If no ``repr_args`` is specified, the default ``aRepr`` is used.
+        :param error:
+            if given as a callable, ``error`` is expected to accept a subset of function arguments
+            (*e.g.*, also including ``result`` for perconditions, only ``self`` for invariants *etc.*) and return
+            an exception. The ``error`` is called on contract violation and the resulting exception is raised.
+
+            Otherwise, it is expected to denote an Exception class which is instantiated with the violation message
+            and raised on contract violation.
 
         """
         # pylint: disable=too-many-arguments
@@ -86,6 +100,13 @@ class _Contract:
                     self.condition_args, got))
 
         self._a_repr = a_repr if a_repr is not None else aRepr
+
+        self.error = error
+        self.error_args = None  # type: Optional[List[str]]
+        self.error_arg_set = None  # type: Optional[Set[str]]
+        if error is not None and (inspect.isfunction(error) or inspect.ismethod(error)):
+            self.error_args = list(inspect.signature(error).parameters.keys())
+            self.error_arg_set = set(self.error_args)
 
 
 def _generate_message(contract: icontract._Contract, condition_kwargs: Mapping[str, Any]) -> str:
@@ -127,47 +148,122 @@ def _generate_message(contract: icontract._Contract, condition_kwargs: Mapping[s
     return msg
 
 
+def _kwargs_from_call(arg_subset: Set[str], param_names: List[str], kwdefaults: Dict[str, Any], args: Tuple[Any, ...],
+                      kwargs: Dict[str, Any]) -> MutableMapping[str, Any]:
+    """
+    Inspect the input values received at the wrapper for the actual function call and and take their subset.
+
+    The subset of arguments is given by the argument names in ``arg_set``.
+    """
+    # pylint: disable=too-many-arguments
+    mapping = dict()  # type: MutableMapping[str, Any]
+
+    # Set the default argument values as condition parameters.
+    for param_name, param_value in kwdefaults.items():
+        if param_name in arg_subset:
+            mapping[param_name] = param_value
+
+    # Override the defaults with the values actually suplied to the function.
+    for i, func_arg in enumerate(args):
+        if param_names[i] in arg_subset:
+            mapping[param_names[i]] = func_arg
+
+    for key, val in kwargs.items():
+        if key in arg_subset:
+            mapping[key] = val
+
+    return mapping
+
+
+def _kwargs_post_call(arg_subset: Set[str], param_names: List[str], kwdefaults: Dict[str, Any], args: Tuple[Any, ...],
+                      kwargs: Dict[str, Any], result: Any) -> MutableMapping[str, Any]:
+    """
+    Inspect the values after the function call (include special ``result``) and and take their subset.
+
+    The subset of arguments is given by the argument names in ``arg_set``.
+    """
+    # pylint: disable=too-many-arguments
+    mapping = _kwargs_from_call(
+        arg_subset=arg_subset, param_names=param_names, kwdefaults=kwdefaults, args=args, kwargs=kwargs)
+
+    # Add the special ``result`` argument
+    if 'result' in arg_subset:
+        mapping['result'] = result
+
+    return mapping
+
+
 def _assert_precondition(contract: _Contract, param_names: List[str], kwdefaults: Dict[str, Any], args: Tuple[Any, ...],
                          kwargs: Dict[str, Any]) -> None:
     """Assert that the contract holds as a precondition."""
     # pylint: disable=too-many-arguments
     # pylint: disable=too-many-locals
-    condition_kwargs = dict()  # type: MutableMapping[str, Any]
-
-    # Set the default argument values as condition parameters.
-    for param_name, param_value in kwdefaults.items():
-        if param_name in contract.condition_arg_set:
-            condition_kwargs[param_name] = param_value
-
-    # Override the defaults with the values actually suplied to the function.
-    for i, func_arg in enumerate(args):
-        if param_names[i] in contract.condition_arg_set:
-            condition_kwargs[param_names[i]] = func_arg
-
-    for key, val in kwargs.items():
-        if key in contract.condition_arg_set:
-            condition_kwargs[key] = val
+    condition_kwargs = _kwargs_from_call(
+        arg_subset=contract.condition_arg_set, param_names=param_names, kwdefaults=kwdefaults, args=args, kwargs=kwargs)
 
     # Check that all arguments to the condition function have been set.
-    for arg_name in contract.condition_args:
-        if arg_name not in condition_kwargs:
-            raise TypeError(("The argument of the contract condition has not been set: {}. "
-                             "Does the function define it?").format(arg_name))
+    missing_args = [arg_name for arg_name in contract.condition_args if arg_name not in condition_kwargs]
+    if missing_args:
+        raise TypeError(("The argument(s) of the precondition have not been set: {}. "
+                         "Does the original function define them?").format(missing_args))
 
     check = contract.condition(**condition_kwargs)
 
     if not check:
-        msg = _generate_message(contract=contract, condition_kwargs=condition_kwargs)
-        raise ViolationError(msg)
+        if contract.error is not None and (inspect.ismethod(contract.error) or inspect.isfunction(contract.error)):
+            assert contract.error_arg_set is not None, "Expected error_arg_set non-None if contract.error a function."
+            assert contract.error_args is not None, "Expected error_args non-None if contract.error a function."
+
+            error_kwargs = _kwargs_from_call(
+                arg_subset=contract.error_arg_set,
+                param_names=param_names,
+                kwdefaults=kwdefaults,
+                args=args,
+                kwargs=kwargs)
+
+            missing_args = [arg_name for arg_name in contract.error_args if arg_name not in error_kwargs]
+            if missing_args:
+                raise TypeError(("The argument(s) of the precondition error have not been set: {}. "
+                                 "Does the original function define them?").format(missing_args))
+
+            raise contract.error(**error_kwargs)
+
+        else:
+            msg = _generate_message(contract=contract, condition_kwargs=condition_kwargs)
+            if contract.error is None:
+                raise ViolationError(msg)
+            elif isinstance(contract.error, type):
+                raise contract.error(msg)
 
 
 def _assert_invariant(contract: _Contract, instance: Any) -> None:
     """Assert that the contract holds as a class invariant given the instance of the class."""
-    check = contract.condition(self=instance)
+    if 'self' in contract.condition_arg_set:
+        check = contract.condition(self=instance)
+    else:
+        check = contract.condition()
 
     if not check:
-        msg = _generate_message(contract=contract, condition_kwargs={"self": instance})
-        raise ViolationError(msg)
+        if contract.error is not None and (inspect.ismethod(contract.error) or inspect.isfunction(contract.error)):
+            assert contract.error_arg_set is not None, "Expected error_arg_set non-None if contract.error a function."
+            assert contract.error_args is not None, "Expected error_args non-None if contract.error a function."
+
+            if 'self' in contract.error_arg_set:
+                raise contract.error(self=instance)
+            else:
+                raise contract.error()
+        else:
+            if 'self' in contract.condition_arg_set:
+                msg = _generate_message(contract=contract, condition_kwargs={"self": instance})
+            else:
+                msg = _generate_message(contract=contract, condition_kwargs=dict())
+
+            if contract.error is None:
+                raise ViolationError(msg)
+            elif isinstance(contract.error, type):
+                raise contract.error(msg)
+            else:
+                raise NotImplementedError("Unhandled contract.error: {}".format(contract.error))
 
 
 def _assert_postcondition(contract: _Contract, param_names: List[str], kwdefaults: Dict[str, Any],
@@ -175,38 +271,48 @@ def _assert_postcondition(contract: _Contract, param_names: List[str], kwdefault
     """Assert that the contract holds as a postcondition given the arguments and the result of a function."""
     # pylint: disable=too-many-arguments
     # pylint: disable=too-many-locals
-    condition_kwargs = dict()  # type: MutableMapping[str, Any]
-
-    # Set the default argument values as condition parameters.
-    for param_name, param_value in kwdefaults.items():
-        if param_name in contract.condition_arg_set:
-            condition_kwargs[param_name] = param_value
-
-    # Override the default argument values with the values actually supplied to the function.
-    for i, func_arg in enumerate(args):
-        if param_names[i] in contract.condition_arg_set:
-            condition_kwargs[param_names[i]] = func_arg
-
-    # Collect the keyword arguments
-    for key, val in kwargs.items():
-        if key in contract.condition_arg_set:
-            condition_kwargs[key] = val
-
-    # Add the special ``result`` argument
-    if "result" in contract.condition_arg_set:
-        condition_kwargs["result"] = result
+    condition_kwargs = _kwargs_post_call(
+        arg_subset=contract.condition_arg_set,
+        param_names=param_names,
+        kwdefaults=kwdefaults,
+        args=args,
+        kwargs=kwargs,
+        result=result)
 
     # Check that all arguments to the condition function have been set.
-    for arg_name in contract.condition_args:
-        if arg_name not in condition_kwargs:
-            raise TypeError(("The argument of the contract condition has not been set: {}. "
-                             "Does the function define it?").format(arg_name))
+    missing_args = [arg_name for arg_name in contract.condition_args if arg_name not in condition_kwargs]
+    if missing_args:
+        raise TypeError(("The argument(s) of the postcondition have not been set: {}. "
+                         "Does the original function define them?").format(missing_args))
 
     check = contract.condition(**condition_kwargs)
 
     if not check:
-        msg = _generate_message(contract=contract, condition_kwargs=condition_kwargs)
-        raise ViolationError(msg)
+        if contract.error is not None and (inspect.ismethod(contract.error) or inspect.isfunction(contract.error)):
+            assert contract.error_arg_set is not None, "Expected error_arg_set non-None if contract.error a function."
+            assert contract.error_args is not None, "Expected error_args non-None if contract.error a function."
+
+            error_kwargs = _kwargs_post_call(
+                arg_subset=contract.error_arg_set,
+                param_names=param_names,
+                kwdefaults=kwdefaults,
+                args=args,
+                kwargs=kwargs,
+                result=result)
+
+            missing_args = [arg_name for arg_name in contract.error_args if arg_name not in error_kwargs]
+            if missing_args:
+                raise TypeError(("The argument(s) of the postcondition error have not been set: {}. "
+                                 "Does the original function define them?").format(missing_args))
+
+            raise contract.error(**error_kwargs)
+
+        else:
+            msg = _generate_message(contract=contract, condition_kwargs=condition_kwargs)
+            if contract.error is None:
+                raise ViolationError(msg)
+            elif isinstance(contract.error, type):
+                raise contract.error(msg)
 
 
 def _decorate_with_checker(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -318,13 +424,16 @@ class pre:  # pylint: disable=invalid-name
                  description: Optional[str] = None,
                  repr_args: Optional[Callable[..., str]] = None,
                  a_repr: Optional[reprlib.Repr] = None,
-                 enabled: bool = __debug__) -> None:
+                 enabled: bool = __debug__,
+                 error: Union[Callable[..., Exception], Type] = None) -> None:
         """
         Initialize.
 
         :param condition: precondition predicate
         :param description: textual description of the precondition
         :param repr_args:
+            [WILL BE DEPRECATED IN ICONTRACT 2]
+
             function to represent arguments in the message on a failed precondition. The repr_func needs to take the
             same arguments as the condition function.
 
@@ -341,6 +450,13 @@ class pre:  # pylint: disable=invalid-name
 
             The default is to always check the condition unless the interpreter runs in optimized mode (``-O`` or
             ``-OO``).
+        :param error:
+            if given as a callable, ``error`` is expected to accept a subset of function arguments
+            (*e.g.*, also including ``result`` for perconditions, only ``self`` for invariants *etc.*) and return
+            an exception. The ``error`` is called on contract violation and the resulting exception is raised.
+
+            Otherwise, it is expected to denote an Exception class which is instantiated with the violation message
+            and raised on contract violation.
 
         """
         # pylint: disable=too-many-arguments
@@ -350,7 +466,8 @@ class pre:  # pylint: disable=invalid-name
         if not enabled:
             return
 
-        self._contract = _Contract(condition=condition, description=description, repr_args=repr_args, a_repr=a_repr)
+        self._contract = _Contract(
+            condition=condition, description=description, repr_args=repr_args, a_repr=a_repr, error=error)
 
     def __call__(self, func: Callable[..., Any]) -> Callable[..., Any]:
         """
@@ -409,7 +526,8 @@ class post:  # pylint: disable=invalid-name
                  description: Optional[str] = None,
                  repr_args: Optional[Callable[..., str]] = None,
                  a_repr: Optional[reprlib.Repr] = None,
-                 enabled: bool = __debug__) -> None:
+                 enabled: bool = __debug__,
+                 error: Union[Callable[..., Exception], Type] = None) -> None:
         """
         Initialize.
 
@@ -432,6 +550,13 @@ class post:  # pylint: disable=invalid-name
 
             The default is to always check the condition unless the interpreter runs in optimized mode (``-O`` or
             ``-OO``).
+        :param error:
+            if given as a callable, ``error`` is expected to accept a subset of function arguments
+            (*e.g.*, also including ``result`` for perconditions, only ``self`` for invariants *etc.*) and return
+            an exception. The ``error`` is called on contract violation and the resulting exception is raised.
+
+            Otherwise, it is expected to denote an Exception class which is instantiated with the violation message
+            and raised on contract violation.
 
         """
         # pylint: disable=too-many-arguments
@@ -441,7 +566,8 @@ class post:  # pylint: disable=invalid-name
         if not enabled:
             return
 
-        self._contract = _Contract(condition=condition, description=description, repr_args=repr_args, a_repr=a_repr)
+        self._contract = _Contract(
+            condition=condition, description=description, repr_args=repr_args, a_repr=a_repr, error=error)
 
     def __call__(self, func: Callable[..., Any]) -> Callable[..., Any]:
         """
@@ -635,7 +761,8 @@ class inv:  # pylint: disable=invalid-name
                  description: Optional[str] = None,
                  repr_args: Optional[Callable[..., str]] = None,
                  a_repr: Optional[reprlib.Repr] = None,
-                 enabled: bool = __debug__) -> None:
+                 enabled: bool = __debug__,
+                 error: Union[Callable[..., Exception], Type] = None) -> None:
         """
         Initialize a class decorator to establish the invariant on all the public methods.
 
@@ -659,7 +786,13 @@ class inv:  # pylint: disable=invalid-name
 
                 The default is to always check the condition unless the interpreter runs in optimized mode (``-O`` or
                 ``-OO``).
+        :param error:
+            if given as a callable, ``error`` is expected to accept a subset of function arguments
+            (*e.g.*, also including ``result`` for perconditions, only ``self`` for invariants *etc.*) and return
+            an exception. The ``error`` is called on contract violation and the resulting exception is raised.
 
+            Otherwise, it is expected to denote an Exception class which is instantiated with the violation message
+            and raised on contract violation.
         :return:
 
         """
@@ -670,7 +803,12 @@ class inv:  # pylint: disable=invalid-name
         if not enabled:
             return
 
-        self._contract = _Contract(condition=condition, description=description, repr_args=repr_args, a_repr=a_repr)
+        self._contract = _Contract(
+            condition=condition, description=description, repr_args=repr_args, a_repr=a_repr, error=error)
+
+        if self._contract.condition_args and self._contract.condition_args != ['self']:
+            raise ValueError("Expected an invariant condition with at most an argument 'self', but got: {}".format(
+                self._contract.condition_args))
 
     def __call__(self, cls: Type) -> Type:
         """
@@ -684,11 +822,6 @@ class inv:  # pylint: disable=invalid-name
             return cls
 
         assert self._contract is not None, "self._contract must be set if the contract was enabled."
-
-        parameter_names = sorted(inspect.signature(self._contract.condition).parameters.keys())
-        if parameter_names != ["self"]:
-            raise ValueError(
-                "Expected a condition function with a single argument 'self', but got: {}".format(parameter_names))
 
         if not hasattr(cls, "__invariants__"):
             invariants = []  # type: List[_Contract]
