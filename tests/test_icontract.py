@@ -255,8 +255,8 @@ class TestPrecondition(unittest.TestCase):
             type_err = err
 
         self.assertIsNotNone(type_err)
-        self.assertEqual("The argument of the contract condition has not been set: b. Does the function define it?",
-                         str(type_err))
+        self.assertEqual("The argument(s) of the precondition have not been set: ['b']. "
+                         "Does the original function define them?", str(type_err))
 
     def test_repr_args(self):
         @icontract.pre(lambda x: x > 3, repr_args=lambda x: "x was {:03}".format(x))
@@ -474,6 +474,83 @@ class TestPrecondition(unittest.TestCase):
                          "x was 100\n"
                          "y was 4", str(pre_err))
 
+    def test_error_as_type(self):
+        @icontract.pre(lambda x: x > 0, error=ValueError)
+        def some_func(x: int) -> int:
+            return 0
+
+        value_error = None  # type: Optional[ValueError]
+        try:
+            some_func(x=0)
+        except ValueError as err:
+            value_error = err
+
+        self.assertIsNotNone(value_error)
+        self.assertIsInstance(value_error, ValueError)
+        self.assertEqual('x > 0: x was 0', str(value_error))
+
+    def test_error_as_function(self):
+        @icontract.pre(lambda x: x > 0, error=lambda x: ValueError("x non-negative"))
+        def some_func(x: int) -> int:
+            return 0
+
+        value_error = None  # type: Optional[ValueError]
+        try:
+            some_func(x=0)
+        except ValueError as err:
+            value_error = err
+
+        self.assertIsNotNone(value_error)
+        self.assertIsInstance(value_error, ValueError)
+        self.assertEqual('x non-negative', str(value_error))
+
+    def test_error_as_function_with_outer_scope(self):
+        z = 42
+
+        @icontract.pre(lambda x: x > 0, error=lambda x: ValueError("x non-negative, z: {}".format(z)))
+        def some_func(x: int) -> int:
+            return 0
+
+        value_error = None  # type: Optional[ValueError]
+        try:
+            some_func(x=0)
+        except ValueError as err:
+            value_error = err
+
+        self.assertIsNotNone(value_error)
+        self.assertIsInstance(value_error, ValueError)
+        self.assertEqual('x non-negative, z: 42', str(value_error))
+
+    def test_error_with_empty_args(self):
+        @icontract.pre(lambda x: x > 0, error=lambda: ValueError("x must be positive"))
+        def some_func(x: int) -> int:
+            return 0
+
+        value_error = None  # type: Optional[ValueError]
+        try:
+            some_func(x=0)
+        except ValueError as err:
+            value_error = err
+
+        self.assertIsNotNone(value_error)
+        self.assertIsInstance(value_error, ValueError)
+        self.assertEqual('x must be positive', str(value_error))
+
+    def test_error_with_different_args_from_condition(self):
+        @icontract.pre(lambda x: x > 0, error=lambda x, y: ValueError("x is {}, y is {}".format(x, y)))
+        def some_func(x: int, y: int) -> int:
+            return 0
+
+        value_error = None  # type: Optional[ValueError]
+        try:
+            some_func(x=0, y=10)
+        except ValueError as err:
+            value_error = err
+
+        self.assertIsNotNone(value_error)
+        self.assertIsInstance(value_error, ValueError)
+        self.assertEqual('x is 0, y is 10', str(value_error))
+
     def test_enabled(self):
         @icontract.pre(lambda x: x > 10, enabled=False)
         def some_func(x: int) -> int:
@@ -660,6 +737,20 @@ class TestPostcondition(unittest.TestCase):
         self.assertIsNotNone(post_err)
         self.assertEqual("result < b:\n" "b was 21\n" "result was 36", str(post_err))
 
+    def test_only_result(self):
+        @icontract.post(lambda result: result > 3)
+        def some_func(x: int) -> int:
+            return 0
+
+        post_err = None  # type: Optional[icontract.ViolationError]
+        try:
+            some_func(x=10 * 1000)
+        except icontract.ViolationError as err:
+            post_err = err
+
+        self.assertIsNotNone(post_err)
+        self.assertEqual("result > 3: result was 0", str(post_err))
+
     def test_repr_args(self):
         @icontract.post(
             lambda result, x: result > x, repr_args=lambda result, x: "result was {:05}, x was {:05}".format(result, x))
@@ -695,19 +786,66 @@ class TestPostcondition(unittest.TestCase):
                          "result was [0, 1, 2, ...]\n"
                          "x was 10000", str(post_err))
 
-    def test_only_result(self):
-        @icontract.post(lambda result: result > 3)
+    def test_error_as_type(self):
+        @icontract.post(lambda result: result > 0, error=ValueError)
         def some_func(x: int) -> int:
-            return 0
+            return x
 
-        post_err = None  # type: Optional[icontract.ViolationError]
+        value_error = None  # type: Optional[ValueError]
         try:
-            some_func(x=10 * 1000)
-        except icontract.ViolationError as err:
-            post_err = err
+            some_func(x=0)
+        except ValueError as err:
+            value_error = err
 
-        self.assertIsNotNone(post_err)
-        self.assertEqual("result > 3: result was 0", str(post_err))
+        self.assertIsNotNone(value_error)
+        self.assertIsInstance(value_error, ValueError)
+        self.assertEqual('result > 0: result was 0', str(value_error))
+
+    def test_error_as_function(self):
+        @icontract.post(lambda result: result > 0, error=lambda result: ValueError("result must be positive."))
+        def some_func(x: int) -> int:
+            return x
+
+        value_error = None  # type: Optional[ValueError]
+        try:
+            some_func(x=0)
+        except ValueError as err:
+            value_error = err
+
+        self.assertIsNotNone(value_error)
+        self.assertIsInstance(value_error, ValueError)
+        self.assertEqual('result must be positive.', str(value_error))
+
+    def test_error_with_empty_args(self):
+        @icontract.post(lambda result: result > 0, error=lambda: ValueError("result must be positive"))
+        def some_func(x: int) -> int:
+            return x
+
+        value_error = None  # type: Optional[ValueError]
+        try:
+            some_func(x=0)
+        except ValueError as err:
+            value_error = err
+
+        self.assertIsNotNone(value_error)
+        self.assertIsInstance(value_error, ValueError)
+        self.assertEqual('result must be positive', str(value_error))
+
+    def test_error_with_different_args_from_condition(self):
+        @icontract.post(
+            lambda result: result > 0, error=lambda x, result: ValueError("x is {}, result is {}".format(x, result)))
+        def some_func(x: int) -> int:
+            return x
+
+        value_error = None  # type: Optional[ValueError]
+        try:
+            some_func(x=0)
+        except ValueError as err:
+            value_error = err
+
+        self.assertIsNotNone(value_error)
+        self.assertIsInstance(value_error, ValueError)
+        self.assertEqual('x is 0, result is 0', str(value_error))
 
     def test_enabled(self):
         @icontract.post(lambda x, result: x > result, enabled=False)
@@ -735,8 +873,8 @@ class TestPostcondition(unittest.TestCase):
             type_err = err
 
         self.assertIsNotNone(type_err)
-        self.assertEqual("The argument of the contract condition has not been set: b. Does the function define it?",
-                         str(type_err))
+        self.assertEqual("The argument(s) of the postcondition have not been set: ['b']. "
+                         "Does the original function define them?", str(type_err))
 
     def test_postcondition_in_static_method(self):
         class SomeClass:
@@ -1240,6 +1378,22 @@ class TestInvariant(unittest.TestCase):
         self.assertIsNotNone(violation_err)
         self.assertEqual("self.x > 0:\n" "self was some instance\n" "self.x was -1", str(violation_err))
 
+    def test_inv_with_empty_arguments(self):
+        z = 42
+
+        @icontract.inv(lambda: z != 42)
+        class A:
+            pass
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            _ = A()
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual("z != 42: z was 42", str(icontract_violation_error))
+
     def test_inv_with_invalid_arguments(self):
         val_err = None  # type: Optional[ValueError]
         try:
@@ -1253,7 +1407,7 @@ class TestInvariant(unittest.TestCase):
             val_err = err
 
         self.assertIsNotNone(val_err)
-        self.assertEqual("Expected a condition function with a single argument 'self', but got: ['self', 'z']",
+        self.assertEqual("Expected an invariant condition with at most an argument 'self', but got: ['self', 'z']",
                          str(val_err))
 
     def test_inv_disabled(self):
@@ -1372,6 +1526,64 @@ class TestInvariant(unittest.TestCase):
         self.assertEqual('not self.toggled:\n'
                          'self was SomeClass\n'
                          'self.toggled was True', str(icontract_violation_error))
+
+    def test_error_as_type(self):
+        @icontract.inv(lambda self: self.x > 0, error=ValueError)
+        class A:
+            def __init__(self) -> None:
+                self.x = 0
+
+            def __repr__(self) -> str:
+                return self.__class__.__name__
+
+        value_error = None  # type: Optional[ValueError]
+        try:
+            _ = A()
+        except ValueError as err:
+            value_error = err
+
+        self.assertIsNotNone(value_error)
+        self.assertIsInstance(value_error, ValueError)
+        self.assertEqual('self.x > 0:\n' 'self was A\n' 'self.x was 0', str(value_error))
+
+    def test_error_as_function(self):
+        @icontract.inv(
+            lambda self: self.x > 0, error=lambda self: ValueError("x must be positive, but got: {}".format(self.x)))
+        class A:
+            def __init__(self) -> None:
+                self.x = 0
+
+            def __repr__(self) -> str:
+                return self.__class__.__name__
+
+        value_error = None  # type: Optional[ValueError]
+        try:
+            _ = A()
+        except ValueError as err:
+            value_error = err
+
+        self.assertIsNotNone(value_error)
+        self.assertIsInstance(value_error, ValueError)
+        self.assertEqual('x must be positive, but got: 0', str(value_error))
+
+    def test_error_as_function_with_empty_args(self):
+        @icontract.inv(lambda self: self.x > 0, error=lambda: ValueError("x must be positive"))
+        class A:
+            def __init__(self) -> None:
+                self.x = 0
+
+            def __repr__(self) -> str:
+                return self.__class__.__name__
+
+        value_error = None  # type: Optional[ValueError]
+        try:
+            _ = A()
+        except ValueError as err:
+            value_error = err
+
+        self.assertIsNotNone(value_error)
+        self.assertIsInstance(value_error, ValueError)
+        self.assertEqual('x must be positive', str(value_error))
 
 
 class TestPreconditionInheritance(unittest.TestCase):
