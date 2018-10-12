@@ -109,6 +109,43 @@ class _Contract:
             self.error_arg_set = set(self.error_args)
 
 
+class _Snapshot:
+    """Define a snapshot of an argument *prior* to the function invocation that is later supplied to a postcondition."""
+
+    def __init__(self, capture: Callable[..., Any], name: Optional[str] = None) -> None:
+        """
+        Initialize.
+
+        :param capture:
+            function to capture the snapshot accepting a single argument (from a set of arguments
+            of the original function)
+
+        :param name: name of the captured variable in OLD that is passed to postconditions
+
+        """
+        self.capture = capture
+
+        args = list(inspect.signature(capture).parameters.keys())  # type: List[str]
+
+        if len(args) > 1:
+            raise TypeError("The capture function of a snapshot expects only a single argument.")
+
+        if len(args) == 0 and name is None:
+            raise ValueError("You must name a snapshot if no argument was given in the capture function.")
+
+        if name is None:
+            name = args[0]
+
+        assert name is not None, "Expected ``name`` to be set in the preceding execution paths."
+        self.name = name
+
+        self.arg = None  # type: Optional[str]
+        if len(args) == 1:
+            self.arg = args[0]
+        else:
+            assert len(args) == 0, "There can be at most one argument to a snapshot capture, but got: {}".format(args)
+
+
 def _generate_message(contract: icontract._Contract, condition_kwargs: Mapping[str, Any]) -> str:
     """Generate the message upon contract violation."""
     # pylint: disable=protected-access
@@ -148,64 +185,52 @@ def _generate_message(contract: icontract._Contract, condition_kwargs: Mapping[s
     return msg
 
 
-def _kwargs_from_call(arg_subset: Set[str], param_names: List[str], kwdefaults: Dict[str, Any], args: Tuple[Any, ...],
+def _kwargs_from_call(param_names: List[str], kwdefaults: Dict[str, Any], args: Tuple[Any, ...],
                       kwargs: Dict[str, Any]) -> MutableMapping[str, Any]:
     """
-    Inspect the input values received at the wrapper for the actual function call and and take their subset.
+    Inspect the input values received at the wrapper for the actual function call.
 
-    The subset of arguments is given by the argument names in ``arg_set``.
+    :param param_names: parameter (*i.e.* argument) names of the original (decorated) function
+    :param kwdefaults: default argument values of the original function
+    :param args: arguments supplied to the call
+    :param kwargs: keyword arguments supplied to the call
+    :return: resolved arguments as they would be passed to the function
     """
     # pylint: disable=too-many-arguments
     mapping = dict()  # type: MutableMapping[str, Any]
 
     # Set the default argument values as condition parameters.
     for param_name, param_value in kwdefaults.items():
-        if param_name in arg_subset:
-            mapping[param_name] = param_value
+        mapping[param_name] = param_value
 
     # Override the defaults with the values actually suplied to the function.
     for i, func_arg in enumerate(args):
-        if param_names[i] in arg_subset:
-            mapping[param_names[i]] = func_arg
+        mapping[param_names[i]] = func_arg
 
     for key, val in kwargs.items():
-        if key in arg_subset:
-            mapping[key] = val
+        mapping[key] = val
 
     return mapping
 
 
-def _kwargs_post_call(arg_subset: Set[str], param_names: List[str], kwdefaults: Dict[str, Any], args: Tuple[Any, ...],
-                      kwargs: Dict[str, Any], result: Any) -> MutableMapping[str, Any]:
+def _assert_precondition(contract: _Contract, resolved_kwargs: Mapping[str, Any]) -> None:
     """
-    Inspect the values after the function call (include special ``result``) and and take their subset.
+    Assert that the contract holds as a precondition.
 
-    The subset of arguments is given by the argument names in ``arg_set``.
+    :param contract: contract to be verified
+    :param resolved_kwargs: resolved keyword arguments (including the default values)
+    :return:
     """
-    # pylint: disable=too-many-arguments
-    mapping = _kwargs_from_call(
-        arg_subset=arg_subset, param_names=param_names, kwdefaults=kwdefaults, args=args, kwargs=kwargs)
-
-    # Add the special ``result`` argument
-    if 'result' in arg_subset:
-        mapping['result'] = result
-
-    return mapping
-
-
-def _assert_precondition(contract: _Contract, param_names: List[str], kwdefaults: Dict[str, Any], args: Tuple[Any, ...],
-                         kwargs: Dict[str, Any]) -> None:
-    """Assert that the contract holds as a precondition."""
-    # pylint: disable=too-many-arguments
-    # pylint: disable=too-many-locals
-    condition_kwargs = _kwargs_from_call(
-        arg_subset=contract.condition_arg_set, param_names=param_names, kwdefaults=kwdefaults, args=args, kwargs=kwargs)
-
     # Check that all arguments to the condition function have been set.
-    missing_args = [arg_name for arg_name in contract.condition_args if arg_name not in condition_kwargs]
+    missing_args = [arg_name for arg_name in contract.condition_args if arg_name not in resolved_kwargs]
     if missing_args:
         raise TypeError(("The argument(s) of the precondition have not been set: {}. "
                          "Does the original function define them?").format(missing_args))
+
+    condition_kwargs = {
+        arg_name: value
+        for arg_name, value in resolved_kwargs.items() if arg_name in contract.condition_arg_set
+    }
 
     check = contract.condition(**condition_kwargs)
 
@@ -214,14 +239,12 @@ def _assert_precondition(contract: _Contract, param_names: List[str], kwdefaults
             assert contract.error_arg_set is not None, "Expected error_arg_set non-None if contract.error a function."
             assert contract.error_args is not None, "Expected error_args non-None if contract.error a function."
 
-            error_kwargs = _kwargs_from_call(
-                arg_subset=contract.error_arg_set,
-                param_names=param_names,
-                kwdefaults=kwdefaults,
-                args=args,
-                kwargs=kwargs)
+            error_kwargs = {
+                arg_name: value
+                for arg_name, value in resolved_kwargs.items() if arg_name in contract.error_arg_set
+            }
 
-            missing_args = [arg_name for arg_name in contract.error_args if arg_name not in error_kwargs]
+            missing_args = [arg_name for arg_name in contract.error_args if arg_name not in resolved_kwargs]
             if missing_args:
                 raise TypeError(("The argument(s) of the precondition error have not been set: {}. "
                                  "Does the original function define them?").format(missing_args))
@@ -266,24 +289,50 @@ def _assert_invariant(contract: _Contract, instance: Any) -> None:
                 raise NotImplementedError("Unhandled contract.error: {}".format(contract.error))
 
 
-def _assert_postcondition(contract: _Contract, param_names: List[str], kwdefaults: Dict[str, Any],
-                          args: Tuple[Any, ...], kwargs: Dict[str, Any], result: Any) -> None:
-    """Assert that the contract holds as a postcondition given the arguments and the result of a function."""
-    # pylint: disable=too-many-arguments
-    # pylint: disable=too-many-locals
-    condition_kwargs = _kwargs_post_call(
-        arg_subset=contract.condition_arg_set,
-        param_names=param_names,
-        kwdefaults=kwdefaults,
-        args=args,
-        kwargs=kwargs,
-        result=result)
+def _capture_snapshot(a_snapshot: _Snapshot, resolved_kwargs: Mapping[str, Any]) -> Any:
+    """
+    Capture the snapshot from the keyword arguments resolved before the function call (including the default values).
+
+    :param a_snapshot: snapshot to be captured
+    :param resolved_kwargs: resolved keyword arguments (including the default values)
+    :return: captured value
+    """
+    if a_snapshot.arg is not None:
+        if a_snapshot.arg not in resolved_kwargs:
+            raise TypeError(("The argument of the snapshot has not been set: {}. "
+                             "Does the original function define it?").format(a_snapshot.arg))
+
+        value = a_snapshot.capture(**{a_snapshot.arg: resolved_kwargs[a_snapshot.arg]})
+    else:
+        value = a_snapshot.capture()
+
+    return value
+
+
+def _assert_postcondition(contract: _Contract, resolved_kwargs: Mapping[str, Any]) -> None:
+    """
+    Assert that the contract holds as a postcondition.
+
+    The arguments to the postcondition are given as ``resolved_kwargs`` which includes
+    both argument values captured in snapshots and actual argument values and the result of a function.
+
+    :param contract: contract to be verified
+    :param resolved_kwargs: resolved keyword arguments (including the default values, ``result`` and ``OLD``)
+    :return:
+    """
+    assert 'result' in resolved_kwargs, \
+        "Expected 'result' to be set in the resolved keyword arguments of a postcondition."
 
     # Check that all arguments to the condition function have been set.
-    missing_args = [arg_name for arg_name in contract.condition_args if arg_name not in condition_kwargs]
+    missing_args = [arg_name for arg_name in contract.condition_args if arg_name not in resolved_kwargs]
     if missing_args:
         raise TypeError(("The argument(s) of the postcondition have not been set: {}. "
                          "Does the original function define them?").format(missing_args))
+
+    condition_kwargs = {
+        arg_name: value
+        for arg_name, value in resolved_kwargs.items() if arg_name in contract.condition_arg_set
+    }
 
     check = contract.condition(**condition_kwargs)
 
@@ -292,15 +341,12 @@ def _assert_postcondition(contract: _Contract, param_names: List[str], kwdefault
             assert contract.error_arg_set is not None, "Expected error_arg_set non-None if contract.error a function."
             assert contract.error_args is not None, "Expected error_args non-None if contract.error a function."
 
-            error_kwargs = _kwargs_post_call(
-                arg_subset=contract.error_arg_set,
-                param_names=param_names,
-                kwdefaults=kwdefaults,
-                args=args,
-                kwargs=kwargs,
-                result=result)
+            error_kwargs = {
+                arg_name: value
+                for arg_name, value in resolved_kwargs.items() if arg_name in contract.error_arg_set
+            }
 
-            missing_args = [arg_name for arg_name in contract.error_args if arg_name not in error_kwargs]
+            missing_args = [arg_name for arg_name in contract.error_args if arg_name not in resolved_kwargs]
             if missing_args:
                 raise TypeError(("The argument(s) of the postcondition error have not been set: {}. "
                                  "Does the original function define them?").format(missing_args))
@@ -315,6 +361,24 @@ def _assert_postcondition(contract: _Contract, param_names: List[str], kwdefault
                 raise contract.error(msg)
 
 
+class _Old:
+    """
+    Represent argument values before the function invocation.
+
+    Recipe taken from http://code.activestate.com/recipes/52308-the-simple-but-handy-collector-of-a-bunch-of-named/
+    """
+
+    def __init__(self, mapping: Mapping[str, Any]) -> None:
+        self.__dict__.update(mapping)
+
+    def __getattr__(self, item):
+        raise AttributeError("The snapshot with the name {!r} is not available in the OLD of a postcondition. "
+                             "Have you decorated the function with an {}?".format(item, snapshot.__qualname__))
+
+    def __repr__(self) -> str:
+        return "a bunch of OLD values"
+
+
 def _decorate_with_checker(func: Callable[..., Any]) -> Callable[..., Any]:
     """Decorate the function with a checker that verifies the preconditions and postconditions."""
     assert not hasattr(func, "__preconditions__"), \
@@ -322,6 +386,10 @@ def _decorate_with_checker(func: Callable[..., Any]) -> Callable[..., Any]:
 
     assert not hasattr(func, "__postconditions__"), \
         "Expected func to have no list of postconditions (there should be only a single contract checker per function)."
+
+    assert not hasattr(func, "__postcondition_snapshots__"), \
+        "Expected func to have no list of postcondition snapshots (there should be only a single contract checker " \
+        "per function)."
 
     sign = inspect.signature(func)
     param_names = list(sign.parameters.keys())
@@ -336,8 +404,18 @@ def _decorate_with_checker(func: Callable[..., Any]) -> Callable[..., Any]:
 
     def wrapper(*args, **kwargs):
         """Wrap func by checking the preconditions and postconditions."""
-        preconditions = getattr(wrapper, "__preconditions__")
-        postconditions = getattr(wrapper, "__postconditions__")
+        preconditions = getattr(wrapper, "__preconditions__")  # type: List[List[_Contract]]
+        snapshots = getattr(wrapper, "__postcondition_snapshots__")  # type: List[_Snapshot]
+        postconditions = getattr(wrapper, "__postconditions__")  # type: List[_Contract]
+
+        resolved_kwargs = _kwargs_from_call(param_names=param_names, kwdefaults=kwdefaults, args=args, kwargs=kwargs)
+
+        if postconditions:
+            if 'result' in resolved_kwargs:
+                raise TypeError("Unexpected argument 'result' in a function decorated with postconditions.")
+
+            if 'OLD' in resolved_kwargs:
+                raise TypeError("Unexpected argument 'OLD' in a function decorated with postconditions.")
 
         # Assert the preconditions in groups. This is necessary to implement "require else" logic when a class
         # weakens the preconditions of its base class.
@@ -346,8 +424,7 @@ def _decorate_with_checker(func: Callable[..., Any]) -> Callable[..., Any]:
             violation_err = None
             try:
                 for contract in group:
-                    _assert_precondition(
-                        contract=contract, param_names=param_names, kwdefaults=kwdefaults, args=args, kwargs=kwargs)
+                    _assert_precondition(contract=contract, resolved_kwargs=resolved_kwargs)
                 break
             except ViolationError as err:
                 violation_err = err
@@ -355,18 +432,27 @@ def _decorate_with_checker(func: Callable[..., Any]) -> Callable[..., Any]:
         if violation_err is not None:
             raise violation_err  # pylint: disable=raising-bad-type
 
+        # Capture the snapshots
+        if postconditions:
+            old_as_mapping = dict()  # type: MutableMapping[str, Any]
+            for snap in snapshots:
+                # This assert is just a last defense.
+                # Conflicting snapshot names should have been caught before, either during the decoration or
+                # in the meta-class.
+                assert snap.name not in old_as_mapping, "Snapshots with the conflicting name: {}"
+                old_as_mapping[snap.name] = _capture_snapshot(a_snapshot=snap, resolved_kwargs=resolved_kwargs)
+
+            resolved_kwargs['OLD'] = _Old(mapping=old_as_mapping)
+
         # Execute the wrapped function
         result = func(*args, **kwargs)
 
-        # Assert the postconditions as a conjunction
-        for contract in postconditions:
-            _assert_postcondition(
-                contract=contract,
-                param_names=param_names,
-                kwdefaults=kwdefaults,
-                args=args,
-                kwargs=kwargs,
-                result=result)
+        if postconditions:
+            resolved_kwargs['result'] = result
+
+            # Assert the postconditions as a conjunction
+            for contract in postconditions:
+                _assert_postcondition(contract=contract, resolved_kwargs=resolved_kwargs)
 
         return result
 
@@ -374,6 +460,8 @@ def _decorate_with_checker(func: Callable[..., Any]) -> Callable[..., Any]:
     functools.update_wrapper(wrapper=wrapper, wrapped=func)
 
     assert not hasattr(wrapper, "__preconditions__"), "Expected no preconditions set on a pristine contract checker."
+    assert not hasattr(wrapper, "__postcondition_snapshots__"), \
+        "Expected no postcondition snapshots set on a pristine contract checker."
     assert not hasattr(wrapper, "__postconditions__"), "Expected no postconditions set on a pristine contract checker."
 
     # Precondition is a list of condition groups (i.e. disjunctive normal form):
@@ -382,12 +470,13 @@ def _decorate_with_checker(func: Callable[..., Any]) -> Callable[..., Any]:
     # This is necessary in order to implement "require else" logic when a class weakens the preconditions of
     # its base class.
     setattr(wrapper, "__preconditions__", [])
+    setattr(wrapper, "__postcondition_snapshots__", [])
     setattr(wrapper, "__postconditions__", [])
 
     return wrapper
 
 
-def _unwind_decorator_stack(func: Callable[..., Any]) -> Iterable['Callable[..., Any]']:
+def _walk_decorator_stack(func: Callable[..., Any]) -> Iterable['Callable[..., Any]']:
     """
     Iterate through the stack of decorated functions until the original function.
 
@@ -404,7 +493,7 @@ def _unwind_decorator_stack(func: Callable[..., Any]) -> Iterable['Callable[...,
 def _find_checker(func: Callable[..., Any]) -> Optional[Callable[..., Any]]:
     """Iterate through the decorator stack till we find the contract checker."""
     contract_checker = None  # type: Optional[Callable[..., Any]]
-    for a_wrapper in _unwind_decorator_stack(func):
+    for a_wrapper in _walk_decorator_stack(func):
         if hasattr(a_wrapper, "__preconditions__") or hasattr(a_wrapper, "__postconditions__"):
             contract_checker = a_wrapper
 
@@ -511,6 +600,78 @@ class pre:  # pylint: disable=invalid-name
         return result
 
 
+class snapshot:  # pylint: disable=invalid-name
+    """
+    Decorate a function with a snapshot of an argument value captured *prior* to the function invocation.
+
+    A snapshot is defined by a capture function (usually a lambda) that accepts a single argument of the function.
+    If the name of the snapshot is not given, the name is equal to the name of the argument.
+
+    The captured values are supplied to postconditions with the OLD argument of the condition and error function.
+    Snapshots are inherited from the base classes and must not have conflicting names in the class hierarchy.
+    """
+
+    def __init__(self, capture: Callable[..., Any], name: Optional[str] = None, enabled: bool = __debug__) -> None:
+        """
+        Initialize.
+
+        :param capture:
+            function to capture the snapshot accepting a single argument (from a set of arguments
+            of the original function)
+        :param name: name of the snapshot; if omitted, the name corresponds to the name of the input argument
+        :param enabled:
+            The decorator is applied only if ``enabled`` is set.
+
+            Otherwise, the snapshot is disabled and there is no run-time overhead.
+
+            The default is to always capture the snapshot unless the interpreter runs in optimized mode (``-O`` or
+            ``-OO``).
+
+        """
+        self._snapshot = None  # type: Optional[_Snapshot]
+        self.enabled = enabled
+
+        # Resolve the snapshot only if enabled so that no overhead is incurred
+        if enabled:
+            self._snapshot = _Snapshot(capture=capture, name=name)
+
+    def __call__(self, func: Callable[..., Any]) -> Callable[..., Any]:
+        """
+        Add the snapshot to the list of snapshots of the function ``func``.
+
+        The function ``func`` is expected to be decorated with at least one postcondition before the snapshot.
+
+        :param func: function whose arguments we need to snapshot
+        :return: ``func`` as given in the input
+        """
+        if not self.enabled:
+            return func
+
+        # Find a contract checker
+        contract_checker = _find_checker(func=func)
+
+        if contract_checker is None:
+            raise ValueError("You are decorating a function with a snapshot, but no postcondition was defined "
+                             "on the function before.")
+
+        assert self._snapshot is not None, "Expected the enabled snapshot to have the property ``snapshot`` set."
+
+        # Add the snapshot to the list of snapshots stored at the checker
+        assert hasattr(contract_checker, "__postcondition_snapshots__")
+
+        snapshots = getattr(contract_checker, "__postcondition_snapshots__")
+        assert isinstance(snapshots, list)
+
+        for snap in snapshots:
+            assert isinstance(snap, _Snapshot)
+            if snap.name == self._snapshot.name:
+                raise ValueError("There are conflicting snapshots with the name: {!r}".format(snap.name))
+
+        snapshots.append(self._snapshot)
+
+        return func
+
+
 class post:  # pylint: disable=invalid-name
     """
     Decorate a function with a postcondition.
@@ -593,7 +754,7 @@ class post:  # pylint: disable=invalid-name
             contract_checker = _decorate_with_checker(func=func)
             result = contract_checker
 
-        # Add the precondition to the list of preconditions stored at the checker
+        # Add the postcondition to the list of postconditions stored at the checker
         assert hasattr(contract_checker, "__postconditions__")
         assert isinstance(getattr(contract_checker, "__postconditions__"), list)
         getattr(contract_checker, "__postconditions__").append(self._contract)
@@ -674,7 +835,7 @@ _SLOT_WRAPPER_TYPE = type(_DummyClass.__init__)
 def _already_decorated_with_invariants(func: Callable[..., Any]) -> bool:
     """Check if the function has been already decorated with an invariant check by going through its decorator stack."""
     already_decorated = False
-    for a_decorator in _unwind_decorator_stack(func=func):
+    for a_decorator in _walk_decorator_stack(func=func):
         if getattr(a_decorator, "__is_invariant_check__", False):
             already_decorated = True
             break
@@ -876,6 +1037,28 @@ def _collapse_preconditions(base_preconditions: List[List[_Contract]], bases_hav
     return base_preconditions + preconditions
 
 
+def _collapse_snapshots(base_snapshots: List[_Snapshot], snapshots: List[_Snapshot]) -> List[_Snapshot]:
+    """
+    Collapse snapshots of pre-invocation values with the snapshots collected from the base classes.
+
+    :param base_snapshots: snapshots collected from the base classes
+    :param snapshots: snapshots of the function (before the collapse)
+    :return: collapsed sequence of snapshots
+    """
+    seen_names = set()  # type: Set[str]
+    collapsed = base_snapshots + snapshots
+
+    for snap in collapsed:
+        if snap.name in seen_names:
+            raise ValueError("There are conflicting snapshots with the name: {!r}.\n\n"
+                             "Please mind that the snapshots are inherited from the base classes. "
+                             "Does one of the base classes defines a snapshot with the same name?".format(snap.name))
+
+        seen_names.add(snap.name)
+
+    return collapsed
+
+
 def _collapse_postconditions(base_postconditions: List[_Contract], postconditions: List[_Contract]) -> List[_Contract]:
     """
     Collapse function postconditions with the postconditions collected from the base classes.
@@ -890,6 +1073,7 @@ def _collapse_postconditions(base_postconditions: List[_Contract], postcondition
 def _decorate_namespace_function(bases: List[type], namespace: MutableMapping[str, Any], key: str) -> None:
     """Collect preconditions and postconditions from the bases and decorate the function at the ``key``."""
     # pylint: disable=too-many-branches
+    # pylint: disable=too-many-locals
 
     value = namespace[key]
     assert inspect.isfunction(value) or isinstance(value, (staticmethod, classmethod))
@@ -904,11 +1088,13 @@ def _decorate_namespace_function(bases: List[type], namespace: MutableMapping[st
 
     # Collect preconditions and postconditions of the function
     preconditions = []  # type: List[List[_Contract]]
+    snapshots = []  # type: List[_Snapshot]
     postconditions = []  # type: List[_Contract]
 
     contract_checker = _find_checker(func=func)
     if contract_checker is not None:
         preconditions = contract_checker.__preconditions__  # type: ignore
+        snapshots = contract_checker.__postcondition_snapshots__  # type: ignore
         postconditions = contract_checker.__postconditions__  # type: ignore
 
     # Collect the preconditions and postconditions from bases.
@@ -917,6 +1103,7 @@ def _decorate_namespace_function(bases: List[type], namespace: MutableMapping[st
     # initialization is an operation specific to the concrete class and does not relate to the class hierarchy.
     if key not in ['__init__']:
         base_preconditions = []  # type: List[List[_Contract]]
+        base_snapshots = []  # type: List[_Snapshot]
         base_postconditions = []  # type: List[_Contract]
 
         bases_have_func = False
@@ -931,6 +1118,7 @@ def _decorate_namespace_function(bases: List[type], namespace: MutableMapping[st
                 # Ignore functions which don't have preconditions or postconditions
                 if base_contract_checker is not None:
                     base_preconditions.extend(base_contract_checker.__preconditions__)  # type: ignore
+                    base_snapshots.extend(base_contract_checker.__postcondition_snapshots__)  # type: ignore
                     base_postconditions.extend(base_contract_checker.__postconditions__)  # type: ignore
 
         # Collapse preconditions and postconditions from the bases with the the function's own ones
@@ -939,6 +1127,8 @@ def _decorate_namespace_function(bases: List[type], namespace: MutableMapping[st
             bases_have_func=bases_have_func,
             preconditions=preconditions,
             func=func)
+
+        snapshots = _collapse_snapshots(base_snapshots=base_snapshots, snapshots=snapshots)
 
         postconditions = _collapse_postconditions(
             base_postconditions=base_postconditions, postconditions=postconditions)
@@ -961,6 +1151,7 @@ def _decorate_namespace_function(bases: List[type], namespace: MutableMapping[st
 
         # Override the preconditions and postconditions
         contract_checker.__preconditions__ = preconditions  # type: ignore
+        contract_checker.__postcondition_snapshots__ = snapshots  # type: ignore
         contract_checker.__postconditions__ = postconditions  # type: ignore
 
 
@@ -985,6 +1176,7 @@ def _decorate_namespace_property(bases: List[type], namespace: MutableMapping[st
 
         # Collect the preconditions and postconditions from bases
         base_preconditions = []  # type: List[List[_Contract]]
+        base_snapshots = []  # type: List[_Snapshot]
         base_postconditions = []  # type: List[_Contract]
 
         bases_have_func = False
@@ -1014,15 +1206,18 @@ def _decorate_namespace_property(bases: List[type], namespace: MutableMapping[st
                 # Ignore functions which don't have preconditions or postconditions
                 if base_contract_checker is not None:
                     base_preconditions.extend(base_contract_checker.__preconditions__)  # type: ignore
+                    base_snapshots.extend(base_contract_checker.__postcondition_snapshots__)  # type: ignore
                     base_postconditions.extend(base_contract_checker.__postconditions__)  # type: ignore
 
         # Add preconditions and postconditions of the function
         preconditions = []  # type: List[List[_Contract]]
+        snapshots = []  # type: List[_Snapshot]
         postconditions = []  # type: List[_Contract]
 
         contract_checker = _find_checker(func=func)
         if contract_checker is not None:
             preconditions = contract_checker.__preconditions__  # type: ignore
+            snapshots = contract_checker.__postcondition_snapshots__
             postconditions = contract_checker.__postconditions__  # type: ignore
 
         preconditions = _collapse_preconditions(
@@ -1030,6 +1225,8 @@ def _decorate_namespace_property(bases: List[type], namespace: MutableMapping[st
             bases_have_func=bases_have_func,
             preconditions=preconditions,
             func=func)
+
+        snapshots = _collapse_snapshots(base_snapshots=base_snapshots, snapshots=snapshots)
 
         postconditions = _collapse_postconditions(
             base_postconditions=base_postconditions, postconditions=postconditions)
@@ -1050,6 +1247,7 @@ def _decorate_namespace_property(bases: List[type], namespace: MutableMapping[st
 
             # Override the preconditions and postconditions
             contract_checker.__preconditions__ = preconditions  # type: ignore
+            contract_checker.__postcondition_snapshots__ = snapshots  # type: ignore
             contract_checker.__postconditions__ = postconditions  # type: ignore
 
     if fget != value.fget or fset != value.fset or fdel != value.fdel:
