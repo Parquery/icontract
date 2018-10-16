@@ -1,3 +1,7 @@
+1.6.1
+=====
+* Replaced ``typing.Type`` with ``type`` so that icontract works with Python 3.5.2
+
 1.6.0
 =====
 * Added ``error`` argument to the contracts
