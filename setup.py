@@ -17,7 +17,7 @@ with open(os.path.join(here, 'README.rst'), encoding='utf-8') as fid:
 
 setup(
     name='icontract',
-    version='1.6.0',
+    version='1.6.1',
     description='Provide design-by-contract with informative violation messages',
     long_description=long_description,
     url='https://github.com/Parquery/icontract',
