@@ -9,7 +9,7 @@ import inspect
 import os
 import platform
 import reprlib
-from typing import Callable, MutableMapping, Any, Optional, Set, List, Type, Dict, \
+from typing import Callable, MutableMapping, Any, Optional, Set, List, Dict, \
     Tuple, Iterable, Mapping, cast, Union  # pylint: disable=unused-import
 
 import icontract._represent
@@ -53,7 +53,7 @@ class _Contract:
                  description: Optional[str] = None,
                  repr_args: Optional[Callable[..., str]] = None,
                  a_repr: Optional[reprlib.Repr] = None,
-                 error: Union[Callable[..., Exception], Type] = None) -> None:
+                 error: Union[Callable[..., Exception], type] = None) -> None:
         """
         Initialize.
 
@@ -425,7 +425,7 @@ class pre:  # pylint: disable=invalid-name
                  repr_args: Optional[Callable[..., str]] = None,
                  a_repr: Optional[reprlib.Repr] = None,
                  enabled: bool = __debug__,
-                 error: Union[Callable[..., Exception], Type] = None) -> None:
+                 error: Union[Callable[..., Exception], type] = None) -> None:
         """
         Initialize.
 
@@ -527,7 +527,7 @@ class post:  # pylint: disable=invalid-name
                  repr_args: Optional[Callable[..., str]] = None,
                  a_repr: Optional[reprlib.Repr] = None,
                  enabled: bool = __debug__,
-                 error: Union[Callable[..., Exception], Type] = None) -> None:
+                 error: Union[Callable[..., Exception], type] = None) -> None:
         """
         Initialize.
 
@@ -682,7 +682,7 @@ def _already_decorated_with_invariants(func: Callable[..., Any]) -> bool:
     return already_decorated
 
 
-def _add_invariant_checks(cls: Type) -> None:
+def _add_invariant_checks(cls: type) -> None:
     """Decorate each of the class functions with invariant checks if not already decorated."""
     # Candidates for the decoration as list of (name, dir() value)
     init_name_func = None  # type: Optional[Tuple[str, Callable[..., None]]]
@@ -762,7 +762,7 @@ class inv:  # pylint: disable=invalid-name
                  repr_args: Optional[Callable[..., str]] = None,
                  a_repr: Optional[reprlib.Repr] = None,
                  enabled: bool = __debug__,
-                 error: Union[Callable[..., Exception], Type] = None) -> None:
+                 error: Union[Callable[..., Exception], type] = None) -> None:
         """
         Initialize a class decorator to establish the invariant on all the public methods.
 
@@ -810,7 +810,7 @@ class inv:  # pylint: disable=invalid-name
             raise ValueError("Expected an invariant condition with at most an argument 'self', but got: {}".format(
                 self._contract.condition_args))
 
-    def __call__(self, cls: Type) -> Type:
+    def __call__(self, cls: type) -> type:
         """
         Decorate each of the public methods with the invariant.
 
@@ -838,14 +838,14 @@ class inv:  # pylint: disable=invalid-name
         return cls
 
 
-def _collapse_invariants(bases: List[Type], namespace: MutableMapping[str, Any]) -> None:
+def _collapse_invariants(bases: List[type], namespace: MutableMapping[str, Any]) -> None:
     """Collect invariants from the bases and merge them with the invariants in the namespace."""
     invariants = []  # type: List[_Contract]
 
     # Add invariants of the bases
     for base in bases:
         if hasattr(base, "__invariants__"):
-            invariants.extend(base.__invariants__)
+            invariants.extend(getattr(base, "__invariants__"))
 
     # Add invariants in the current namespace
     if '__invariants__' in namespace:
@@ -887,7 +887,7 @@ def _collapse_postconditions(base_postconditions: List[_Contract], postcondition
     return base_postconditions + postconditions
 
 
-def _decorate_namespace_function(bases: List[Type], namespace: MutableMapping[str, Any], key: str) -> None:
+def _decorate_namespace_function(bases: List[type], namespace: MutableMapping[str, Any], key: str) -> None:
     """Collect preconditions and postconditions from the bases and decorate the function at the ``key``."""
     # pylint: disable=too-many-branches
 
@@ -964,7 +964,7 @@ def _decorate_namespace_function(bases: List[Type], namespace: MutableMapping[st
         contract_checker.__postconditions__ = postconditions  # type: ignore
 
 
-def _decorate_namespace_property(bases: List[Type], namespace: MutableMapping[str, Any], key: str) -> None:
+def _decorate_namespace_property(bases: List[type], namespace: MutableMapping[str, Any], key: str) -> None:
     """Collect contracts for all getters/setters/deleters corresponding to ``key`` and decorate them."""
     # pylint: disable=too-many-locals
     # pylint: disable=too-many-branches
@@ -1056,7 +1056,7 @@ def _decorate_namespace_property(bases: List[Type], namespace: MutableMapping[st
         namespace[key] = property(fget=fget, fset=fset, fdel=fdel)
 
 
-def _dbc_decorate_namespace(bases: List[Type], namespace: MutableMapping[str, Any]) -> None:
+def _dbc_decorate_namespace(bases: List[type], namespace: MutableMapping[str, Any]) -> None:
     """
     Collect invariants, preconditions and postconditions from the bases and decorate all the methods.
 
