@@ -124,9 +124,9 @@ class Visitor(ast.NodeVisitor):
         self.generic_visit(node=node)
 
 
-def _is_lambda(condition: Callable[..., bool]) -> bool:
+def _is_lambda(a_function: Callable[..., Any]) -> bool:
     """
-    Check whether the condition is a lambda function.
+    Check whether the function is a lambda function.
 
     >>> def some_func()->bool: return True
     >>> _is_lambda(some_func)
@@ -139,10 +139,10 @@ def _is_lambda(condition: Callable[..., bool]) -> bool:
     :param condition: condition function of a contract
     :return: True if condition is defined as lambda function
     """
-    return condition.__name__ == "<lambda>"
+    return a_function.__name__ == "<lambda>"
 
 
-class LambdaInspection:
+class ConditionLambdaInspection:
     """Represent the inspection of the condition function given as a lambda."""
 
     def __init__(self, atok: asttokens.ASTTokens, node: ast.Lambda) -> None:
@@ -161,37 +161,47 @@ _DECORATOR_RE = re.compile(r'^\s*@[a-zA-Z_]')
 _DEF_CLASS_RE = re.compile(r'^\s*(def |class )')
 
 
-def inspect_lambda_condition(condition: Callable[..., bool]) -> Optional[LambdaInspection]:
+class DecoratorInspection:
+    """Represent the inspection of a decorator extracted from a source file and embedded in a dummy dynamic module."""
+
+    def __init__(self, atok: asttokens.ASTTokens, node: ast.Call) -> None:
+        """
+        Initialize.
+
+        :param atok: parsed AST tree and tokens with added positional properties
+        :param node: lambda AST node corresponding to the condition
+        """
+        self.atok = atok
+        self.node = node
+
+
+def inspect_decorator(lines: List[str], lineno: int, filename: str) -> DecoratorInspection:
     """
-    Parse the file in which condition resides and figure out the corresponding lambda AST node.
+    Parse the file in which the decorator is called and figure out the corresponding call AST node.
 
-    :param condition: condition lambda function
-    :return: inspected lambda function, or None if the condition is not a lambda function
+    :param lines: lines of the source file corresponding to the decorator call
+    :param lineno: line index (starting with 0) of one of the lines in the decorator call
+    :param filename: name of the file where decorator is called
+    :return: inspected decorator call
     """
-    if not _is_lambda(condition=condition):
-        return None
+    if lineno < 0 or lineno >= len(lines):
+        raise ValueError(("Given line number {} of one of the decorator lines "
+                          "is not within the range [{}, {}) of lines in {}").format(lineno, 0, len(lines), filename))
 
-    # We need to extract the source code corresponding to the decorator since inspect.getsource() is broken with
-    # lambdas.
-
-    # Find the line corresponding to the condition lambda
-    lines, condition_lineno = inspect.findsource(condition)
-
-    # Assume that the lambda condition lives in a decorator. Go up till a line starts with a decorator
+    # Go up till a line starts with a decorator
     decorator_lineno = None  # type: Optional[int]
-    for i in range(condition_lineno, -1, -1):
+    for i in range(lineno, -1, -1):
         if _DECORATOR_RE.match(lines[i]):
             decorator_lineno = i
             break
 
     if decorator_lineno is None:
-        raise SyntaxError(
-            "Decorator corresponding to the lambda condition on line {} could not be found in file {}: {!r}".format(
-                condition_lineno + 1, inspect.getsourcefile(condition), lines[condition_lineno]))
+        raise SyntaxError("Decorator corresponding to the line {} could not be found in file {}: {!r}".format(
+            lineno + 1, filename, lines[lineno]))
 
     # Find the decorator end -- it's either a function definition, a class definition or another decorator
     decorator_end_lineno = None  # type: Optional[int]
-    for i in range(condition_lineno + 1, len(lines)):
+    for i in range(lineno + 1, len(lines)):
         line = lines[i]
 
         if _DECORATOR_RE.match(line) or _DEF_CLASS_RE.match(line):
@@ -199,10 +209,8 @@ def inspect_lambda_condition(condition: Callable[..., bool]) -> Optional[LambdaI
             break
 
     if decorator_end_lineno is None:
-        raise SyntaxError(
-            ("The next statement following the decorator corresponding to the lambda condition on line {} "
-             "could not be found in file {}: {!r}").format(condition_lineno + 1, inspect.getsourcefile(condition),
-                                                           lines[condition_lineno]))
+        raise SyntaxError(("The next statement following the decorator corresponding to the line {} "
+                           "could not be found in file {}: {!r}").format(lineno + 1, filename, lines[lineno]))
 
     decorator_lines = lines[decorator_lineno:decorator_end_lineno]
 
@@ -229,6 +237,30 @@ def inspect_lambda_condition(condition: Callable[..., bool]) -> Optional[LambdaI
 
     call_node = func_def_node.decorator_list[0]
 
+    return DecoratorInspection(atok=atok, node=call_node)
+
+
+def inspect_lambda_condition(condition: Callable[..., bool]) -> Optional[ConditionLambdaInspection]:
+    """
+    Parse the file in which condition resides and figure out the corresponding lambda AST node.
+
+    :param condition: condition lambda function
+    :return: inspected lambda function, or None if the condition is not a lambda function
+    """
+    if not _is_lambda(a_function=condition):
+        return None
+
+    # We need to extract the source code corresponding to the decorator since inspect.getsource() is broken with
+    # lambdas.
+
+    # Find the line corresponding to the condition lambda
+    lines, condition_lineno = inspect.findsource(condition)
+    filename = inspect.getsourcefile(condition)
+
+    decorator_inspection = inspect_decorator(lines=lines, lineno=condition_lineno, filename=filename)
+
+    call_node = decorator_inspection.node
+
     lambda_node = None  # type: Optional[ast.Lambda]
 
     if len(call_node.args) > 0:
@@ -253,10 +285,10 @@ def inspect_lambda_condition(condition: Callable[..., bool]) -> Optional[LambdaI
             "Expected a call AST node of a decorator to have either args or keywords, but got: {}".format(
                 ast.dump(call_node)))
 
-    return LambdaInspection(atok=atok, node=lambda_node)
+    return ConditionLambdaInspection(atok=decorator_inspection.atok, node=lambda_node)
 
 
-def repr_values(condition: Callable[..., bool], lambda_inspection: Optional[LambdaInspection],
+def repr_values(condition: Callable[..., bool], lambda_inspection: Optional[ConditionLambdaInspection],
                 condition_kwargs: Mapping[str, Any], a_repr: reprlib.Repr) -> List[str]:
     # pylint: disable=too-many-locals
     """
@@ -270,7 +302,7 @@ def repr_values(condition: Callable[..., bool], lambda_inspection: Optional[Lamb
     :param a_repr: representation instance that defines how the values are represented.
     :return: list of value representations
     """
-    if _is_lambda(condition=condition):
+    if _is_lambda(a_function=condition):
         assert lambda_inspection is not None, "Expected a lambda inspection when given a condition as a lambda function"
     else:
         assert lambda_inspection is None, "Expected no lambda inspection in a condition given as a non-lambda function"
@@ -339,7 +371,7 @@ def _walk_with_parent(node: ast.AST) -> Iterable[Tuple[ast.AST, Optional[ast.AST
         yield node, parent
 
 
-def condition_as_text(condition: Callable[..., bool], lambda_inspection: Optional[LambdaInspection]) -> str:
+def condition_as_text(condition: Callable[..., bool], lambda_inspection: Optional[ConditionLambdaInspection]) -> str:
     """
     Convert the condition into text.
 
@@ -347,7 +379,7 @@ def condition_as_text(condition: Callable[..., bool], lambda_inspection: Optiona
     :param lambda_inspection: lambda inspection if the condition is a lambda function, or None otherwise
     :return: string representation of the condition
     """
-    if _is_lambda(condition=condition):
+    if _is_lambda(a_function=condition):
         assert lambda_inspection is not None, "Expected a lambda inspection when given a condition as a lambda function"
     else:
         assert lambda_inspection is None, "Expected no lambda inspection in a condition given as a non-lambda function"

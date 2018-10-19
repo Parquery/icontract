@@ -257,6 +257,64 @@ After the invocation of a magic method:
     self was some instance
     self.x was -1
 
+Snapshots (a.k.a "old" argument values)
+---------------------------------------
+Usual postconditions can not verify the state transitions of the function's argument values. For example, it is
+impossible to verify in a postcondition that the list supplied as an argument was appended an element since the
+postcondition only sees the argument value as-is after the function invocation.
+
+In order to verify the state transitions, the postcondition needs the "old" argument value (before the invocation)
+as well as the current argument value (after the invocation). ``icontract.snapshot`` decorator instructs the checker
+to take snapshots of the argument values before the function call which are then supplied as ``OLD`` argument to the
+postcondition function.
+
+``icontract.snapshot`` takes a capture function which accepts a single argument of the function (or none). The name of
+the argument corresponds to the property of ``OLD`` object passed to the postcondition. You can also rename the
+property in ``OLD`` by supplying a ``name`` argument to ``icontract.snapshot``.
+
+Here is an example that uses snapshots to check that a value was appended to the list:
+
+.. code-block:: python
+
+    >>> import icontract
+    >>> from typing import List
+
+    >>> @icontract.snapshot(lambda lst: lst[:])
+    ... @icontract.post(lambda OLD, lst, value: lst == OLD.lst + [value])
+    ... def some_func(lst: List[int], value: int) -> None:
+    ...     lst.append(value)
+    ...     lst.append(1984)  # bug
+
+    >>> some_func(lst=[1, 2], value=3)
+    Traceback (most recent call last):
+        ...
+    icontract.ViolationError: lst == OLD.lst + [value]:
+    OLD was a bunch of OLD values
+    OLD.lst was [1, 2]
+    lst was [1, 2, 3, 1984]
+    value was 3
+
+The following example shows how you can name the snapshot:
+
+.. code-block:: python
+
+    >>> import icontract
+    >>> from typing import List
+
+    >>> @icontract.snapshot(lambda lst: len(lst), name="len_lst")
+    ... @icontract.post(lambda OLD, lst, value: len(lst) == OLD.len_lst + 1)
+    ... def some_func(lst: List[int], value: int) -> None:
+    ...     lst.append(value)
+    ...     lst.append(1984)  # bug
+
+    >>> some_func(lst=[1, 2], value=3)
+    Traceback (most recent call last):
+        ...
+    icontract.ViolationError: len(lst) == OLD.len_lst + 1:
+    OLD was a bunch of OLD values
+    OLD.len_lst was 2
+    len(lst) was 4
+    lst was [1, 2, 3, 1984]
 
 Inheritance
 -----------
@@ -285,6 +343,9 @@ class apply.
 
 **Abstract Classes**. Since Python 3 does not allow multiple meta classes, ``icontract.DBCMeta`` inherits from
 ``abc.ABCMeta`` to allow combining contracts with abstract base classes.
+
+**Snapshots**. Snapshots are inherited from the base classes for computational efficiency.
+You can use snapshots from the base classes as if they were defined in the concrete class.
 
 The following example shows an abstract parent class and a child class that inherits and strengthens parent's contracts:
 
@@ -380,10 +441,41 @@ The following example shows how preconditions are weakened:
             ...
         icontract.ViolationError: x % 3 == 0: x was 5
 
+The example below illustrates how snaphots are inherited:
+
+.. code-block:: python
+
+        >>> class A(icontract.DBC):
+        ...     @abc.abstractmethod
+        ...     @icontract.snapshot(lambda lst: lst[:])
+        ...     @icontract.post(lambda OLD, lst: len(lst) == len(OLD.lst) + 1)
+        ...     def func(self, lst: List[int], value: int) -> None:
+        ...         pass
+
+        >>> class B(A):
+        ...     # The snapshot of OLD.lst has been defined in class A.
+        ...     @icontract.post(lambda OLD, lst: lst == OLD.lst + [value])
+        ...     def func(self, lst: List[int], value: int) -> None:
+        ...         lst.append(value)
+        ...         lst.append(1984)  # bug
+
+        >>> b = B()
+        >>> b.func(lst=[1, 2], value=3)
+        Traceback (most recent call last):
+            ...
+        icontract.ViolationError: len(lst) == len(OLD.lst) + 1:
+        OLD was a bunch of OLD values
+        OLD.lst was [1, 2]
+        len(OLD.lst) was 2
+        len(lst) was 4
+        lst was [1, 2, 3, 1984]
+
+
 Toggling Contracts
 ------------------
-By default, the contracts are always checked at run-time. To disable them, run the interpreter in optimized mode (``-O``
-or ``-OO``, see `Python command-line options <https://docs.python.org/3/using/cmdline.html#cmdoption-o>`_).
+By default, the contract checks (including the snapshots) are always perfromed at run-time. To disable them, run the
+interpreter in optimized mode (``-O`` or ``-OO``, see
+`Python command-line options <https://docs.python.org/3/using/cmdline.html#cmdoption-o>`_).
 
 If you want to override this behavior, you can supply the the ``enabled`` argument to the contract:
 
