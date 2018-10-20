@@ -1,3 +1,8 @@
+1.7.0
+=====
+* Added ``snapshot`` decorator to capture "old" values (prior to function invocation) for postconditions that verify
+  state transitions
+
 1.6.1
 =====
 * Replaced ``typing.Type`` with ``type`` so that icontract works with Python 3.5.2
