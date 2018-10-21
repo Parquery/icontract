@@ -12,6 +12,8 @@ import asttokens
 
 import icontract._recompute
 
+from icontract._types import Contract
+
 
 def _representable(value: Any) -> bool:
     """
@@ -390,3 +392,41 @@ def condition_as_text(condition: Callable[..., bool], lambda_inspection: Optiona
         condition_text = lambda_inspection.text
 
     return condition_text
+
+
+def generate_message(contract: Contract, condition_kwargs: Mapping[str, Any]) -> str:
+    """Generate the message upon contract violation."""
+    # pylint: disable=protected-access
+    parts = []  # type: List[str]
+
+    if contract.description is not None:
+        parts.append("{}: ".format(contract.description))
+
+    lambda_inspection = inspect_lambda_condition(condition=contract.condition)
+
+    parts.append(condition_as_text(condition=contract.condition, lambda_inspection=lambda_inspection))
+
+    if contract._repr_func:
+        parts.append(': ')
+        parts.append(contract._repr_func(**condition_kwargs))
+    else:
+        repr_vals = repr_values(
+            condition=contract.condition,
+            lambda_inspection=lambda_inspection,
+            condition_kwargs=condition_kwargs,
+            a_repr=contract._a_repr)
+
+        if len(repr_vals) == 0:
+            # Do not append anything since no value could be represented as a string.
+            # This could appear in case we have, for example, a generator expression as the return value of a lambda.
+            pass
+
+        elif len(repr_vals) == 1:
+            parts.append(': ')
+            parts.append(repr_vals[0])
+        else:
+            parts.append(':\n')
+            parts.append('\n'.join(repr_vals))
+
+    msg = "".join(parts)
+    return msg
