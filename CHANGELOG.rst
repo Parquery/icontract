@@ -1,3 +1,7 @@
+1.7.1
+=====
+* Refactored implementation and tests into smaller modules
+
 1.7.0
 =====
 * Added ``snapshot`` decorator to capture "old" values (prior to function invocation) for postconditions that verify
