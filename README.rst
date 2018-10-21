@@ -84,7 +84,7 @@ If you want to customize the error, see Section "Custom Errors".
     >>> some_func(x=1)
     Traceback (most recent call last):
       ...
-    icontract.ViolationError: x > 3: x was 1
+    icontract.errors.ViolationError: x > 3: x was 1
 
     # Pre-condition violation with a description
     >>> @icontract.pre(lambda x: x > 3, "x must not be small")
@@ -94,7 +94,7 @@ If you want to customize the error, see Section "Custom Errors".
     >>> some_func(x=1)
     Traceback (most recent call last):
       ...
-    icontract.ViolationError: x must not be small: x > 3: x was 1
+    icontract.errors.ViolationError: x must not be small: x > 3: x was 1
 
     # Pre-condition violation with more complex values
     >>> class B:
@@ -123,7 +123,7 @@ If you want to customize the error, see Section "Custom Errors".
     >>> some_func(an_a)
     Traceback (most recent call last):
       ...
-    icontract.ViolationError: a.b.x + a.b.y() > SOME_GLOBAL_VAR:
+    icontract.errors.ViolationError: a.b.x + a.b.y() > SOME_GLOBAL_VAR:
     SOME_GLOBAL_VAR was 13
     a was instance of A
     a.b was instance of B
@@ -138,7 +138,7 @@ If you want to customize the error, see Section "Custom Errors".
     >>> some_func(x=10)
     Traceback (most recent call last):
       ...
-    icontract.ViolationError: result > x:
+    icontract.errors.ViolationError: result > x:
     result was 5
     x was 10
 
@@ -180,7 +180,7 @@ After the initialization:
         >>> some_instance = SomeClass()
         Traceback (most recent call last):
          ...
-        icontract.ViolationError: self.x > 0:
+        icontract.errors.ViolationError: self.x > 0:
         self was some instance
         self.x was -1
 
@@ -205,7 +205,7 @@ Before the invocation of a public method:
     >>> some_instance.some_method()
     Traceback (most recent call last):
      ...
-    icontract.ViolationError: self.x > 0:
+    icontract.errors.ViolationError: self.x > 0:
     self was some instance
     self.x was -1
 
@@ -229,7 +229,7 @@ After the invocation of a public method:
     >>> some_instance.some_method()
     Traceback (most recent call last):
      ...
-    icontract.ViolationError: self.x > 0:
+    icontract.errors.ViolationError: self.x > 0:
     self was some instance
     self.x was -1
 
@@ -253,7 +253,7 @@ After the invocation of a magic method:
     >>> some_instance()
     Traceback (most recent call last):
      ...
-    icontract.ViolationError: self.x > 0:
+    icontract.errors.ViolationError: self.x > 0:
     self was some instance
     self.x was -1
 
@@ -288,7 +288,7 @@ Here is an example that uses snapshots to check that a value was appended to the
     >>> some_func(lst=[1, 2], value=3)
     Traceback (most recent call last):
         ...
-    icontract.ViolationError: lst == OLD.lst + [value]:
+    icontract.errors.ViolationError: lst == OLD.lst + [value]:
     OLD was a bunch of OLD values
     OLD.lst was [1, 2]
     lst was [1, 2, 3, 1984]
@@ -310,7 +310,7 @@ The following example shows how you can name the snapshot:
     >>> some_func(lst=[1, 2], value=3)
     Traceback (most recent call last):
         ...
-    icontract.ViolationError: len(lst) == OLD.len_lst + 1:
+    icontract.errors.ViolationError: len(lst) == OLD.len_lst + 1:
     OLD was a bunch of OLD values
     OLD.len_lst was 2
     len(lst) was 4
@@ -388,7 +388,7 @@ The following example shows an abstract parent class and a child class that inhe
         >>> some_b.func(y=0)
         Traceback (most recent call last):
             ...
-        icontract.ViolationError: result < y:
+        icontract.errors.ViolationError: result < y:
         result was 1
         y was 0
 
@@ -397,7 +397,7 @@ The following example shows an abstract parent class and a child class that inhe
         >>> another_b.break_parent_invariant()
         Traceback (most recent call last):
             ...
-        icontract.ViolationError: self.x > 0:
+        icontract.errors.ViolationError: self.x > 0:
         self was instance of B
         self.x was -1
 
@@ -406,7 +406,7 @@ The following example shows an abstract parent class and a child class that inhe
         >>> yet_another_b.break_my_invariant()
         Traceback (most recent call last):
             ...
-        icontract.ViolationError: self.x < 100:
+        icontract.errors.ViolationError: self.x < 100:
         self was instance of B
         self.x was 101
 
@@ -439,7 +439,7 @@ The following example shows how preconditions are weakened:
         >>> b.func(x=5)
         Traceback (most recent call last):
             ...
-        icontract.ViolationError: x % 3 == 0: x was 5
+        icontract.errors.ViolationError: x % 3 == 0: x was 5
 
 The example below illustrates how snaphots are inherited:
 
@@ -463,7 +463,7 @@ The example below illustrates how snaphots are inherited:
         >>> b.func(lst=[1, 2], value=3)
         Traceback (most recent call last):
             ...
-        icontract.ViolationError: len(lst) == len(OLD.lst) + 1:
+        icontract.errors.ViolationError: len(lst) == len(OLD.lst) + 1:
         OLD was a bunch of OLD values
         OLD.lst was [1, 2]
         len(OLD.lst) was 2

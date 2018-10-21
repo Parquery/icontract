@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # pylint: disable=missing-docstring,invalid-name,too-many-public-methods,no-self-use
+
 import pathlib
 import unittest
 from typing import Optional, List, Tuple  # pylint: disable=unused-import
