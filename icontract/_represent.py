@@ -242,25 +242,12 @@ def inspect_decorator(lines: List[str], lineno: int, filename: str) -> Decorator
     return DecoratorInspection(atok=atok, node=call_node)
 
 
-def inspect_lambda_condition(condition: Callable[..., bool]) -> Optional[ConditionLambdaInspection]:
+def find_lambda_condition(decorator_inspection: DecoratorInspection) -> Optional[ConditionLambdaInspection]:
     """
-    Parse the file in which condition resides and figure out the corresponding lambda AST node.
+    Inspect the decorator and extract the condition as lambda.
 
-    :param condition: condition lambda function
-    :return: inspected lambda function, or None if the condition is not a lambda function
+    If the condition is not given as a lambda function, return None.
     """
-    if not _is_lambda(a_function=condition):
-        return None
-
-    # We need to extract the source code corresponding to the decorator since inspect.getsource() is broken with
-    # lambdas.
-
-    # Find the line corresponding to the condition lambda
-    lines, condition_lineno = inspect.findsource(condition)
-    filename = inspect.getsourcefile(condition)
-
-    decorator_inspection = inspect_decorator(lines=lines, lineno=condition_lineno, filename=filename)
-
     call_node = decorator_inspection.node
 
     lambda_node = None  # type: Optional[ast.Lambda]
@@ -361,39 +348,6 @@ def repr_values(condition: Callable[..., bool], lambda_inspection: Optional[Cond
     return parts
 
 
-def _walk_with_parent(node: ast.AST) -> Iterable[Tuple[ast.AST, Optional[ast.AST]]]:
-    """Walk the abstract syntax tree by (node, parent)."""
-    stack = [(node, None)]  # type: List[Tuple[ast.AST, Optional[ast.AST]]]
-    while stack:
-        node, parent = stack.pop()
-
-        for child in ast.iter_child_nodes(node):
-            stack.append((child, node))
-
-        yield node, parent
-
-
-def condition_as_text(condition: Callable[..., bool], lambda_inspection: Optional[ConditionLambdaInspection]) -> str:
-    """
-    Convert the condition into text.
-
-    :param condition: condition function
-    :param lambda_inspection: lambda inspection if the condition is a lambda function, or None otherwise
-    :return: string representation of the condition
-    """
-    if _is_lambda(a_function=condition):
-        assert lambda_inspection is not None, "Expected a lambda inspection when given a condition as a lambda function"
-    else:
-        assert lambda_inspection is None, "Expected no lambda inspection in a condition given as a non-lambda function"
-
-    if lambda_inspection is None:
-        condition_text = condition.__name__
-    else:
-        condition_text = lambda_inspection.text
-
-    return condition_text
-
-
 def generate_message(contract: Contract, condition_kwargs: Mapping[str, Any]) -> str:
     """Generate the message upon contract violation."""
     # pylint: disable=protected-access
@@ -402,9 +356,26 @@ def generate_message(contract: Contract, condition_kwargs: Mapping[str, Any]) ->
     if contract.description is not None:
         parts.append("{}: ".format(contract.description))
 
-    lambda_inspection = inspect_lambda_condition(condition=contract.condition)
+    lambda_inspection = None  # type: Optional[ConditionLambdaInspection]
+    if not _is_lambda(a_function=contract.condition):
+        condition_text = contract.condition.__name__
+    else:
+        # We need to extract the source code corresponding to the decorator since inspect.getsource() is broken with
+        # lambdas.
 
-    parts.append(condition_as_text(condition=contract.condition, lambda_inspection=lambda_inspection))
+        # Find the line corresponding to the condition lambda
+        lines, condition_lineno = inspect.findsource(contract.condition)
+        filename = inspect.getsourcefile(contract.condition)
+
+        decorator_inspection = inspect_decorator(lines=lines, lineno=condition_lineno, filename=filename)
+        lambda_inspection = find_lambda_condition(decorator_inspection=decorator_inspection)
+
+        assert lambda_inspection is not None, \
+            "Expected lambda_inspection to be non-None if _is_lambda is True on: {}".format(contract.condition)
+
+        condition_text = lambda_inspection.text
+
+    parts.append(condition_text)
 
     if contract._repr_func:
         parts.append(': ')
