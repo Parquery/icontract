@@ -576,6 +576,14 @@ Here is an example of the error given as a callable:
         ...
     ValueError: x must be positive, but got: 0
 
+.. danger::
+    Be careful when you write contracts with custom errors. This might lead the caller to (ab)use the contracts as
+    a control flow mechanism.
+
+    In that case, the user will expect that the contract is *always* enabled and not only during debug or test.
+    (For example, whenever you run Python interpreter with ``-O`` or ``-OO``, ``__debug__`` will be ``False``.
+    If you left ``enabled`` argument to its default ``__debug__``, the contract will *not* be verified in
+    ``-O`` mode.)
 
 
 Implementation Details
