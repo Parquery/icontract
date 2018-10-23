@@ -20,8 +20,7 @@ class pre:  # pylint: disable=invalid-name
     def __init__(self,
                  condition: Callable[..., bool],
                  description: Optional[str] = None,
-                 repr_args: Optional[Callable[..., str]] = None,
-                 a_repr: Optional[reprlib.Repr] = None,
+                 a_repr: reprlib.Repr = icontract._globals.aRepr,
                  enabled: bool = __debug__,
                  error: Union[Callable[..., Exception], type] = None) -> None:
         """
@@ -29,18 +28,7 @@ class pre:  # pylint: disable=invalid-name
 
         :param condition: precondition predicate
         :param description: textual description of the precondition
-        :param repr_args:
-            [WILL BE DEPRECATED IN ICONTRACT 2]
-
-            function to represent arguments in the message on a failed precondition. The repr_func needs to take the
-            same arguments as the condition function.
-
-            If not specified, all the involved values are represented by re-traversing the AST.
-        :param a_repr:
-            representation instance that defines how the values are represented.
-
-            If ``repr_args`` is specified, ``repr_instance`` should be None.
-            If no ``repr_args`` is specified, the default ``aRepr`` is used.
+        :param a_repr: representation instance that defines how the values are represented
         :param enabled:
             The decorator is applied only if this argument is set.
 
@@ -64,8 +52,7 @@ class pre:  # pylint: disable=invalid-name
         if not enabled:
             return
 
-        self._contract = Contract(
-            condition=condition, description=description, repr_args=repr_args, a_repr=a_repr, error=error)
+        self._contract = Contract(condition=condition, description=description, a_repr=a_repr, error=error)
 
     def __call__(self, func: Callable[..., Any]) -> Callable[..., Any]:
         """
@@ -194,8 +181,7 @@ class post:  # pylint: disable=invalid-name
     def __init__(self,
                  condition: Callable[..., bool],
                  description: Optional[str] = None,
-                 repr_args: Optional[Callable[..., str]] = None,
-                 a_repr: Optional[reprlib.Repr] = None,
+                 a_repr: reprlib.Repr = icontract._globals.aRepr,
                  enabled: bool = __debug__,
                  error: Union[Callable[..., Exception], type] = None) -> None:
         """
@@ -203,16 +189,7 @@ class post:  # pylint: disable=invalid-name
 
         :param condition: postcondition predicate
         :param description: textual description of the postcondition
-        :param repr_args:
-            function to represent arguments in the message on a failed postcondition. The repr_func needs to take the
-            same arguments as the condition function.
-
-            If not specified, all the involved values are represented by re-traversing the AST.
-        :param a_repr:
-            representation instance that defines how the values are represented.
-
-            If ``repr_args`` is specified, ``repr_instance`` should be None.
-            If no ``repr_args`` is specified, the default ``reprlib.aRepr`` is used.
+        :param a_repr: representation instance that defines how the values are represented
         :param enabled:
             The decorator is applied only if this argument is set.
 
@@ -236,8 +213,7 @@ class post:  # pylint: disable=invalid-name
         if not enabled:
             return
 
-        self._contract = Contract(
-            condition=condition, description=description, repr_args=repr_args, a_repr=a_repr, error=error)
+        self._contract = Contract(condition=condition, description=description, a_repr=a_repr, error=error)
 
     def __call__(self, func: Callable[..., Any]) -> Callable[..., Any]:
         """
@@ -287,8 +263,7 @@ class inv:  # pylint: disable=invalid-name
     def __init__(self,
                  condition: Callable[..., bool],
                  description: Optional[str] = None,
-                 repr_args: Optional[Callable[..., str]] = None,
-                 a_repr: Optional[reprlib.Repr] = None,
+                 a_repr: reprlib.Repr = icontract._globals.aRepr,
                  enabled: bool = __debug__,
                  error: Union[Callable[..., Exception], type] = None) -> None:
         """
@@ -296,17 +271,7 @@ class inv:  # pylint: disable=invalid-name
 
         :param condition: invariant predicate
         :param description: textual description of the invariant
-        :param repr_args:
-                function to represent arguments in the message on a breached invariant. The repr_func takes only
-                ``self`` as a single argument.
-
-                If not specified, all the involved values are represented by re-traversing the AST.
-
-        :param a_repr:
-                representation instance that defines how the values are represented.
-
-                If ``repr_args`` is specified, ``repr_instance`` should be None.
-                If no ``repr_args`` is specified, the default ``icontract.aRepr`` is used.
+        :param a_repr: representation instance that defines how the values are represented
         :param enabled:
                 The decorator is applied only if this argument is set.
 
@@ -331,8 +296,7 @@ class inv:  # pylint: disable=invalid-name
         if not enabled:
             return
 
-        self._contract = Contract(
-            condition=condition, description=description, repr_args=repr_args, a_repr=a_repr, error=error)
+        self._contract = Contract(condition=condition, description=description, a_repr=a_repr, error=error)
 
         if self._contract.condition_args and self._contract.condition_args != ['self']:
             raise ValueError("Expected an invariant condition with at most an argument 'self', but got: {}".format(

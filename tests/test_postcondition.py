@@ -6,7 +6,6 @@
 
 import abc
 import functools
-import reprlib
 import unittest
 from typing import Optional, List, Type  # pylint: disable=unused-import
 
@@ -122,43 +121,6 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(post_err)
         self.assertEqual("result > 3: result was 0", str(post_err))
-
-
-class TestRepr(unittest.TestCase):
-    def test_repr_args(self):
-        @icontract.post(
-            lambda result, x: result > x, repr_args=lambda result, x: "result was {:05}, x was {:05}".format(result, x))
-        def some_func(x: int, y: int = 5) -> int:
-            return x - y
-
-        post_err = None  # type: Optional[icontract.ViolationError]
-        try:
-            some_func(x=1)
-        except icontract.ViolationError as err:
-            post_err = err
-
-        self.assertIsNotNone(post_err)
-        self.assertEqual("result > x: result was -0004, x was 00001", str(post_err))
-
-    def test_repr(self):
-        a_repr = reprlib.Repr()
-        a_repr.maxlist = 3
-
-        @icontract.post(lambda result, x: len(result) > x, a_repr=a_repr)
-        def some_func(x: int) -> List[int]:
-            return list(range(x))
-
-        post_err = None  # type: Optional[icontract.ViolationError]
-        try:
-            some_func(x=10 * 1000)
-        except icontract.ViolationError as err:
-            post_err = err
-
-        self.assertIsNotNone(post_err)
-        self.assertEqual("len(result) > x:\n"
-                         "len(result) was 10000\n"
-                         "result was [0, 1, 2, ...]\n"
-                         "x was 10000", str(post_err))
 
 
 class TestError(unittest.TestCase):

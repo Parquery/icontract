@@ -16,26 +16,14 @@ class Contract:
     def __init__(self,
                  condition: Callable[..., bool],
                  description: Optional[str] = None,
-                 repr_args: Optional[Callable[..., str]] = None,
-                 a_repr: Optional[reprlib.Repr] = None,
+                 a_repr: reprlib.Repr = icontract._globals.aRepr,
                  error: Union[Callable[..., Exception], type] = None) -> None:
         """
         Initialize.
 
         :param condition: condition predicate
         :param description: textual description of the contract
-        :param repr_args:
-            [WILL BE DEPRECATED IN ICONTRACT 2]
-
-            function to represent arguments in the message on a failed condition. The repr_func needs to take the
-            same arguments as the condition function.
-
-            If not specified, all the involved values are represented by re-traversing the AST.
-        :param a_repr:
-            representation instance that defines how the values are represented.
-
-            If ``repr_args`` is specified, ``repr_instance`` should be None.
-            If no ``repr_args`` is specified, the default ``aRepr`` is used.
+        :param a_repr: representation instance that defines how the values are represented
         :param error:
             if given as a callable, ``error`` is expected to accept a subset of function arguments
             (*e.g.*, also including ``result`` for perconditions, only ``self`` for invariants *etc.*) and return
@@ -46,25 +34,13 @@ class Contract:
 
         """
         # pylint: disable=too-many-arguments
-        if repr_args is not None and a_repr is not None:
-            raise ValueError("Expected no repr_instance if repr_args is given.")
-
         self.condition = condition
 
         self.condition_args = list(inspect.signature(condition).parameters.keys())  # type: List[str]
         self.condition_arg_set = set(self.condition_args)  # type: Set[str]
 
         self.description = description
-
-        self._repr_func = repr_args
-        if repr_args is not None:
-            got = list(inspect.signature(repr_args).parameters.keys())
-
-            if got != self.condition_args:
-                raise ValueError("Unexpected argument(s) of repr_args. Expected {}, got {}".format(
-                    self.condition_args, got))
-
-        self._a_repr = a_repr if a_repr is not None else icontract._globals.aRepr
+        self._a_repr = a_repr
 
         self.error = error
         self.error_args = None  # type: Optional[List[str]]
