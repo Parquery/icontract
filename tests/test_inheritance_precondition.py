@@ -12,12 +12,12 @@ import icontract
 class TestOK(unittest.TestCase):
     def test_require_else(self):
         class A(icontract.DBC):
-            @icontract.pre(lambda x: x % 2 == 0)
+            @icontract.require(lambda x: x % 2 == 0)
             def func(self, x: int) -> None:
                 pass
 
         class B(A):
-            @icontract.pre(lambda x: x % 3 == 0)
+            @icontract.require(lambda x: x % 3 == 0)
             def func(self, x: int) -> None:
                 pass
 
@@ -27,17 +27,17 @@ class TestOK(unittest.TestCase):
 
     def test_triple_inheritance_with_require_else(self):
         class A(icontract.DBC):
-            @icontract.pre(lambda x: x % 2 == 0)
+            @icontract.require(lambda x: x % 2 == 0)
             def func(self, x: int) -> None:
                 pass
 
         class B(A):
-            @icontract.pre(lambda x: x % 3 == 0)
+            @icontract.require(lambda x: x % 3 == 0)
             def func(self, x: int) -> None:
                 pass
 
         class C(B):
-            @icontract.pre(lambda x: x % 5 == 0)
+            @icontract.require(lambda x: x % 5 == 0)
             def func(self, x: int) -> None:
                 pass
 
@@ -48,7 +48,7 @@ class TestOK(unittest.TestCase):
 class TestViolation(unittest.TestCase):
     def test_inherited_without_implementation(self):
         class A(icontract.DBC):
-            @icontract.pre(lambda x: x < 100)
+            @icontract.require(lambda x: x < 100)
             def func(self, x: int) -> None:
                 pass
 
@@ -67,7 +67,7 @@ class TestViolation(unittest.TestCase):
 
     def test_inherited_with_implementation(self):
         class A(icontract.DBC):
-            @icontract.pre(lambda x: x < 100)
+            @icontract.require(lambda x: x < 100)
             def func(self, x: int) -> None:
                 pass
 
@@ -87,12 +87,12 @@ class TestViolation(unittest.TestCase):
 
     def test_require_else(self):
         class A(icontract.DBC):
-            @icontract.pre(lambda x: x % 2 == 0)
+            @icontract.require(lambda x: x % 2 == 0)
             def func(self, x: int) -> None:
                 pass
 
         class B(A):
-            @icontract.pre(lambda x: x % 3 == 0)
+            @icontract.require(lambda x: x % 3 == 0)
             def func(self, x: int) -> None:
                 pass
 
@@ -109,7 +109,7 @@ class TestViolation(unittest.TestCase):
 
     def test_triple_inheritance_wo_implementation(self):
         class A(icontract.DBC):
-            @icontract.pre(lambda x: x < 100)
+            @icontract.require(lambda x: x < 100)
             def func(self, x: int) -> None:
                 pass
 
@@ -131,7 +131,7 @@ class TestViolation(unittest.TestCase):
 
     def test_triple_inheritance_with_implementation(self):
         class A(icontract.DBC):
-            @icontract.pre(lambda x: x < 100)
+            @icontract.require(lambda x: x < 100)
             def func(self, x: int) -> None:
                 pass
 
@@ -154,17 +154,17 @@ class TestViolation(unittest.TestCase):
 
     def test_triple_inheritance_with_require_else(self):
         class A(icontract.DBC):
-            @icontract.pre(lambda x: x % 2 == 0)
+            @icontract.require(lambda x: x % 2 == 0)
             def func(self, x: int) -> None:
                 pass
 
         class B(A):
-            @icontract.pre(lambda x: x % 3 == 0)
+            @icontract.require(lambda x: x % 3 == 0)
             def func(self, x: int) -> None:
                 pass
 
         class C(B):
-            @icontract.pre(lambda x: x % 5 == 0)
+            @icontract.require(lambda x: x % 5 == 0)
             def func(self, x: int) -> None:
                 pass
 
@@ -181,7 +181,7 @@ class TestViolation(unittest.TestCase):
 
     def test_abstract_method(self):
         class A(icontract.DBC):
-            @icontract.pre(lambda x: x > 0)
+            @icontract.require(lambda x: x > 0)
             @abc.abstractmethod
             def func(self, x: int) -> int:
                 pass
@@ -202,7 +202,7 @@ class TestViolation(unittest.TestCase):
 
     def test_that_base_preconditions_apply_to_init_if_not_defined(self):
         class A(icontract.DBC):
-            @icontract.pre(lambda x: x >= 0)
+            @icontract.require(lambda x: x >= 0)
             def __init__(self, x: int) -> None:
                 pass
 
@@ -220,13 +220,13 @@ class TestViolation(unittest.TestCase):
 
     def test_that_base_preconditions_dont_apply_to_init_if_overridden(self):
         class A(icontract.DBC):
-            @icontract.pre(lambda x: x >= 0)
+            @icontract.require(lambda x: x >= 0)
             def __init__(self, x: int) -> None:
                 pass
 
         class B(A):
             # pylint: disable=super-init-not-called
-            @icontract.pre(lambda x: x < 0)
+            @icontract.require(lambda x: x < 0)
             def __init__(self, x: int) -> None:
                 pass
 
@@ -251,17 +251,17 @@ class TestPropertyOK(unittest.TestCase):
                 self._some_prop = 1
 
             @property
-            @icontract.pre(lambda self: self._some_prop > 0)
+            @icontract.require(lambda self: self._some_prop > 0)
             def some_prop(self) -> int:
                 return self._some_prop
 
             @some_prop.setter
-            @icontract.pre(lambda value: value > 0)
+            @icontract.require(lambda value: value > 0)
             def some_prop(self, value: int) -> None:
                 self._some_prop = value
 
             @some_prop.deleter
-            @icontract.pre(lambda self: not self.deleted)
+            @icontract.require(lambda self: not self.deleted)
             def some_prop(self) -> None:
                 self.deleted = True
 
@@ -283,7 +283,7 @@ class TestPropertyViolation(unittest.TestCase):
                 self.toggled = True
 
             @property
-            @icontract.pre(lambda self: not self.toggled)
+            @icontract.require(lambda self: not self.toggled)
             def some_prop(self) -> int:
                 return 0
 
@@ -315,7 +315,7 @@ class TestPropertyViolation(unittest.TestCase):
                 return 0
 
             @some_prop.setter
-            @icontract.pre(lambda value: value > 0)
+            @icontract.require(lambda value: value > 0)
             def some_prop(self, value: int) -> None:
                 pass
 
@@ -348,7 +348,7 @@ class TestPropertyViolation(unittest.TestCase):
                 return 0
 
             @some_prop.deleter
-            @icontract.pre(lambda self: not self.toggled)
+            @icontract.require(lambda self: not self.toggled)
             def some_prop(self) -> None:
                 pass
 
@@ -378,7 +378,7 @@ class TestInvalid(unittest.TestCase):
     def test_abstract_method_not_implemented(self):
         # pylint: disable=abstract-method
         class A(icontract.DBC):
-            @icontract.pre(lambda x: x > 0)
+            @icontract.require(lambda x: x > 0)
             @abc.abstractmethod
             def func(self, x: int) -> int:
                 pass
@@ -404,7 +404,7 @@ class TestInvalid(unittest.TestCase):
         try:
 
             class B(A):  # pylint: disable=unused-variable
-                @icontract.pre(lambda x: x < 0)
+                @icontract.require(lambda x: x < 0)
                 def func(self, x: int) -> int:
                     return 1000
         except TypeError as err:

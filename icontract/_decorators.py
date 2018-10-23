@@ -9,7 +9,7 @@ import icontract._checkers
 # pylint: disable=protected-access
 
 
-class pre:  # pylint: disable=invalid-name
+class require:  # pylint: disable=invalid-name
     """
     Decorate a function with a precondition.
 
@@ -168,7 +168,7 @@ class snapshot:  # pylint: disable=invalid-name
         return func
 
 
-class post:  # pylint: disable=invalid-name
+class ensure:  # pylint: disable=invalid-name
     """
     Decorate a function with a postcondition.
 
@@ -247,7 +247,7 @@ class post:  # pylint: disable=invalid-name
         return result
 
 
-class inv:  # pylint: disable=invalid-name
+class invariant:  # pylint: disable=invalid-name
     """
     Represent a class decorator to establish the invariant on all the public methods.
 

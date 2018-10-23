@@ -20,7 +20,7 @@ class TestOK(unittest.TestCase):
 
         inc = Increment()
 
-        @icontract.inv(lambda self: inc())
+        @icontract.invariant(lambda self: inc())
         class A(icontract.DBC):
             def __repr__(self) -> str:
                 return "instance of A"
@@ -44,7 +44,7 @@ class TestOK(unittest.TestCase):
 
 class TestViolation(unittest.TestCase):
     def test_inherited(self):
-        @icontract.inv(lambda self: self.x > 0)
+        @icontract.invariant(lambda self: self.x > 0)
         class A(icontract.DBC):
             def __init__(self) -> None:
                 self.x = 10
@@ -70,7 +70,7 @@ class TestViolation(unittest.TestCase):
         self.assertEqual("self.x > 0:\n" "self was instance of B\n" "self.x was -1", str(violation_err))
 
     def test_inherited_violated_in_child(self):
-        @icontract.inv(lambda self: self.x > 0)
+        @icontract.invariant(lambda self: self.x > 0)
         class A(icontract.DBC):
             def __init__(self) -> None:
                 self.x = 10
@@ -99,7 +99,7 @@ class TestViolation(unittest.TestCase):
         self.assertEqual("self.x > 0:\n" "self was instance of B\n" "self.x was -1", str(violation_err))
 
     def test_additional_invariant_violated_in_childs_init(self):
-        @icontract.inv(lambda self: self.x > 0)
+        @icontract.invariant(lambda self: self.x > 0)
         class A(icontract.DBC):
             def __init__(self) -> None:
                 self.x = 10
@@ -107,7 +107,7 @@ class TestViolation(unittest.TestCase):
             def __repr__(self) -> str:
                 return "instance of A"
 
-        @icontract.inv(lambda self: self.x > 100)
+        @icontract.invariant(lambda self: self.x > 100)
         class B(A):
             def __repr__(self) -> str:
                 return "instance of B"
@@ -122,7 +122,7 @@ class TestViolation(unittest.TestCase):
         self.assertEqual("self.x > 100:\n" "self was instance of B\n" "self.x was 10", str(violation_err))
 
     def test_method_violates_in_child(self):
-        @icontract.inv(lambda self: self.x > 0)
+        @icontract.invariant(lambda self: self.x > 0)
         class A(icontract.DBC):
             def __init__(self) -> None:
                 self.x = 1000
@@ -133,7 +133,7 @@ class TestViolation(unittest.TestCase):
             def __repr__(self) -> str:
                 return "instance of A"
 
-        @icontract.inv(lambda self: self.x > 100)
+        @icontract.invariant(lambda self: self.x > 100)
         class B(A):
             def __repr__(self) -> str:
                 return "instance of B"
@@ -149,7 +149,7 @@ class TestViolation(unittest.TestCase):
         self.assertEqual("self.x > 100:\n" "self was instance of B\n" "self.x was 10", str(violation_err))
 
     def test_triple_inheritance(self):
-        @icontract.inv(lambda self: self.x > 0)
+        @icontract.invariant(lambda self: self.x > 0)
         class A(icontract.DBC):
             def __init__(self) -> None:
                 self.x = 10
@@ -179,7 +179,7 @@ class TestViolation(unittest.TestCase):
         self.assertEqual("self.x > 0:\n" "self was instance of C\n" "self.x was -1", str(violation_err))
 
     def test_with_abstract_method(self):
-        @icontract.inv(lambda self: self.x > 0)
+        @icontract.invariant(lambda self: self.x > 0)
         class A(icontract.DBC):
             def __init__(self) -> None:
                 self.x = 10
@@ -211,7 +211,7 @@ class TestViolation(unittest.TestCase):
 
 class TestProperty(unittest.TestCase):
     def test_inherited_getter(self):
-        @icontract.inv(lambda self: not self.toggled)
+        @icontract.invariant(lambda self: not self.toggled)
         class SomeBase(icontract.DBC):
             def __init__(self) -> None:
                 self.toggled = False
@@ -239,7 +239,7 @@ class TestProperty(unittest.TestCase):
                          'self.toggled was True', str(icontract_violation_error))
 
     def test_inherited_setter(self):
-        @icontract.inv(lambda self: not self.toggled)
+        @icontract.invariant(lambda self: not self.toggled)
         class SomeBase(icontract.DBC):
             def __init__(self) -> None:
                 self.toggled = False
@@ -270,7 +270,7 @@ class TestProperty(unittest.TestCase):
                          'self.toggled was True', str(icontract_violation_error))
 
     def test_inherited_deleter(self):
-        @icontract.inv(lambda self: not self.toggled)
+        @icontract.invariant(lambda self: not self.toggled)
         class SomeBase(icontract.DBC):
             def __init__(self) -> None:
                 self.toggled = False
@@ -301,7 +301,7 @@ class TestProperty(unittest.TestCase):
                          'self.toggled was True', str(icontract_violation_error))
 
     def test_inherited_invariant_on_getter(self):
-        @icontract.inv(lambda self: not self.toggled)
+        @icontract.invariant(lambda self: not self.toggled)
         class SomeBase(icontract.DBC):
             def __init__(self) -> None:
                 self.toggled = False
@@ -329,7 +329,7 @@ class TestProperty(unittest.TestCase):
                          'self.toggled was True', str(icontract_violation_error))
 
     def test_inherited_invariant_on_setter(self):
-        @icontract.inv(lambda self: not self.toggled)
+        @icontract.invariant(lambda self: not self.toggled)
         class SomeBase(icontract.DBC):
             def __init__(self) -> None:
                 self.toggled = False
@@ -360,7 +360,7 @@ class TestProperty(unittest.TestCase):
                          'self.toggled was True', str(icontract_violation_error))
 
     def test_inherited_invariant_on_deleter(self):
-        @icontract.inv(lambda self: not self.toggled)
+        @icontract.invariant(lambda self: not self.toggled)
         class SomeBase(icontract.DBC):
             def __init__(self) -> None:
                 self.toggled = False

@@ -15,7 +15,7 @@ class TestOK(unittest.TestCase):
         z = [1]
 
         @icontract.snapshot(lambda: z[:], name="z")
-        @icontract.post(lambda OLD, val: OLD.z + [val] == z)
+        @icontract.ensure(lambda OLD, val: OLD.z + [val] == z)
         def some_func(val: int) -> None:
             z.append(val)
 
@@ -23,7 +23,7 @@ class TestOK(unittest.TestCase):
 
     def test_with_name_same_as_argument(self):
         @icontract.snapshot(lambda lst: lst[:])
-        @icontract.post(lambda OLD, val, lst: OLD.lst + [val] == lst)
+        @icontract.ensure(lambda OLD, val, lst: OLD.lst + [val] == lst)
         def some_func(lst: List[int], val: int) -> None:
             lst.append(val)
 
@@ -32,7 +32,7 @@ class TestOK(unittest.TestCase):
 
     def test_with_custom_name(self):
         @icontract.snapshot(lambda lst: len(lst), name="len_lst")
-        @icontract.post(lambda OLD, val, lst: OLD.len_lst + 1 == len(lst))
+        @icontract.ensure(lambda OLD, val, lst: OLD.len_lst + 1 == len(lst))
         def some_func(lst: List[int], val: int) -> None:
             lst.append(val)
 
@@ -43,7 +43,7 @@ class TestOK(unittest.TestCase):
 class TestViolation(unittest.TestCase):
     def test_with_name_same_as_argument(self):
         @icontract.snapshot(lambda lst: lst[:])
-        @icontract.post(lambda OLD, val, lst: OLD.lst + [val] == lst)
+        @icontract.ensure(lambda OLD, val, lst: OLD.lst + [val] == lst)
         def some_func(lst: List[int], val: int) -> None:
             lst.append(val)
             lst.append(1984)
@@ -63,7 +63,7 @@ class TestViolation(unittest.TestCase):
 
     def test_with_custom_name(self):
         @icontract.snapshot(lambda lst: len(lst), name="len_lst")
-        @icontract.post(lambda OLD, val, lst: OLD.len_lst + 1 == len(lst))
+        @icontract.ensure(lambda OLD, val, lst: OLD.len_lst + 1 == len(lst))
         def some_func(lst: List[int], val: int) -> None:
             lst.append(val)
             lst.append(1984)
@@ -84,7 +84,7 @@ class TestViolation(unittest.TestCase):
 
 class TestInvalid(unittest.TestCase):
     def test_missing_old_snapshot(self):
-        @icontract.post(lambda OLD, val, lst: OLD.len_lst + 1 == len(lst))
+        @icontract.ensure(lambda OLD, val, lst: OLD.len_lst + 1 == len(lst))
         def some_func(lst: List[int], val: int) -> None:
             lst.append(val)
 
@@ -106,7 +106,7 @@ class TestInvalid(unittest.TestCase):
 
             @icontract.snapshot(lambda lst: lst[:])
             @icontract.snapshot(lambda lst: lst[:])
-            @icontract.post(lambda OLD, val, lst: len(OLD.lst) + 1 == len(lst))
+            @icontract.ensure(lambda OLD, val, lst: len(OLD.lst) + 1 == len(lst))
             def some_func(lst: List[int], val: int) -> None:
                 lst.append(val)
 
@@ -123,7 +123,7 @@ class TestInvalid(unittest.TestCase):
 
             @icontract.snapshot(lambda lst: len(lst), name='len_lst')
             @icontract.snapshot(lambda lst: len(lst), name='len_lst')
-            @icontract.post(lambda OLD, val, lst: OLD.len_lst + 1 == len(lst))
+            @icontract.ensure(lambda OLD, val, lst: OLD.len_lst + 1 == len(lst))
             def some_func(lst: List[int], val: int) -> None:
                 lst.append(val)
 
@@ -139,7 +139,7 @@ class TestInvalid(unittest.TestCase):
         try:
 
             @icontract.snapshot(lambda lst: len(lst), name='len_lst')
-            @icontract.post(lambda OLD, val, a_list: OLD.len_lst + 1 == len(a_list))
+            @icontract.ensure(lambda OLD, val, a_list: OLD.len_lst + 1 == len(a_list))
             def some_func(a_list: List[int], val: int) -> None:
                 a_list.append(val)
 
@@ -158,7 +158,7 @@ class TestInvalid(unittest.TestCase):
             # pylint: disable=unused-variable
 
             @icontract.snapshot(lambda lst, val: len(lst) + val, name='dummy_snap')
-            @icontract.post(lambda OLD: OLD.dummy_snap)
+            @icontract.ensure(lambda OLD: OLD.dummy_snap)
             def some_func(a_list: List[int], val: int) -> None:
                 a_list.append(val)
 
@@ -176,7 +176,7 @@ class TestInvalid(unittest.TestCase):
             # pylint: disable=unused-variable
 
             @icontract.snapshot(lambda: z[:])
-            @icontract.post(lambda OLD, val: OLD.z + [val] == z)
+            @icontract.ensure(lambda OLD, val: OLD.z + [val] == z)
             def some_func(val: int) -> None:
                 z.append(val)
 

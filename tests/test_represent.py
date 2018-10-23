@@ -12,7 +12,7 @@ import icontract._represent
 
 class TestReprValues(unittest.TestCase):
     def test_num(self):
-        @icontract.pre(lambda x: x < 5)
+        @icontract.require(lambda x: x < 5)
         def func(x: int) -> int:
             return x
 
@@ -26,7 +26,7 @@ class TestReprValues(unittest.TestCase):
         self.assertEqual("x < 5: x was 100", str(icontract_violation_error))
 
     def test_str(self):
-        @icontract.pre(lambda x: x != "oi")
+        @icontract.require(lambda x: x != "oi")
         def func(x: str) -> str:
             return x
 
@@ -40,7 +40,7 @@ class TestReprValues(unittest.TestCase):
         self.assertEqual("""x != "oi": x was 'oi'""", str(icontract_violation_error))
 
     def test_bytes(self):
-        @icontract.pre(lambda x: x != b"oi")
+        @icontract.require(lambda x: x != b"oi")
         def func(x: bytes) -> bytes:
             return x
 
@@ -54,7 +54,7 @@ class TestReprValues(unittest.TestCase):
         self.assertEqual("""x != b"oi": x was b'oi'""", str(icontract_violation_error))
 
     def test_bool(self):
-        @icontract.pre(lambda x: x != False)
+        @icontract.require(lambda x: x != False)
         def func(x: bool) -> bool:
             return x
 
@@ -70,7 +70,7 @@ class TestReprValues(unittest.TestCase):
     def test_list(self):
         y = 1
 
-        @icontract.pre(lambda x: sum([1, y, x]) == 1)
+        @icontract.require(lambda x: sum([1, y, x]) == 1)
         def func(x: int) -> int:
             return x
 
@@ -89,7 +89,7 @@ class TestReprValues(unittest.TestCase):
     def test_tuple(self):
         y = 1
 
-        @icontract.pre(lambda x: sum((1, y, x)) == 1)
+        @icontract.require(lambda x: sum((1, y, x)) == 1)
         def func(x: int) -> int:
             return x
 
@@ -108,7 +108,7 @@ class TestReprValues(unittest.TestCase):
     def test_set(self):
         y = 2
 
-        @icontract.pre(lambda x: sum({1, y, x}) == 1)
+        @icontract.require(lambda x: sum({1, y, x}) == 1)
         def func(x: int) -> int:
             return x
 
@@ -127,7 +127,7 @@ class TestReprValues(unittest.TestCase):
     def test_dict(self):
         y = "someKey"
 
-        @icontract.pre(lambda x: len({y: 3, x: 8}) == 6)
+        @icontract.require(lambda x: len({y: 3, x: 8}) == 6)
         def func(x: str) -> str:
             return x
 
@@ -144,7 +144,7 @@ class TestReprValues(unittest.TestCase):
                          "y was 'someKey'", str(icontract_violation_error))
 
     def test_unary_op(self):
-        @icontract.pre(lambda x: not -x + 10 > 3)
+        @icontract.require(lambda x: not -x + 10 > 3)
         def func(x: int) -> int:
             return x
 
@@ -158,7 +158,7 @@ class TestReprValues(unittest.TestCase):
         self.assertEqual('not -x + 10 > 3: x was 1', str(icontract_violation_error))
 
     def test_binary_op(self):
-        @icontract.pre(lambda x: -x + x - x * x / x // x**x % x > 3)
+        @icontract.require(lambda x: -x + x - x * x / x // x**x % x > 3)
         def func(x: int) -> int:
             return x
 
@@ -172,7 +172,7 @@ class TestReprValues(unittest.TestCase):
         self.assertEqual('-x + x - x * x / x // x**x % x > 3: x was 1', str(icontract_violation_error))
 
     def test_binary_op_bit(self):
-        @icontract.pre(lambda x: ~(x << x | x & x ^ x) >> x > x)
+        @icontract.require(lambda x: ~(x << x | x & x ^ x) >> x > x)
         def func(x: int) -> int:
             return x
 
@@ -186,7 +186,7 @@ class TestReprValues(unittest.TestCase):
         self.assertEqual('~(x << x | x & x ^ x) >> x > x: x was 1', str(icontract_violation_error))
 
     def test_bool_op_single(self):
-        @icontract.pre(lambda x: x > 3 and x < 10)
+        @icontract.require(lambda x: x > 3 and x < 10)
         def func(x: int) -> int:
             return x
 
@@ -200,7 +200,7 @@ class TestReprValues(unittest.TestCase):
         self.assertEqual('x > 3 and x < 10: x was 1', str(icontract_violation_error))
 
     def test_bool_op_multiple(self):
-        @icontract.pre(lambda x: x > 3 and x < 10 and x % 2 == 0)
+        @icontract.require(lambda x: x > 3 and x < 10 and x % 2 == 0)
         def func(x: int) -> int:
             return x
 
@@ -216,7 +216,7 @@ class TestReprValues(unittest.TestCase):
     def test_compare(self):
         # Chain the compare operators in a meaningless order and semantics
 
-        @icontract.pre(
+        @icontract.require(
             lambda x: 0 < x < 3 and x > 10 and x != 7 and x >= 10 and x <= 11 and x is not None and
                       x in [1, 2, 3] and x not in [1, 2, 3])
         def func(x: int) -> int:
@@ -236,7 +236,7 @@ class TestReprValues(unittest.TestCase):
         def y() -> int:
             return 1
 
-        @icontract.pre(lambda x: x < y())
+        @icontract.require(lambda x: x < y())
         def func(x: int) -> int:
             return x
 
@@ -252,7 +252,7 @@ class TestReprValues(unittest.TestCase):
     def test_if_exp_body(self):
         y = 5
 
-        @icontract.pre(lambda x: x < (x**2 if y == 5 else x**3))
+        @icontract.require(lambda x: x < (x**2 if y == 5 else x**3))
         def func(x: int) -> int:
             return x
 
@@ -268,7 +268,7 @@ class TestReprValues(unittest.TestCase):
     def test_if_exp_orelse(self):
         y = 5
 
-        @icontract.pre(lambda x: x < (x**2 if y != 5 else x**3))
+        @icontract.require(lambda x: x < (x**2 if y != 5 else x**3))
         def func(x: int) -> int:
             return x
 
@@ -291,7 +291,7 @@ class TestReprValues(unittest.TestCase):
 
         a = A()
 
-        @icontract.pre(lambda x: x > a.y)
+        @icontract.require(lambda x: x > a.y)
         def func(x: int) -> int:
             return x
 
@@ -307,7 +307,7 @@ class TestReprValues(unittest.TestCase):
     def test_index(self):
         lst = [1, 2, 3]
 
-        @icontract.pre(lambda x: x > lst[1])
+        @icontract.require(lambda x: x > lst[1])
         def func(x: int) -> int:
             return x
 
@@ -323,7 +323,7 @@ class TestReprValues(unittest.TestCase):
     def test_slice(self):
         lst = [1, 2, 3]
 
-        @icontract.pre(lambda x: x > sum(lst[1:2:1]))
+        @icontract.require(lambda x: x > sum(lst[1:2:1]))
         def func(x: int) -> int:
             return x
 
@@ -340,7 +340,7 @@ class TestReprValues(unittest.TestCase):
                          'x was 1', str(icontract_violation_error))
 
     def test_lambda(self):
-        @icontract.pre(lambda x: x > (lambda y: y + 4).__call__(y=7))
+        @icontract.require(lambda x: x > (lambda y: y + 4).__call__(y=7))
         def func(x: int) -> int:
             return x
 
@@ -353,7 +353,7 @@ class TestReprValues(unittest.TestCase):
         self.assertIsNotNone(not_implemented_err)
 
     def test_generator_expression_with_attr_on_element(self):
-        @icontract.post(lambda result: all(single_res[1].is_absolute() for single_res in result))
+        @icontract.ensure(lambda result: all(single_res[1].is_absolute() for single_res in result))
         def some_func() -> List[Tuple[pathlib.Path, pathlib.Path]]:
             return [(pathlib.Path("/home/file1"), pathlib.Path("home/file2"))]
 
@@ -373,7 +373,7 @@ class TestReprValues(unittest.TestCase):
         lst = [[1, 2], [3]]
 
         # yapf: disable
-        @icontract.pre(
+        @icontract.require(
             lambda x: all(item == x for sublst in lst for item in sublst)
         )
         # yapf: enable
@@ -395,7 +395,7 @@ class TestReprValues(unittest.TestCase):
     def test_list_comprehension(self):
         lst = [1, 2, 3]
 
-        @icontract.pre(lambda x: [item < x for item in lst if item % x == 0] == [])
+        @icontract.require(lambda x: [item < x for item in lst if item % x == 0] == [])
         def func(x: int) -> int:
             return x
 
@@ -413,7 +413,7 @@ class TestReprValues(unittest.TestCase):
     def test_set_comprehension(self):
         lst = [1, 2, 3]
 
-        @icontract.pre(lambda x: len({item < x for item in lst if item % x == 0}) == 0)
+        @icontract.require(lambda x: len({item < x for item in lst if item % x == 0}) == 0)
         def func(x: int) -> int:
             return x
 
@@ -430,7 +430,7 @@ class TestReprValues(unittest.TestCase):
                          '{item < x for item in lst if item % x == 0} was {False}', str(icontract_violation_error))
 
     def test_dict_comprehension(self):
-        @icontract.pre(lambda x: len({i: i**2 for i in range(x)}) == 0)
+        @icontract.require(lambda x: len({i: i**2 for i in range(x)}) == 0)
         def func(x: int) -> int:
             return x
 
@@ -453,7 +453,7 @@ class TestConditionAsText(unittest.TestCase):
 
     def test_single_line(self):
         # yapf: disable
-        @icontract.pre(lambda x: x > 3)
+        @icontract.require(lambda x: x > 3)
         def func(x: int) -> int:
             return x
 
@@ -470,7 +470,7 @@ class TestConditionAsText(unittest.TestCase):
 
     def test_condition_on_next_line(self):
         # yapf: disable
-        @icontract.pre(
+        @icontract.require(
             lambda x: x > 3)
         def func(x: int) -> int:
             return x
@@ -488,7 +488,7 @@ class TestConditionAsText(unittest.TestCase):
 
     def test_condition_on_multiple_lines(self):
         # yapf: disable
-        @icontract.pre(
+        @icontract.require(
             lambda x:
             x
             >
@@ -510,9 +510,9 @@ class TestConditionAsText(unittest.TestCase):
     def test_with_multiple_lambdas_on_a_line(self):
         # pylint: disable=unnecessary-lambda
         # yapf: disable
-        @icontract.pre(
+        @icontract.require(
             error=lambda x: ValueError("x > 0, but got: {}".format(x)), condition=lambda x: x > 0)
-        @icontract.pre(
+        @icontract.require(
             error=lambda x: ValueError("x < 100, but got: {}".format(x)), condition=lambda x: x < 100)
         def func(x: int) -> int:
             return x
@@ -546,7 +546,7 @@ class TestRepr(unittest.TestCase):
         a_repr = reprlib.Repr()
         a_repr.maxlist = 3
 
-        @icontract.pre(lambda x: len(x) < 10, a_repr=a_repr)
+        @icontract.require(lambda x: len(x) < 10, a_repr=a_repr)
         def some_func(x: List[int]) -> None:
             pass
 
@@ -576,7 +576,7 @@ class TestClass(unittest.TestCase):
             def __init__(self) -> None:
                 self.b = B()
 
-            @icontract.pre(lambda self: self.b.x > 0)
+            @icontract.require(lambda self: self.b.x > 0)
             def some_func(self) -> None:
                 pass
 
@@ -621,7 +621,7 @@ class TestClass(unittest.TestCase):
             def __init__(self) -> None:
                 self.b = B()
 
-            @icontract.pre(lambda self: pathlib.Path(str(gt_zero(self.b.c(x=0).x() + 12.2 * z))) is None)
+            @icontract.require(lambda self: pathlib.Path(str(gt_zero(self.b.c(x=0).x() + 12.2 * z))) is None)
             def some_func(self) -> None:
                 pass
 
@@ -653,7 +653,7 @@ class TestClosures(unittest.TestCase):
         y = 4
         z = 5
 
-        @icontract.pre(lambda x: x < y + z)
+        @icontract.require(lambda x: x < y + z)
         def some_func(x: int) -> None:
             pass
 
@@ -667,7 +667,7 @@ class TestClosures(unittest.TestCase):
         self.assertEqual("x < y + z:\n" "x was 100\n" "y was 4\n" "z was 5", str(pre_err))
 
     def test_global(self):
-        @icontract.pre(lambda x: x < SOME_GLOBAL_CONSTANT)
+        @icontract.require(lambda x: x < SOME_GLOBAL_CONSTANT)
         def some_func(x: int) -> None:
             pass
 
@@ -683,7 +683,7 @@ class TestClosures(unittest.TestCase):
     def test_closure_and_global(self):
         y = 4
 
-        @icontract.pre(lambda x: x < y + SOME_GLOBAL_CONSTANT)
+        @icontract.require(lambda x: x < y + SOME_GLOBAL_CONSTANT)
         def some_func(x: int) -> None:
             pass
 

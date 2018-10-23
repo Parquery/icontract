@@ -14,7 +14,7 @@ class TestOK(unittest.TestCase):
                 self.lst = []  # type: List[int]
 
             @icontract.snapshot(lambda self: self.lst[:], name="lst")
-            @icontract.post(lambda OLD, self, val: OLD.lst + [val] == self.lst)
+            @icontract.ensure(lambda OLD, self, val: OLD.lst + [val] == self.lst)
             def some_func(self, val: int) -> None:
                 self.lst.append(val)
 
@@ -32,7 +32,7 @@ class TestViolation(unittest.TestCase):
                 self.lst = []  # type: List[int]
 
             @icontract.snapshot(lambda self: self.lst[:], name="lst")
-            @icontract.post(lambda OLD, self, val: OLD.lst + [val] == self.lst)
+            @icontract.ensure(lambda OLD, self, val: OLD.lst + [val] == self.lst)
             def some_func(self, val: int) -> None:
                 self.lst.append(val)
                 self.lst.append(1984)
@@ -63,12 +63,12 @@ class TestViolation(unittest.TestCase):
                 self.lst = []  # type: List[int]
 
             @icontract.snapshot(lambda self: len(self.lst), name="len_lst")
-            @icontract.post(lambda self: self.lst)
+            @icontract.ensure(lambda self: self.lst)
             def some_func(self, val: int) -> None:
                 pass
 
         class B(A):
-            @icontract.post(lambda OLD, self: OLD.len_lst + 1 == len(self.lst))
+            @icontract.ensure(lambda OLD, self: OLD.len_lst + 1 == len(self.lst))
             def some_func(self, val: int) -> None:
                 self.lst.append(val)
                 self.lst.append(1984)
@@ -103,21 +103,21 @@ class TestPropertyOK(unittest.TestCase):
 
             @property
             @icontract.snapshot(lambda self: self.gets, name="gets")
-            @icontract.post(lambda OLD, self: self.gets == OLD.gets + 1)
+            @icontract.ensure(lambda OLD, self: self.gets == OLD.gets + 1)
             def some_prop(self) -> int:
                 self.gets += 1
                 return 0
 
             @some_prop.setter
             @icontract.snapshot(lambda self: self.sets, name="sets")
-            @icontract.post(lambda OLD, self: self.sets == OLD.sets + 1)
+            @icontract.ensure(lambda OLD, self: self.sets == OLD.sets + 1)
             def some_prop(self, value: int) -> None:
                 # pylint: disable=unused-argument
                 self.sets += 1
 
             @some_prop.deleter
             @icontract.snapshot(lambda self: self.dels, name="dels")
-            @icontract.post(lambda OLD, self: self.dels == OLD.dels + 1)
+            @icontract.ensure(lambda OLD, self: self.dels == OLD.dels + 1)
             def some_prop(self) -> None:
                 self.dels += 1
 
@@ -144,14 +144,14 @@ class TestPropertyViolation(unittest.TestCase):
 
             @property
             @icontract.snapshot(lambda self: self.gets, name="gets")
-            @icontract.post(lambda OLD, self: self.gets == OLD.gets + 1)
+            @icontract.ensure(lambda OLD, self: self.gets == OLD.gets + 1)
             def some_prop(self) -> int:
                 # no self.gets increment
                 return 0
 
             @some_prop.setter
             @icontract.snapshot(lambda self: self.sets, name="sets")
-            @icontract.post(lambda OLD, self: self.sets == OLD.sets + 1)
+            @icontract.ensure(lambda OLD, self: self.sets == OLD.sets + 1)
             def some_prop(self, value: int) -> None:
                 # pylint: disable=unused-argument
                 # no self.sets increment
@@ -159,7 +159,7 @@ class TestPropertyViolation(unittest.TestCase):
 
             @some_prop.deleter
             @icontract.snapshot(lambda self: self.dels, name="dels")
-            @icontract.post(lambda OLD, self: self.dels == OLD.dels + 1)
+            @icontract.ensure(lambda OLD, self: self.dels == OLD.dels + 1)
             def some_prop(self) -> None:
                 # no self.dels increment
                 return
@@ -223,7 +223,7 @@ class TestInvalid(unittest.TestCase):
                     self.lst = []  # type: List[int]
 
                 @icontract.snapshot(lambda self: len(self.lst), name="len_lst")
-                @icontract.post(lambda self: self.lst)
+                @icontract.ensure(lambda self: self.lst)
                 def some_func(self, val: int) -> None:
                     pass
 
@@ -231,7 +231,7 @@ class TestInvalid(unittest.TestCase):
 
             class B(A):
                 @icontract.snapshot(lambda self: len(self.lst), name="len_lst")
-                @icontract.post(lambda OLD, self: OLD.len_lst + 1 == len(self.lst))
+                @icontract.ensure(lambda OLD, self: OLD.len_lst + 1 == len(self.lst))
                 def some_func(self, val: int) -> None:
                     self.lst.append(val)
                     self.lst.append(1984)
@@ -253,7 +253,7 @@ class TestPropertyInvalid(unittest.TestCase):
 
             @property
             @icontract.snapshot(lambda self: self.gets, name="gets")
-            @icontract.post(lambda OLD, self: self.gets == OLD.gets + 1)
+            @icontract.ensure(lambda OLD, self: self.gets == OLD.gets + 1)
             def some_prop(self) -> int:
                 self.gets += 1
                 return 0
@@ -265,7 +265,7 @@ class TestPropertyInvalid(unittest.TestCase):
             class SomeClass(SomeBase):
                 @property
                 @icontract.snapshot(lambda self: self.gets, name="gets")
-                @icontract.post(lambda OLD, self: self.gets == OLD.gets + 1)
+                @icontract.ensure(lambda OLD, self: self.gets == OLD.gets + 1)
                 def some_prop(self) -> int:
                     return 0
 
@@ -288,7 +288,7 @@ class TestPropertyInvalid(unittest.TestCase):
 
             @some_prop.setter
             @icontract.snapshot(lambda self: self.sets, name="sets")
-            @icontract.post(lambda OLD, self: self.sets == OLD.sets + 1)
+            @icontract.ensure(lambda OLD, self: self.sets == OLD.sets + 1)
             def some_prop(self, value: int) -> None:
                 # pylint: disable=unused-argument
                 self.sets += 1
@@ -305,7 +305,7 @@ class TestPropertyInvalid(unittest.TestCase):
 
                 @some_prop.setter
                 @icontract.snapshot(lambda self: self.sets, name="sets")
-                @icontract.post(lambda OLD, self: self.sets == OLD.sets + 1)
+                @icontract.ensure(lambda OLD, self: self.sets == OLD.sets + 1)
                 def some_prop(self, value: int) -> None:
                     # pylint: disable=unused-argument
                     return
@@ -329,7 +329,7 @@ class TestPropertyInvalid(unittest.TestCase):
 
             @some_prop.deleter
             @icontract.snapshot(lambda self: self.dels, name="dels")
-            @icontract.post(lambda OLD, self: self.sets == OLD.dels + 1)
+            @icontract.ensure(lambda OLD, self: self.sets == OLD.dels + 1)
             def some_prop(self) -> None:
                 self.dels += 1
                 return
@@ -345,7 +345,7 @@ class TestPropertyInvalid(unittest.TestCase):
 
                 @some_prop.deleter
                 @icontract.snapshot(lambda self: self.dels, name="dels")
-                @icontract.post(lambda OLD, self: self.dels == OLD.dels + 1)
+                @icontract.ensure(lambda OLD, self: self.dels == OLD.dels + 1)
                 def some_prop(self) -> None:
                     return
 
