@@ -1,3 +1,7 @@
+1.7.2
+=====
+* Demarcated decorator and lambda inspection in ``_represent`` submodule
+
 1.7.1
 =====
 * Refactored implementation and tests into smaller modules
