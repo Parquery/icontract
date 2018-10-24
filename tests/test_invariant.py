@@ -134,21 +134,14 @@ class TestOK(unittest.TestCase):
         inst.some_method()
         self.assertEqual(10, inst.x)
 
-    def test_inv_with_empty_arguments(self):
+    def test_inv_with_empty_arguments(self):  # pylint: disable=no-self-use
         z = 42
 
-        @icontract.invariant(lambda: z != 42)
+        @icontract.invariant(lambda: z == 42)
         class A:
             pass
 
-        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
-        try:
-            _ = A()
-        except icontract.ViolationError as err:
-            icontract_violation_error = err
-
-        self.assertIsNotNone(icontract_violation_error)
-        self.assertEqual("z != 42: z was 42", str(icontract_violation_error))
+        _ = A()
 
 
 class TestViolation(unittest.TestCase):
@@ -357,6 +350,22 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_err)
         self.assertEqual("self.x > 0:\n" "self was some instance\n" "self.x was -1", str(violation_err))
+
+    def test_inv_with_empty_arguments(self):
+        z = 42
+
+        @icontract.invariant(lambda: z != 42)
+        class A:
+            pass
+
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            _ = A()
+        except icontract.ViolationError as err:
+            icontract_violation_error = err
+
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual("z != 42: z was 42", str(icontract_violation_error))
 
 
 class TestProperty(unittest.TestCase):
