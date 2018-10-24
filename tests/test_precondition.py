@@ -426,7 +426,7 @@ class TestInvalid(unittest.TestCase):
 
         self.assertIsNotNone(type_err)
         self.assertEqual("The argument(s) of the precondition have not been set: ['b']. "
-                         "Does the original function define them?", str(type_err))
+                         "Does the original function define them? Did you supply them in the call?", str(type_err))
 
     def test_error_with_invalid_arguments(self):
         @icontract.require(lambda x: x > 0, error=lambda x, z: ValueError("x is {}, y is {}".format(x, z)))
@@ -441,7 +441,7 @@ class TestInvalid(unittest.TestCase):
 
         self.assertIsNotNone(type_error)
         self.assertEqual("The argument(s) of the precondition error have not been set: ['z']. "
-                         "Does the original function define them?", str(type_error))
+                         "Does the original function define them? Did you supply them in the call?", str(type_error))
 
 
 if __name__ == '__main__':

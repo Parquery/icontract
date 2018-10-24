@@ -148,8 +148,8 @@ class TestInvalid(unittest.TestCase):
             type_error = err
 
         self.assertIsNotNone(type_error)
-        self.assertEqual("The argument of the snapshot has not been set: lst. Does the original function define it?",
-                         str(type_error))
+        self.assertEqual("The argument of the snapshot has not been set: lst. "
+                         "Does the original function define it? Did you supply it in the call?", str(type_error))
 
     def test_with_invalid_arguments(self):
         # lst versus a_list
