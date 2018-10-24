@@ -73,7 +73,7 @@ If you want to customize the error, see Section "Custom Errors".
 
     >>> import icontract
 
-    >>> @icontract.pre(lambda x: x > 3)
+    >>> @icontract.require(lambda x: x > 3)
     ... def some_func(x: int, y: int = 5)->None:
     ...     pass
     ...
@@ -87,7 +87,7 @@ If you want to customize the error, see Section "Custom Errors".
     icontract.errors.ViolationError: x > 3: x was 1
 
     # Pre-condition violation with a description
-    >>> @icontract.pre(lambda x: x > 3, "x must not be small")
+    >>> @icontract.require(lambda x: x > 3, "x must not be small")
     ... def some_func(x: int, y: int = 5) -> None:
     ...     pass
     ...
@@ -115,7 +115,7 @@ If you want to customize the error, see Section "Custom Errors".
     ...         return "instance of A"
     ...
     >>> SOME_GLOBAL_VAR = 13
-    >>> @icontract.pre(lambda a: a.b.x + a.b.y() > SOME_GLOBAL_VAR)
+    >>> @icontract.require(lambda a: a.b.x + a.b.y() > SOME_GLOBAL_VAR)
     ... def some_func(a: A) -> None:
     ...     pass
     ...
@@ -131,7 +131,7 @@ If you want to customize the error, see Section "Custom Errors".
     a.b.y() was 2
 
     # Post-condition
-    >>> @icontract.post(lambda result, x: result > x)
+    >>> @icontract.ensure(lambda result, x: result > x)
     ... def some_func(x: int, y: int = 5) -> int:
     ...     return x - y
     ...
@@ -169,7 +169,7 @@ After the initialization:
 
 .. code-block:: python
 
-        >>> @icontract.inv(lambda self: self.x > 0)
+        >>> @icontract.invariant(lambda self: self.x > 0)
         ... class SomeClass:
         ...     def __init__(self) -> None:
         ...         self.x = -1
@@ -189,7 +189,7 @@ Before the invocation of a public method:
 
 .. code-block:: python
 
-    >>> @icontract.inv(lambda self: self.x > 0)
+    >>> @icontract.invariant(lambda self: self.x > 0)
     ... class SomeClass:
     ...     def __init__(self) -> None:
     ...         self.x = 100
@@ -214,7 +214,7 @@ After the invocation of a public method:
 
 .. code-block:: python
 
-    >>> @icontract.inv(lambda self: self.x > 0)
+    >>> @icontract.invariant(lambda self: self.x > 0)
     ... class SomeClass:
     ...     def __init__(self) -> None:
     ...         self.x = 100
@@ -238,7 +238,7 @@ After the invocation of a magic method:
 
 .. code-block:: python
 
-    >>> @icontract.inv(lambda self: self.x > 0)
+    >>> @icontract.invariant(lambda self: self.x > 0)
     ... class SomeClass:
     ...     def __init__(self) -> None:
     ...         self.x = 100
@@ -280,7 +280,7 @@ Here is an example that uses snapshots to check that a value was appended to the
     >>> from typing import List
 
     >>> @icontract.snapshot(lambda lst: lst[:])
-    ... @icontract.post(lambda OLD, lst, value: lst == OLD.lst + [value])
+    ... @icontract.ensure(lambda OLD, lst, value: lst == OLD.lst + [value])
     ... def some_func(lst: List[int], value: int) -> None:
     ...     lst.append(value)
     ...     lst.append(1984)  # bug
@@ -302,7 +302,7 @@ The following example shows how you can name the snapshot:
     >>> from typing import List
 
     >>> @icontract.snapshot(lambda lst: len(lst), name="len_lst")
-    ... @icontract.post(lambda OLD, lst, value: len(lst) == OLD.len_lst + 1)
+    ... @icontract.ensure(lambda OLD, lst, value: len(lst) == OLD.len_lst + 1)
     ... def some_func(lst: List[int], value: int) -> None:
     ...     lst.append(value)
     ...     lst.append(1984)  # bug
@@ -354,20 +354,20 @@ The following example shows an abstract parent class and a child class that inhe
         >>> import abc
         >>> import icontract
 
-        >>> @icontract.inv(lambda self: self.x > 0)
+        >>> @icontract.invariant(lambda self: self.x > 0)
         ... class A(icontract.DBC):
         ...     def __init__(self) -> None:
         ...         self.x = 10
         ...
         ...     @abc.abstractmethod
-        ...     @icontract.post(lambda y, result: result < y)
+        ...     @icontract.ensure(lambda y, result: result < y)
         ...     def func(self, y: int) -> int:
         ...         pass
         ...
         ...     def __repr__(self) -> str:
         ...         return "instance of A"
 
-        >>> @icontract.inv(lambda self: self.x < 100)
+        >>> @icontract.invariant(lambda self: self.x < 100)
         ... class B(A):
         ...     def func(self, y: int) -> int:
         ...         # Break intentionally the postcondition
@@ -415,12 +415,12 @@ The following example shows how preconditions are weakened:
 .. code-block:: python
 
         >>> class A(icontract.DBC):
-        ...     @icontract.pre(lambda x: x % 2 == 0)
+        ...     @icontract.require(lambda x: x % 2 == 0)
         ...     def func(self, x: int) -> None:
         ...         pass
 
         >>> class B(A):
-        ...     @icontract.pre(lambda x: x % 3 == 0)
+        ...     @icontract.require(lambda x: x % 3 == 0)
         ...     def func(self, x: int) -> None:
         ...         pass
 
@@ -448,13 +448,13 @@ The example below illustrates how snaphots are inherited:
         >>> class A(icontract.DBC):
         ...     @abc.abstractmethod
         ...     @icontract.snapshot(lambda lst: lst[:])
-        ...     @icontract.post(lambda OLD, lst: len(lst) == len(OLD.lst) + 1)
+        ...     @icontract.ensure(lambda OLD, lst: len(lst) == len(OLD.lst) + 1)
         ...     def func(self, lst: List[int], value: int) -> None:
         ...         pass
 
         >>> class B(A):
         ...     # The snapshot of OLD.lst has been defined in class A.
-        ...     @icontract.post(lambda OLD, lst: lst == OLD.lst + [value])
+        ...     @icontract.ensure(lambda OLD, lst: lst == OLD.lst + [value])
         ...     def func(self, lst: List[int], value: int) -> None:
         ...         lst.append(value)
         ...         lst.append(1984)  # bug
@@ -481,7 +481,7 @@ If you want to override this behavior, you can supply the the ``enabled`` argume
 
 .. code-block:: python
 
-    >>> @icontract.pre(lambda x: x > 10, enabled=False)
+    >>> @icontract.require(lambda x: x > 10, enabled=False)
     ... def some_func(x: int) -> int:
     ...     return 123
     ...
@@ -505,7 +505,7 @@ Here is some example code:
 .. code-block:: python
 
     # some_module.py
-    @icontract.pre(lambda x: x > 10, enabled=icontract.SLOW)
+    @icontract.require(lambda x: x > 10, enabled=icontract.SLOW)
         def some_func(x: int) -> int:
             return 123
 
@@ -550,7 +550,7 @@ Here is an example of the error given as an exception class:
 
 .. code-block:: python
 
-    >>> @icontract.pre(lambda x: x > 0, error=ValueError)
+    >>> @icontract.require(lambda x: x > 0, error=ValueError)
     ... def some_func(x: int) -> int:
     ...     return 123
     ...
@@ -565,7 +565,9 @@ Here is an example of the error given as a callable:
 
 .. code-block:: python
 
-    >>> @icontract.pre(lambda x: x > 0, error=lambda x: ValueError('x must be positive, but got: {}'.format(x)))
+    >>> @icontract.require(
+    ...     lambda x: x > 0,
+    ...     error=lambda x: ValueError('x must be positive, got: {}'.format(x)))
     ... def some_func(x: int) -> int:
     ...     return 123
     ...
@@ -574,7 +576,7 @@ Here is an example of the error given as a callable:
     >>> some_func(x=0)
     Traceback (most recent call last):
         ...
-    ValueError: x must be positive, but got: 0
+    ValueError: x must be positive, got: 0
 
 .. danger::
     Be careful when you write contracts with custom errors. This might lead the caller to (ab)use the contracts as
@@ -605,9 +607,9 @@ Consider the following example:
 .. code-block:: python
 
     @some_custom_decorator
-    @icontract.pre(lambda x: x > 0)
+    @icontract.require(lambda x: x > 0)
     @another_custom_decorator
-    @icontract.pre(lambda x, y: y < x)
+    @icontract.require(lambda x, y: y < x)
     def some_func(x: int, y: int) -> None:
       # ...
 

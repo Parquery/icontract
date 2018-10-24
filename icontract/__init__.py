@@ -4,7 +4,7 @@
 # pylint: disable=too-many-instance-attributes
 
 import icontract._represent
-from icontract._decorators import pre, snapshot, post, inv
+from icontract._decorators import require, snapshot, ensure, invariant
 from icontract._globals import aRepr, SLOW
 from icontract._metaclass import DBCMeta, DBC
 

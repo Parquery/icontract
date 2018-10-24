@@ -12,12 +12,12 @@ import icontract
 class TestOK(unittest.TestCase):
     def test_ensure_then(self):
         class A(icontract.DBC):
-            @icontract.post(lambda result: result % 2 == 0)
+            @icontract.ensure(lambda result: result % 2 == 0)
             def func(self) -> int:
                 return 10
 
         class B(A):
-            @icontract.post(lambda result: result % 3 == 0)
+            @icontract.ensure(lambda result: result % 3 == 0)
             def func(self) -> int:
                 return 6
 
@@ -34,7 +34,7 @@ class TestOK(unittest.TestCase):
 
         inc = Increment()
 
-        @icontract.inv(lambda self: inc())
+        @icontract.invariant(lambda self: inc())
         class SomeClass:
             def __init__(self) -> None:
                 pass
@@ -58,7 +58,7 @@ class TestOK(unittest.TestCase):
 
         inc = Increment()
 
-        @icontract.inv(lambda self: inc())
+        @icontract.invariant(lambda self: inc())
         class SomeClass:
             pass
 
@@ -72,7 +72,7 @@ class TestOK(unittest.TestCase):
 class TestViolation(unittest.TestCase):
     def test_inherited_without_implementation(self):
         class A(icontract.DBC):
-            @icontract.post(lambda result: result < 100)
+            @icontract.ensure(lambda result: result < 100)
             def func(self) -> int:
                 return 1000
 
@@ -91,7 +91,7 @@ class TestViolation(unittest.TestCase):
 
     def test_inherited_with_modified_implementation(self):
         class A(icontract.DBC):
-            @icontract.post(lambda result: result < 100)
+            @icontract.ensure(lambda result: result < 100)
             def func(self) -> int:
                 return 1000
 
@@ -111,12 +111,12 @@ class TestViolation(unittest.TestCase):
 
     def test_ensure_then_violated_in_base(self):
         class A(icontract.DBC):
-            @icontract.post(lambda result: result % 2 == 0)
+            @icontract.ensure(lambda result: result % 2 == 0)
             def func(self) -> int:
                 return 10
 
         class B(A):
-            @icontract.post(lambda result: result % 3 == 0)
+            @icontract.ensure(lambda result: result % 3 == 0)
             def func(self) -> int:
                 return 3
 
@@ -133,12 +133,12 @@ class TestViolation(unittest.TestCase):
 
     def test_ensure_then_violated_in_child(self):
         class A(icontract.DBC):
-            @icontract.post(lambda result: result % 2 == 0)
+            @icontract.ensure(lambda result: result % 2 == 0)
             def func(self) -> int:
                 return 10
 
         class B(A):
-            @icontract.post(lambda result: result % 3 == 0)
+            @icontract.ensure(lambda result: result % 3 == 0)
             def func(self) -> int:
                 return 2
 
@@ -155,7 +155,7 @@ class TestViolation(unittest.TestCase):
 
     def test_abstract_method(self):
         class A(icontract.DBC):
-            @icontract.post(lambda result: result < 100)
+            @icontract.ensure(lambda result: result < 100)
             @abc.abstractmethod
             def func(self) -> int:
                 pass
@@ -176,7 +176,7 @@ class TestViolation(unittest.TestCase):
 
     def test_that_base_postconditions_apply_to_init_if_not_defined(self):
         class A(icontract.DBC):
-            @icontract.post(lambda self: self.x >= 0)
+            @icontract.ensure(lambda self: self.x >= 0)
             def __init__(self, x: int) -> None:
                 self.x = x
 
@@ -197,13 +197,13 @@ class TestViolation(unittest.TestCase):
 
     def test_that_base_postconditions_dont_apply_to_init_if_overridden(self):
         class A(icontract.DBC):
-            @icontract.post(lambda self: self.x >= 0)
+            @icontract.ensure(lambda self: self.x >= 0)
             def __init__(self, x: int) -> None:
                 self.x = x
 
         class B(A):
             # pylint: disable=super-init-not-called
-            @icontract.post(lambda self: self.x < 0)
+            @icontract.ensure(lambda self: self.x < 0)
             def __init__(self, x: int) -> None:
                 self.x = x
 
@@ -231,17 +231,17 @@ class TestPropertyOK(unittest.TestCase):
                 self._some_prop = 1
 
             @property
-            @icontract.post(lambda self, result: self._some_prop == result)
+            @icontract.ensure(lambda self, result: self._some_prop == result)
             def some_prop(self) -> int:
                 return self._some_prop
 
             @some_prop.setter
-            @icontract.post(lambda self, value: self.some_prop == value)
+            @icontract.ensure(lambda self, value: self.some_prop == value)
             def some_prop(self, value: int) -> None:
                 self._some_prop = value
 
             @some_prop.deleter
-            @icontract.post(lambda self: self.deleted)
+            @icontract.ensure(lambda self: self.deleted)
             def some_prop(self) -> None:
                 self.deleted = True
 
@@ -263,7 +263,7 @@ class TestPropertyViolation(unittest.TestCase):
                 self.toggled = True
 
             @property
-            @icontract.post(lambda self: not self.toggled)
+            @icontract.ensure(lambda self: not self.toggled)
             def some_prop(self) -> int:
                 return 0
 
@@ -298,7 +298,7 @@ class TestPropertyViolation(unittest.TestCase):
                 return 0
 
             @some_prop.setter
-            @icontract.post(lambda self: not self.toggled)
+            @icontract.ensure(lambda self: not self.toggled)
             def some_prop(self, value: int) -> None:
                 pass
 
@@ -333,7 +333,7 @@ class TestPropertyViolation(unittest.TestCase):
                 return 0
 
             @some_prop.deleter
-            @icontract.post(lambda self: not self.toggled)
+            @icontract.ensure(lambda self: not self.toggled)
             def some_prop(self) -> None:
                 pass
 
@@ -373,7 +373,7 @@ class TestPropertyViolation(unittest.TestCase):
 
         class SomeClass(SomeBase):
             @SomeBase.some_prop.setter  # pylint: disable=no-member
-            @icontract.post(lambda self: not self.toggled)
+            @icontract.ensure(lambda self: not self.toggled)
             def some_prop(self, value: int) -> None:
                 pass
 
@@ -398,7 +398,7 @@ class TestInvalid(unittest.TestCase):
     def test_abstract_method_not_implemented(self):
         # pylint: disable=abstract-method
         class A(icontract.DBC):
-            @icontract.post(lambda result: result < 100)
+            @icontract.ensure(lambda result: result < 100)
             @abc.abstractmethod
             def func(self) -> int:
                 pass

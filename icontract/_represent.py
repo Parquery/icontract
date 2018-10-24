@@ -377,27 +377,23 @@ def generate_message(contract: Contract, condition_kwargs: Mapping[str, Any]) ->
 
     parts.append(condition_text)
 
-    if contract._repr_func:
+    repr_vals = repr_values(
+        condition=contract.condition,
+        lambda_inspection=lambda_inspection,
+        condition_kwargs=condition_kwargs,
+        a_repr=contract._a_repr)
+
+    if len(repr_vals) == 0:
+        # Do not append anything since no value could be represented as a string.
+        # This could appear in case we have, for example, a generator expression as the return value of a lambda.
+        pass
+
+    elif len(repr_vals) == 1:
         parts.append(': ')
-        parts.append(contract._repr_func(**condition_kwargs))
+        parts.append(repr_vals[0])
     else:
-        repr_vals = repr_values(
-            condition=contract.condition,
-            lambda_inspection=lambda_inspection,
-            condition_kwargs=condition_kwargs,
-            a_repr=contract._a_repr)
-
-        if len(repr_vals) == 0:
-            # Do not append anything since no value could be represented as a string.
-            # This could appear in case we have, for example, a generator expression as the return value of a lambda.
-            pass
-
-        elif len(repr_vals) == 1:
-            parts.append(': ')
-            parts.append(repr_vals[0])
-        else:
-            parts.append(':\n')
-            parts.append('\n'.join(repr_vals))
+        parts.append(':\n')
+        parts.append('\n'.join(repr_vals))
 
     msg = "".join(parts)
     return msg

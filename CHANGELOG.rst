@@ -1,3 +1,9 @@
+2.0.0
+=====
+* Removed ``repr_args`` argument to contracts since it is superseded by more versatile ``error`` argument
+* Renamed contracts to follow naming used in other languages and libraries (``require``, ``ensure`` and ``invariant``)
+* Improved error messages on missing arguments in the call
+
 1.7.2
 =====
 * Demarcated decorator and lambda inspection in ``_represent`` submodule
