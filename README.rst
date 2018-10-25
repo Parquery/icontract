@@ -47,8 +47,8 @@ be followed on `python-ideas mailing list <https://groups.google.com/forum/#!top
 
 Usage
 =====
-icontract provides two function decorators, ``pre`` and ``post`` for pre-conditions and post-conditions, respectively.
-Additionally, it provides a class decorator, ``inv``, to establish class invariants.
+icontract provides two function decorators, ``require`` and ``ensure`` for pre-conditions and post-conditions,
+respectively. Additionally, it provides a class decorator, ``invariant``, to establish class invariants.
 
 The ``condition`` argument specifies the contract and is usually written in lambda notation. In post-conditions,
 condition function receives a reserved parameter ``result`` corresponding to the result of the function. The condition
@@ -163,7 +163,7 @@ We also excempt ``__repr__`` method to prevent endless loops when generating err
 
 The icontract invariants are implemented as class decorators.
 
-The following examples shows various cases when an invariant is breached.
+The following examples show various cases when an invariant is breached.
 
 After the initialization:
 
@@ -477,7 +477,7 @@ By default, the contract checks (including the snapshots) are always perfromed a
 interpreter in optimized mode (``-O`` or ``-OO``, see
 `Python command-line options <https://docs.python.org/3/using/cmdline.html#cmdoption-o>`_).
 
-If you want to override this behavior, you can supply the the ``enabled`` argument to the contract:
+If you want to override this behavior, you can supply the ``enabled`` argument to the contract:
 
 .. code-block:: python
 
@@ -490,8 +490,8 @@ If you want to override this behavior, you can supply the the ``enabled`` argume
     >>> some_func(x=0)
     123
 
-icontract provides a global ``icontract.SLOW`` to provide a unified way to mark a plethora of contracts in large code
-bases. ``icontract.SLOW`` reflects the environment variable ``ICONTRACT_SLOW``.
+Icontract provides a global variable ``icontract.SLOW`` to provide a unified way to mark a plethora of contracts
+in large code bases. ``icontract.SLOW`` reflects the environment variable ``ICONTRACT_SLOW``.
 
 While you may want to keep most contracts running both during the development and in the production, contracts
 marked with ``icontract.SLOW`` should run only during the development (since they are too sluggish to execute in a real
@@ -537,14 +537,16 @@ The ``error`` argument can either be:
 
 * **An exception class.** The exception is constructed with the violation message and finally raised.
 * **A callable that returns an exception.** The callable accepts the subset of arguments of the original function
-  (including ``result`` for postconditions) or ``self`` in case of invariants, respectively, and returns an exception.
-  The arguments to the condition function can freely differ from the arguments to the error function.
+  (including ``result`` and ``OLD`` for postconditions) or ``self`` in case of invariants, respectively,
+  and returns an exception. The arguments to the condition function can freely differ from the arguments
+  to the error function.
 
   The exception returned by the given callable is finally raised.
 
   If you specify the ``error`` argument as callable, the values will not be traced and the condition function will not
-  be parsed. Hence, violation of contracts with ``error`` arguments as callables incur a much smaller overhead
-  compared to the contracts with default messages.
+  be parsed. Hence, violation of contracts with ``error`` arguments as callables incur a much smaller computational
+  overhead in case of violations compared to contracts with default violation messages for which we need to  trace
+  the argument values and parse the condition function.
 
 Here is an example of the error given as an exception class:
 
