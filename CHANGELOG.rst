@@ -1,3 +1,7 @@
+2.0.1
+=====
+* Fixed forgotten renamings in the Readme left from icontract 1.x
+
 2.0.0
 =====
 * Removed ``repr_args`` argument to contracts since it is superseded by more versatile ``error`` argument
