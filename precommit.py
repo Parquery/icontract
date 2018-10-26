@@ -66,6 +66,10 @@ def main() -> int:
     for pth in (repo_root / "icontract").glob("**/*.py"):
         subprocess.check_call(["python3", "-m", "doctest", pth.as_posix()])
 
+    print("Checking the restructured text of the readme...")
+    subprocess.check_call(
+        ['python3', 'setup.py', 'check', '--restructuredtext', '--strict'], cwd=os.path.dirname(__file__))
+
     return 0
 
 
