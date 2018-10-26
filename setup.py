@@ -39,12 +39,14 @@ setup(
     extras_require={
         'dev': [
             # yapf: disable
-            'mypy==0.620',
-            'pylint==1.8.2',
+            'mypy==0.641',
+            'pylint==2.1.1',
             'yapf==0.20.2',
             'tox>=3.0.0',
             'pydocstyle>=2.1.1,<3',
-            'coverage>=4.5.1,<5'
+            'coverage>=4.5.1,<5',
+            'docutils>=0.14,<1',
+            'pygments>=2.2.0,<3'
             # yapf: enable
         ],
     },

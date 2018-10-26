@@ -9,6 +9,9 @@ from icontract.errors import ViolationError
 
 # pylint: disable=protected-access
 
+# pylint does not play with typing.Mapping.
+# pylint: disable=unsubscriptable-object
+
 
 def _walk_decorator_stack(func: Callable[..., Any]) -> Iterable['Callable[..., Any]']:
     """
@@ -397,7 +400,7 @@ class _DummyClass:
     pass
 
 
-_SLOT_WRAPPER_TYPE = type(_DummyClass.__init__)
+_SLOT_WRAPPER_TYPE = type(_DummyClass.__init__)  # pylint: disable=invalid-name
 
 
 def _already_decorated_with_invariants(func: Callable[..., Any]) -> bool:
