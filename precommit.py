@@ -67,8 +67,7 @@ def main() -> int:
         subprocess.check_call(["python3", "-m", "doctest", pth.as_posix()])
 
     print("Checking the restructured text of the readme...")
-    subprocess.check_call(
-        ['python3', 'setup.py', 'check', '--restructuredtext', '--strict'], cwd=os.path.dirname(__file__))
+    subprocess.check_call(['python3', 'setup.py', 'check', '--restructuredtext', '--strict'])
 
     return 0
 
