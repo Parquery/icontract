@@ -54,7 +54,7 @@ class TestReprValues(unittest.TestCase):
         self.assertEqual("""x != b"oi": x was b'oi'""", str(icontract_violation_error))
 
     def test_bool(self):
-        @icontract.require(lambda x: x != False)
+        @icontract.require(lambda x: x is not False)
         def func(x: bool) -> bool:
             return x
 
@@ -65,7 +65,7 @@ class TestReprValues(unittest.TestCase):
             icontract_violation_error = err
 
         self.assertIsNotNone(icontract_violation_error)
-        self.assertEqual('x != False: x was False', str(icontract_violation_error))
+        self.assertEqual('x is not False: x was False', str(icontract_violation_error))
 
     def test_list(self):
         y = 1
@@ -186,6 +186,7 @@ class TestReprValues(unittest.TestCase):
         self.assertEqual('~(x << x | x & x ^ x) >> x > x: x was 1', str(icontract_violation_error))
 
     def test_bool_op_single(self):
+        # pylint: disable=chained-comparison
         @icontract.require(lambda x: x > 3 and x < 10)
         def func(x: int) -> int:
             return x
@@ -200,6 +201,7 @@ class TestReprValues(unittest.TestCase):
         self.assertEqual('x > 3 and x < 10: x was 1', str(icontract_violation_error))
 
     def test_bool_op_multiple(self):
+        # pylint: disable=chained-comparison
         @icontract.require(lambda x: x > 3 and x < 10 and x % 2 == 0)
         def func(x: int) -> int:
             return x
@@ -214,8 +216,9 @@ class TestReprValues(unittest.TestCase):
         self.assertEqual('x > 3 and x < 10 and x % 2 == 0: x was 1', str(icontract_violation_error))
 
     def test_compare(self):
-        # Chain the compare operators in a meaningless order and semantics
+        # pylint: disable=chained-comparison
 
+        # Chain the compare operators in a meaningless order and semantics
         @icontract.require(
             lambda x: 0 < x < 3 and x > 10 and x != 7 and x >= 10 and x <= 11 and x is not None and
                       x in [1, 2, 3] and x not in [1, 2, 3])

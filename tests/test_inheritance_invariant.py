@@ -1,6 +1,7 @@
 # pylint: disable=invalid-name
 # pylint: disable=missing-docstring
 # pylint: disable=unused-argument
+# pylint: disable=no-member
 
 import abc
 import unittest

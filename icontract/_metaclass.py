@@ -9,6 +9,9 @@ import icontract._checkers
 
 # pylint: disable=protected-access
 
+# Pylint can't deal with multiple Python versions.
+# pylint: disable=arguments-differ
+
 
 def _collapse_invariants(bases: List[type], namespace: MutableMapping[str, Any]) -> None:
     """Collect invariants from the bases and merge them with the invariants in the namespace."""
@@ -315,7 +318,7 @@ class DBCMeta(abc.ABCMeta):
             return cls
     else:
 
-        def __new__(mlcs, name, bases, namespace, **kwargs):  # type: ignore  # pylint: disable=arguments-differ
+        def __new__(mlcs, name, bases, namespace, **kwargs):  # type: ignore
             """Create a class with inherited preconditions, postconditions and invariants."""
             _dbc_decorate_namespace(bases, namespace)
 

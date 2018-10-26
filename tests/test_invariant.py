@@ -1,6 +1,7 @@
 # pylint: disable=missing-docstring
 # pylint: disable=invalid-name
 # pylint: disable=unused-argument
+# pylint: disable=no-member
 
 import time
 import unittest

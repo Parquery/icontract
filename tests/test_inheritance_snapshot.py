@@ -292,7 +292,6 @@ class TestPropertyInvalid(unittest.TestCase):
             def some_prop(self, value: int) -> None:
                 # pylint: disable=unused-argument
                 self.sets += 1
-                return
 
         value_error = None  # type: Optional[ValueError]
         try:
@@ -329,10 +328,9 @@ class TestPropertyInvalid(unittest.TestCase):
 
             @some_prop.deleter
             @icontract.snapshot(lambda self: self.dels, name="dels")
-            @icontract.ensure(lambda OLD, self: self.sets == OLD.dels + 1)
+            @icontract.ensure(lambda OLD, self: self.dels == OLD.dels + 1)
             def some_prop(self) -> None:
                 self.dels += 1
-                return
 
         value_error = None  # type: Optional[ValueError]
         try:

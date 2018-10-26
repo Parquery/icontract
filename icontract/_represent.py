@@ -14,6 +14,9 @@ import icontract._recompute
 
 from icontract._types import Contract
 
+# pylint does not play with typing.Mapping.
+# pylint: disable=unsubscriptable-object
+
 
 def _representable(value: Any) -> bool:
     """
