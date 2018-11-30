@@ -336,7 +336,7 @@ the postconditions of the original parent function that it overrides.
 provide either arguments that satisfy the preconditions associated with the function of the parent class *or*
 arguments that satisfy the preconditions of the function of the child class.
 
-**Precondiitons and Postconditions of __init__**. Mind that ``__init__`` method is a special case. Since the constructor
+**Preconditions and Postconditions of __init__**. Mind that ``__init__`` method is a special case. Since the constructor
 is exempt from polymorphism, preconditions and postconditions of base classes are *not* inherited for the
 ``__init__`` method. Only the preconditions and postconditions specified for the ``__init__`` method of the concrete
 class apply.
