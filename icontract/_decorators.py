@@ -2,6 +2,7 @@
 import reprlib
 from typing import Callable, Optional, Union, Any, List  # pylint: disable=unused-import
 
+from icontract._globals import CallableT
 from icontract._types import Contract, Snapshot
 
 import icontract._checkers
@@ -54,7 +55,7 @@ class require:  # pylint: disable=invalid-name
 
         self._contract = Contract(condition=condition, description=description, a_repr=a_repr, error=error)
 
-    def __call__(self, func: Callable[..., Any]) -> Callable[..., Any]:
+    def __call__(self, func: CallableT) -> CallableT:
         """
         Add the precondition to the list of preconditions of the function ``func``.
 
@@ -131,7 +132,7 @@ class snapshot:  # pylint: disable=invalid-name
         if enabled:
             self._snapshot = Snapshot(capture=capture, name=name)
 
-    def __call__(self, func: Callable[..., Any]) -> Callable[..., Any]:
+    def __call__(self, func: CallableT) -> CallableT:
         """
         Add the snapshot to the list of snapshots of the function ``func``.
 
@@ -215,7 +216,7 @@ class ensure:  # pylint: disable=invalid-name
 
         self._contract = Contract(condition=condition, description=description, a_repr=a_repr, error=error)
 
-    def __call__(self, func: Callable[..., Any]) -> Callable[..., Any]:
+    def __call__(self, func: CallableT) -> CallableT:
         """
         Add the postcondition to the list of postconditions of the function ``func``.
 
