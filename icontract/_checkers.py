@@ -229,7 +229,7 @@ class _Old:
     def __init__(self, mapping: Mapping[str, Any]) -> None:
         self.__dict__.update(mapping)
 
-    def __getattr__(self, item):
+    def __getattr__(self, item: str) -> Any:
         raise AttributeError("The snapshot with the name {!r} is not available in the OLD of a postcondition. "
                              "Have you decorated the function with a corresponding snapshot decorator?".format(item))
 

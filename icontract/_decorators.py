@@ -23,7 +23,7 @@ class require:  # pylint: disable=invalid-name
                  description: Optional[str] = None,
                  a_repr: reprlib.Repr = icontract._globals.aRepr,
                  enabled: bool = __debug__,
-                 error: Union[Callable[..., Exception], type] = None) -> None:
+                 error: Optional[Union[Callable[..., Exception], type]] = None) -> None:
         """
         Initialize.
 
@@ -184,7 +184,7 @@ class ensure:  # pylint: disable=invalid-name
                  description: Optional[str] = None,
                  a_repr: reprlib.Repr = icontract._globals.aRepr,
                  enabled: bool = __debug__,
-                 error: Union[Callable[..., Exception], type] = None) -> None:
+                 error: Optional[Union[Callable[..., Exception], type]] = None) -> None:
         """
         Initialize.
 
@@ -266,7 +266,7 @@ class invariant:  # pylint: disable=invalid-name
                  description: Optional[str] = None,
                  a_repr: reprlib.Repr = icontract._globals.aRepr,
                  enabled: bool = __debug__,
-                 error: Union[Callable[..., Exception], type] = None) -> None:
+                 error: Optional[Union[Callable[..., Exception], type]] = None) -> None:
         """
         Initialize a class decorator to establish the invariant on all the public methods.
 
