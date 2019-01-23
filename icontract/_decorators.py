@@ -19,7 +19,7 @@ class require:  # pylint: disable=invalid-name
 
     # pylint: disable=too-many-instance-attributes
     def __init__(self,
-                 condition: Callable[..., bool],
+                 condition: Callable[..., Any],
                  description: Optional[str] = None,
                  a_repr: reprlib.Repr = icontract._globals.aRepr,
                  enabled: bool = __debug__,
@@ -180,7 +180,7 @@ class ensure:  # pylint: disable=invalid-name
 
     # pylint: disable=too-many-instance-attributes
     def __init__(self,
-                 condition: Callable[..., bool],
+                 condition: Callable[..., Any],
                  description: Optional[str] = None,
                  a_repr: reprlib.Repr = icontract._globals.aRepr,
                  enabled: bool = __debug__,
@@ -262,7 +262,7 @@ class invariant:  # pylint: disable=invalid-name
     """
 
     def __init__(self,
-                 condition: Callable[..., bool],
+                 condition: Callable[..., Any],
                  description: Optional[str] = None,
                  a_repr: reprlib.Repr = icontract._globals.aRepr,
                  enabled: bool = __debug__,

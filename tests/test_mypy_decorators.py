@@ -15,23 +15,17 @@ class TestMypyDecorators(unittest.TestCase):
 
                 import icontract
 
-                def some_precond(x: int) -> bool: return x > 0
-
-                @icontract.require(some_precond)
+                @icontract.require(lambda x: x > 0)
                 def f1(x: int) -> int:
                     return x
                 f1("this is wrong")
 
-                def some_postcond(result: int) -> bool: return result > 0
-
-                @icontract.ensure(some_postcond)
+                @icontract.ensure(lambda result: result > 0)
                 def f2(x: int) -> int:
                     return x
                 f2("this is wrong")
 
-                def some_snapshot(x: int) -> int: return x
-
-                @icontract.snapshot(some_snapshot)
+                @icontract.snapshot(lambda x: x)
                 def f3(x: int) -> int:
                     return x
                 f3("this is wrong")
@@ -45,9 +39,9 @@ class TestMypyDecorators(unittest.TestCase):
             self.assertIsNone(err)
             self.assertEqual(
                 textwrap.dedent('''\
-                    {path}:10: error: Argument 1 to "f1" has incompatible type "str"; expected "int"
-                    {path}:17: error: Argument 1 to "f2" has incompatible type "str"; expected "int"
-                    {path}:24: error: Argument 1 to "f3" has incompatible type "str"; expected "int"
+                    {path}:8: error: Argument 1 to "f1" has incompatible type "str"; expected "int"
+                    {path}:13: error: Argument 1 to "f2" has incompatible type "str"; expected "int"
+                    {path}:18: error: Argument 1 to "f3" has incompatible type "str"; expected "int"
                     '''.format(path=tmp.name)),
                 out)
 
