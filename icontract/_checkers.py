@@ -4,6 +4,7 @@ import inspect
 from typing import Callable, Any, Iterable, Optional, Tuple, List, Mapping, MutableMapping, Dict
 
 import icontract._represent
+from icontract._globals import CallableT
 from icontract._types import Contract, Snapshot
 from icontract.errors import ViolationError
 
@@ -13,7 +14,7 @@ from icontract.errors import ViolationError
 # pylint: disable=unsubscriptable-object
 
 
-def _walk_decorator_stack(func: Callable[..., Any]) -> Iterable['Callable[..., Any]']:
+def _walk_decorator_stack(func: CallableT) -> Iterable['CallableT']:
     """
     Iterate through the stack of decorated functions until the original function.
 
@@ -27,9 +28,9 @@ def _walk_decorator_stack(func: Callable[..., Any]) -> Iterable['Callable[..., A
     yield func
 
 
-def find_checker(func: Callable[..., Any]) -> Optional[Callable[..., Any]]:
+def find_checker(func: CallableT) -> Optional[CallableT]:
     """Iterate through the decorator stack till we find the contract checker."""
-    contract_checker = None  # type: Optional[Callable[..., Any]]
+    contract_checker = None  # type: Optional[CallableT]
     for a_wrapper in _walk_decorator_stack(func):
         if hasattr(a_wrapper, "__preconditions__") or hasattr(a_wrapper, "__postconditions__"):
             contract_checker = a_wrapper
@@ -228,7 +229,7 @@ class _Old:
     def __init__(self, mapping: Mapping[str, Any]) -> None:
         self.__dict__.update(mapping)
 
-    def __getattr__(self, item):
+    def __getattr__(self, item: str) -> Any:
         raise AttributeError("The snapshot with the name {!r} is not available in the OLD of a postcondition. "
                              "Have you decorated the function with a corresponding snapshot decorator?".format(item))
 
@@ -236,7 +237,7 @@ class _Old:
         return "a bunch of OLD values"
 
 
-def decorate_with_checker(func: Callable[..., Any]) -> Callable[..., Any]:
+def decorate_with_checker(func: CallableT) -> CallableT:
     """Decorate the function with a checker that verifies the preconditions and postconditions."""
     assert not hasattr(func, "__preconditions__"), \
         "Expected func to have no list of preconditions (there should be only a single contract checker per function)."
@@ -311,7 +312,7 @@ def decorate_with_checker(func: Callable[..., Any]) -> Callable[..., Any]:
             for contract in postconditions:
                 _assert_postcondition(contract=contract, resolved_kwargs=resolved_kwargs)
 
-        return result
+        return result  # type: ignore
 
     # Copy __doc__ and other properties so that doctests can run
     functools.update_wrapper(wrapper=wrapper, wrapped=func)
@@ -330,7 +331,7 @@ def decorate_with_checker(func: Callable[..., Any]) -> Callable[..., Any]:
     setattr(wrapper, "__postcondition_snapshots__", [])
     setattr(wrapper, "__postconditions__", [])
 
-    return wrapper
+    return wrapper  # type: ignore
 
 
 def _find_self(param_names: List[str], args: Tuple[Any, ...], kwargs: Dict[str, Any]) -> Any:
@@ -344,7 +345,7 @@ def _find_self(param_names: List[str], args: Tuple[Any, ...], kwargs: Dict[str, 
     return instance
 
 
-def _decorate_with_invariants(func: Callable[..., Any], is_init: bool) -> Callable[..., Any]:
+def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
     """
     Decorate the function ``func`` of the class ``cls`` with invariant checks.
 
@@ -391,7 +392,7 @@ def _decorate_with_invariants(func: Callable[..., Any], is_init: bool) -> Callab
 
     setattr(wrapper, "__is_invariant_check__", True)
 
-    return wrapper
+    return wrapper  # type: ignore
 
 
 class _DummyClass:
@@ -403,7 +404,7 @@ class _DummyClass:
 _SLOT_WRAPPER_TYPE = type(_DummyClass.__init__)  # pylint: disable=invalid-name
 
 
-def _already_decorated_with_invariants(func: Callable[..., Any]) -> bool:
+def _already_decorated_with_invariants(func: CallableT) -> bool:
     """Check if the function has been already decorated with an invariant check by going through its decorator stack."""
     already_decorated = False
     for a_decorator in _walk_decorator_stack(func=func):
@@ -467,9 +468,9 @@ def add_invariant_checks(cls: type) -> None:
         setattr(cls, name, wrapper)
 
     for name, prop in names_properties:
-        fget = _decorate_with_invariants(func=prop.fget, is_init=False) if prop.fget else None
-        fset = _decorate_with_invariants(func=prop.fset, is_init=False) if prop.fset else None
-        fdel = _decorate_with_invariants(func=prop.fdel, is_init=False) if prop.fdel else None
-
-        new_prop = property(fget=fget, fset=fset, fdel=fdel, doc=prop.__doc__)
+        new_prop = property(  # type: ignore
+            fget=_decorate_with_invariants(func=prop.fget, is_init=False) if prop.fget else None,
+            fset=_decorate_with_invariants(func=prop.fset, is_init=False) if prop.fset else None,
+            fdel=_decorate_with_invariants(func=prop.fdel, is_init=False) if prop.fdel else None,
+            doc=prop.__doc__)
         setattr(cls, name, new_prop)

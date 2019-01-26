@@ -17,7 +17,7 @@ class Contract:
                  condition: Callable[..., bool],
                  description: Optional[str] = None,
                  a_repr: reprlib.Repr = icontract._globals.aRepr,
-                 error: Union[Callable[..., Exception], type] = None) -> None:
+                 error: Optional[Union[Callable[..., Exception], type]] = None) -> None:
         """
         Initialize.
 
