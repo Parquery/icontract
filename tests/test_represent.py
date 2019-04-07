@@ -5,7 +5,7 @@
 import pathlib
 import reprlib
 import unittest
-from typing import Optional, List, Tuple  # pylint: disable=unused-import
+from typing import Optional, List, Tuple, Union  # pylint: disable=unused-import
 
 import icontract._represent
 
@@ -701,6 +701,95 @@ class TestClosures(unittest.TestCase):
                          "SOME_GLOBAL_CONSTANT was 10\n"
                          "x was 100\n"
                          "y was 4", str(pre_err))
+
+
+class MockArray:
+    """Represent a class that mocks a numpy.array and it's behavior on less-then operator."""
+
+    def __init__(self, values: List[Union[int, bool]]) -> None:
+        """Initialize with the given values."""
+        self.values = values
+
+    def __lt__(self, other: int) -> 'MockArray':
+        """Map the value to each comparison with ``other``."""
+        return MockArray(values=[value < other for value in self.values])
+
+    def __gt__(self, other: int) -> 'MockArray':
+        """Map the value to each comparison with ``other``."""
+        return MockArray(values=[value > other for value in self.values])
+
+    def __bool__(self) -> bool:
+        """Raise a ValueError."""
+        raise ValueError("The truth value of an array with more than one element is ambiguous.")
+
+    def all(self) -> bool:
+        """Return True if all values are True."""
+        return all(self.values)
+
+    def __repr__(self) -> str:
+        """Represent with the constructor."""
+        return 'MockArray({!r})'.format(self.values)
+
+
+class TestWithNumpyMock(unittest.TestCase):
+    def test_that_mock_works(self) -> None:
+        arr = MockArray(values=[-3, 3])
+
+        value_err = None  # type: Optional[ValueError]
+        try:
+            not (arr > 0)  # pylint: disable=superfluous-parens,unneeded-not
+        except ValueError as err:
+            value_err = err
+
+        self.assertIsNotNone(value_err)
+        self.assertEqual('The truth value of an array with more than one element is ambiguous.', str(value_err))
+
+    def test_that_single_comparator_works(self) -> None:
+        @icontract.require(lambda arr: (arr > 0).all())
+        def some_func(arr: MockArray) -> None:
+            pass
+
+        pre_err = None  # type: Optional[icontract.ViolationError]
+        try:
+            some_func(arr=MockArray(values=[-3, 3]))
+        except icontract.ViolationError as err:
+            pre_err = err
+
+        self.assertIsNotNone(pre_err)
+        self.assertEqual('(arr > 0).all():\n' '(arr > 0).all() was False\n' 'arr was MockArray([-3, 3])', str(pre_err))
+
+    def test_that_multiple_comparators_fail(self) -> None:
+        """
+        Test that multiple comparators in an expression will fail.
+
+        Multiple comparisons are not implemented in numpy as of version <= 1.16.
+        The following snippet exemplifies the problem:
+
+        .. code-block:: python
+
+            import numpy as np
+
+            x = np.array([-3, 3])
+            -100 < x < 100
+            Traceback (most recent call last):
+            ...
+            ValueError: The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
+
+        :return:
+        """
+
+        @icontract.require(lambda arr: (-3 < arr < 0).all())
+        def some_func(arr: MockArray) -> None:
+            pass
+
+        value_err = None  # type: Optional[ValueError]
+        try:
+            some_func(arr=MockArray(values=[-10, -1]))
+        except ValueError as err:
+            value_err = err
+
+        self.assertIsNotNone(value_err)
+        self.assertEqual('The truth value of an array with more than one element is ambiguous.', str(value_err))
 
 
 if __name__ == '__main__':

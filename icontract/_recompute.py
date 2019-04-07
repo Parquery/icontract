@@ -211,7 +211,7 @@ class Visitor(ast.NodeVisitor):
 
         comparators = [self.visit(node=comparator) for comparator in node.comparators]
 
-        result = True
+        result = None  # type: Optional[Any]
         for comparator, op in zip(comparators, node.ops):
             if isinstance(op, ast.Eq):
                 comparison = left == comparator
@@ -236,9 +236,10 @@ class Visitor(ast.NodeVisitor):
             else:
                 raise NotImplementedError("Unhandled op of {}: {}".format(node, op))
 
-            if not comparison:
-                result = False
-                break
+            if result is None:
+                result = comparison
+            else:
+                result = result and comparison
 
             left = comparator
 
