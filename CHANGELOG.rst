@@ -1,3 +1,6 @@
+2.0.3
+=====
+*
 2.0.2
 =====
 * Specified ``require`` and ``ensure`` to use generics in order to fix typing erasure of the decorated functions.
