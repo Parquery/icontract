@@ -398,8 +398,6 @@ def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
 class _DummyClass:
     """Represent a dummy class so that we can infer the type of the slot wrapper."""
 
-    pass
-
 
 _SLOT_WRAPPER_TYPE = type(_DummyClass.__init__)  # pylint: disable=invalid-name
 
