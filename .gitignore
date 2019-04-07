@@ -1,10 +1,11 @@
-venv3
+venv3/
+venv/
 .mypy_cache/
-.idea
+.idea/
 *.pyc
 .precommit_hashes
 *.egg-info
-.tox
+.tox/
 dist/
 .coverage
 htmlcov

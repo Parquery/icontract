@@ -332,5 +332,3 @@ class DBCMeta(abc.ABCMeta):
 
 class DBC(metaclass=DBCMeta):
     """Provide a standard way to create a class which can inherit the contracts."""
-
-    pass
