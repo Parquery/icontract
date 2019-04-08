@@ -1,6 +1,8 @@
 2.0.3
 =====
-*
+* Fixed representation of numpy conditions
+* Updated pylint to 2.3.1
+
 2.0.2
 =====
 * Specified ``require`` and ``ensure`` to use generics in order to fix typing erasure of the decorated functions.
