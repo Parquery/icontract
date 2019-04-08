@@ -180,7 +180,8 @@ After the initialization:
         >>> some_instance = SomeClass()
         Traceback (most recent call last):
          ...
-        icontract.errors.ViolationError: self.x > 0:
+        icontract.errors.ViolationError: File <doctest README.rst[14]>, line 1 in <module>:
+        self.x > 0:
         self was some instance
         self.x was -1
 
@@ -205,7 +206,8 @@ Before the invocation of a public method:
     >>> some_instance.some_method()
     Traceback (most recent call last):
      ...
-    icontract.errors.ViolationError: self.x > 0:
+    icontract.errors.ViolationError: File <doctest README.rst[16]>, line 1 in <module>:
+    self.x > 0:
     self was some instance
     self.x was -1
 
@@ -229,7 +231,8 @@ After the invocation of a public method:
     >>> some_instance.some_method()
     Traceback (most recent call last):
      ...
-    icontract.errors.ViolationError: self.x > 0:
+    icontract.errors.ViolationError: File <doctest README.rst[20]>, line 1 in <module>:
+    self.x > 0:
     self was some instance
     self.x was -1
 
@@ -253,7 +256,8 @@ After the invocation of a magic method:
     >>> some_instance()
     Traceback (most recent call last):
      ...
-    icontract.errors.ViolationError: self.x > 0:
+    icontract.errors.ViolationError: File <doctest README.rst[23]>, line 1 in <module>:
+    self.x > 0:
     self was some instance
     self.x was -1
 
@@ -397,7 +401,8 @@ The following example shows an abstract parent class and a child class that inhe
         >>> another_b.break_parent_invariant()
         Traceback (most recent call last):
             ...
-        icontract.errors.ViolationError: self.x > 0:
+        icontract.errors.ViolationError: File <doctest README.rst[36]>, line 1 in <module>:
+        self.x > 0:
         self was instance of B
         self.x was -1
 
@@ -406,7 +411,8 @@ The following example shows an abstract parent class and a child class that inhe
         >>> yet_another_b.break_my_invariant()
         Traceback (most recent call last):
             ...
-        icontract.errors.ViolationError: self.x < 100:
+        icontract.errors.ViolationError: File <doctest README.rst[37]>, line 1 in <module>:
+        self.x < 100:
         self was instance of B
         self.x was 101
 
@@ -710,7 +716,7 @@ module without the contracts.
 +-----------------------------------+----------------------------------+-------------------------+----------------------------------------------------+
 | Number of conditions per function | Total import time [milliseconds] | Overhead [milliseconds] | Overhead per condition and function [milliseconds] |
 +===================================+==================================+=========================+====================================================+
-| None                              |                   795.59 ± 10.47 |                       - |                                                  - |
+| None                              |                   795.59 ± 10.47 |                     N/A |                                                N/A |
 +-----------------------------------+----------------------------------+-------------------------+----------------------------------------------------+
 | 1                                 |                   919.53 ± 61.22 |                  123.93 |                                               1.24 |
 +-----------------------------------+----------------------------------+-------------------------+----------------------------------------------------+
@@ -741,7 +747,7 @@ are presented in the following table.
 +--------------------------------+----------------------------------+-------------------------+-------------------------------------------------+
 | Number of conditions per class | Total import time [milliseconds] | Overhead [milliseconds] | Overhead per condition and class [milliseconds] |
 +================================+==================================+=========================+=================================================+
-| None                           |                   843.61 ± 28.21 |                       - |                                               - |
+| None                           |                   843.61 ± 28.21 |                     N/A |                                             N/A |
 +--------------------------------+----------------------------------+-------------------------+-------------------------------------------------+
 | 1                              |                  3409.71 ± 95.78 |                  2566.1 |                                           25.66 |
 +--------------------------------+----------------------------------+-------------------------+-------------------------------------------------+

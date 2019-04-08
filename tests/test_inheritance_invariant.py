@@ -8,6 +8,7 @@ import unittest
 from typing import Optional  # pylint: disable=unused-import
 
 import icontract
+import tests.violation_error
 
 
 class TestOK(unittest.TestCase):
@@ -61,14 +62,16 @@ class TestViolation(unittest.TestCase):
                 return "instance of B"
 
         b = B()
-        violation_err = None  # type: Optional[icontract.ViolationError]
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             b.func()
         except icontract.ViolationError as err:
-            violation_err = err
+            icontract_violation_error = err
 
-        self.assertIsNotNone(violation_err)
-        self.assertEqual("self.x > 0:\n" "self was instance of B\n" "self.x was -1", str(violation_err))
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual("self.x > 0:\n"
+                         "self was instance of B\n"
+                         "self.x was -1", tests.violation_error.lstrip_location(str(icontract_violation_error)))
 
     def test_inherited_violated_in_child(self):
         @icontract.invariant(lambda self: self.x > 0)
@@ -90,14 +93,16 @@ class TestViolation(unittest.TestCase):
                 return "instance of B"
 
         b = B()
-        violation_err = None  # type: Optional[icontract.ViolationError]
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             b.func()
         except icontract.ViolationError as err:
-            violation_err = err
+            icontract_violation_error = err
 
-        self.assertIsNotNone(violation_err)
-        self.assertEqual("self.x > 0:\n" "self was instance of B\n" "self.x was -1", str(violation_err))
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual("self.x > 0:\n"
+                         "self was instance of B\n"
+                         "self.x was -1", tests.violation_error.lstrip_location(str(icontract_violation_error)))
 
     def test_additional_invariant_violated_in_childs_init(self):
         @icontract.invariant(lambda self: self.x > 0)
@@ -113,14 +118,16 @@ class TestViolation(unittest.TestCase):
             def __repr__(self) -> str:
                 return "instance of B"
 
-        violation_err = None  # type: Optional[icontract.ViolationError]
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             _ = B()
         except icontract.ViolationError as err:
-            violation_err = err
+            icontract_violation_error = err
 
-        self.assertIsNotNone(violation_err)
-        self.assertEqual("self.x > 100:\n" "self was instance of B\n" "self.x was 10", str(violation_err))
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual("self.x > 100:\n"
+                         "self was instance of B\n"
+                         "self.x was 10", tests.violation_error.lstrip_location(str(icontract_violation_error)))
 
     def test_method_violates_in_child(self):
         @icontract.invariant(lambda self: self.x > 0)
@@ -140,14 +147,16 @@ class TestViolation(unittest.TestCase):
                 return "instance of B"
 
         b = B()
-        violation_err = None  # type: Optional[icontract.ViolationError]
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             b.some_method()
         except icontract.ViolationError as err:
-            violation_err = err
+            icontract_violation_error = err
 
-        self.assertIsNotNone(violation_err)
-        self.assertEqual("self.x > 100:\n" "self was instance of B\n" "self.x was 10", str(violation_err))
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual("self.x > 100:\n"
+                         "self was instance of B\n"
+                         "self.x was 10", tests.violation_error.lstrip_location(str(icontract_violation_error)))
 
     def test_triple_inheritance(self):
         @icontract.invariant(lambda self: self.x > 0)
@@ -170,14 +179,16 @@ class TestViolation(unittest.TestCase):
                 return "instance of C"
 
         c = C()
-        violation_err = None  # type: Optional[icontract.ViolationError]
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             c.func()
         except icontract.ViolationError as err:
-            violation_err = err
+            icontract_violation_error = err
 
-        self.assertIsNotNone(violation_err)
-        self.assertEqual("self.x > 0:\n" "self was instance of C\n" "self.x was -1", str(violation_err))
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual("self.x > 0:\n"
+                         "self was instance of C\n"
+                         "self.x was -1", tests.violation_error.lstrip_location(str(icontract_violation_error)))
 
     def test_with_abstract_method(self):
         @icontract.invariant(lambda self: self.x > 0)
@@ -200,14 +211,16 @@ class TestViolation(unittest.TestCase):
                 return "instance of B"
 
         b = B()
-        violation_err = None  # type: Optional[icontract.ViolationError]
+        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             b.func()
         except icontract.ViolationError as err:
-            violation_err = err
+            icontract_violation_error = err
 
-        self.assertIsNotNone(violation_err)
-        self.assertEqual("self.x > 0:\n" "self was instance of B\n" "self.x was -1", str(violation_err))
+        self.assertIsNotNone(icontract_violation_error)
+        self.assertEqual("self.x > 0:\n"
+                         "self was instance of B\n"
+                         "self.x was -1", tests.violation_error.lstrip_location(str(icontract_violation_error)))
 
 
 class TestProperty(unittest.TestCase):
@@ -237,7 +250,7 @@ class TestProperty(unittest.TestCase):
         self.assertIsNotNone(icontract_violation_error)
         self.assertEqual('not self.toggled:\n'
                          'self was SomeClass\n'
-                         'self.toggled was True', str(icontract_violation_error))
+                         'self.toggled was True', tests.violation_error.lstrip_location(str(icontract_violation_error)))
 
     def test_inherited_setter(self):
         @icontract.invariant(lambda self: not self.toggled)
@@ -268,7 +281,7 @@ class TestProperty(unittest.TestCase):
         self.assertIsNotNone(icontract_violation_error)
         self.assertEqual('not self.toggled:\n'
                          'self was SomeClass\n'
-                         'self.toggled was True', str(icontract_violation_error))
+                         'self.toggled was True', tests.violation_error.lstrip_location(str(icontract_violation_error)))
 
     def test_inherited_deleter(self):
         @icontract.invariant(lambda self: not self.toggled)
@@ -299,7 +312,7 @@ class TestProperty(unittest.TestCase):
         self.assertIsNotNone(icontract_violation_error)
         self.assertEqual('not self.toggled:\n'
                          'self was SomeClass\n'
-                         'self.toggled was True', str(icontract_violation_error))
+                         'self.toggled was True', tests.violation_error.lstrip_location(str(icontract_violation_error)))
 
     def test_inherited_invariant_on_getter(self):
         @icontract.invariant(lambda self: not self.toggled)
@@ -327,7 +340,7 @@ class TestProperty(unittest.TestCase):
         self.assertIsNotNone(icontract_violation_error)
         self.assertEqual('not self.toggled:\n'
                          'self was SomeClass\n'
-                         'self.toggled was True', str(icontract_violation_error))
+                         'self.toggled was True', tests.violation_error.lstrip_location(str(icontract_violation_error)))
 
     def test_inherited_invariant_on_setter(self):
         @icontract.invariant(lambda self: not self.toggled)
@@ -358,7 +371,7 @@ class TestProperty(unittest.TestCase):
         self.assertIsNotNone(icontract_violation_error)
         self.assertEqual('not self.toggled:\n'
                          'self was SomeClass\n'
-                         'self.toggled was True', str(icontract_violation_error))
+                         'self.toggled was True', tests.violation_error.lstrip_location(str(icontract_violation_error)))
 
     def test_inherited_invariant_on_deleter(self):
         @icontract.invariant(lambda self: not self.toggled)
@@ -389,7 +402,7 @@ class TestProperty(unittest.TestCase):
         self.assertIsNotNone(icontract_violation_error)
         self.assertEqual('not self.toggled:\n'
                          'self was SomeClass\n'
-                         'self.toggled was True', str(icontract_violation_error))
+                         'self.toggled was True', tests.violation_error.lstrip_location(str(icontract_violation_error)))
 
 
 if __name__ == '__main__':

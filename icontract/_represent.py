@@ -356,6 +356,9 @@ def generate_message(contract: Contract, condition_kwargs: Mapping[str, Any]) ->
     # pylint: disable=protected-access
     parts = []  # type: List[str]
 
+    if contract.location is not None:
+        parts.append("{}:\n".format(contract.location))
+
     if contract.description is not None:
         parts.append("{}: ".format(contract.description))
 

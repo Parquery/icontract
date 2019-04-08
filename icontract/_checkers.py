@@ -100,9 +100,15 @@ def _assert_precondition(contract: Contract, resolved_kwargs: Mapping[str, Any])
 
             missing_args = [arg_name for arg_name in contract.error_args if arg_name not in resolved_kwargs]
             if missing_args:
-                raise TypeError(
+                msg_parts = []  # type: List[str]
+                if contract.location is not None:
+                    msg_parts.append("{}:\n".format(contract.location))
+
+                msg_parts.append(
                     ("The argument(s) of the precondition error have not been set: {}. "
                      "Does the original function define them? Did you supply them in the call?").format(missing_args))
+
+                raise TypeError(''.join(msg_parts))
 
             raise contract.error(**error_kwargs)
 
@@ -205,9 +211,15 @@ def _assert_postcondition(contract: Contract, resolved_kwargs: Mapping[str, Any]
 
             missing_args = [arg_name for arg_name in contract.error_args if arg_name not in resolved_kwargs]
             if missing_args:
-                raise TypeError(
+                msg_parts = []  # type: List[str]
+                if contract.location is not None:
+                    msg_parts.append("{}:\n".format(contract.location))
+
+                msg_parts.append(
                     ("The argument(s) of the postcondition error have not been set: {}. "
                      "Does the original function define them? Did you supply them in the call?").format(missing_args))
+
+                raise TypeError(''.join(msg_parts))
 
             raise contract.error(**error_kwargs)
 
