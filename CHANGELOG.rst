@@ -1,3 +1,7 @@
+2.0.4
+=====
+* Added contract location to the message of the violation error
+
 2.0.3
 =====
 * Fixed representation of numpy conditions
