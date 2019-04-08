@@ -1,11 +1,11 @@
 """Define public decorators."""
 import reprlib
+import traceback
 from typing import Callable, Optional, Union, Any, List  # pylint: disable=unused-import
 
+import icontract._checkers
 from icontract._globals import CallableT
 from icontract._types import Contract, Snapshot
-
-import icontract._checkers
 
 # pylint: disable=protected-access
 
@@ -297,7 +297,14 @@ class invariant:  # pylint: disable=invalid-name
         if not enabled:
             return
 
-        self._contract = Contract(condition=condition, description=description, a_repr=a_repr, error=error)
+        location = None  # type: Optional[str]
+        tb_stack = traceback.extract_stack(limit=2)[:1]
+        if len(tb_stack) > 0:
+            frame = tb_stack[0]
+            location = 'File {}, line {} in {}'.format(frame.filename, frame.lineno, frame.name)
+
+        self._contract = Contract(
+            condition=condition, description=description, a_repr=a_repr, error=error, location=location)
 
         if self._contract.condition_args and self._contract.condition_args != ['self']:
             raise ValueError("Expected an invariant condition with at most an argument 'self', but got: {}".format(

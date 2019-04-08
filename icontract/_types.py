@@ -17,7 +17,8 @@ class Contract:
                  condition: Callable[..., bool],
                  description: Optional[str] = None,
                  a_repr: reprlib.Repr = icontract._globals.aRepr,
-                 error: Optional[Union[Callable[..., Exception], type]] = None) -> None:
+                 error: Optional[Union[Callable[..., Exception], type]] = None,
+                 location: Optional[str] = None) -> None:
         """
         Initialize.
 
@@ -31,7 +32,7 @@ class Contract:
 
             Otherwise, it is expected to denote an Exception class which is instantiated with the violation message
             and raised on contract violation.
-
+        :param location: indicate where the contract was defined (*e.g.*, path and line number)
         """
         # pylint: disable=too-many-arguments
         self.condition = condition
@@ -48,6 +49,8 @@ class Contract:
         if error is not None and (inspect.isfunction(error) or inspect.ismethod(error)):
             self.error_args = list(inspect.signature(error).parameters.keys())
             self.error_arg_set = set(self.error_args)
+
+        self.location = location
 
 
 class Snapshot:
