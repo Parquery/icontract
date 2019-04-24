@@ -53,7 +53,13 @@ class require:  # pylint: disable=invalid-name
         if not enabled:
             return
 
-        self._contract = Contract(condition=condition, description=description, a_repr=a_repr, error=error)
+        location = None  # type: Optional[str]
+        tb_stack = traceback.extract_stack(limit=2)[:1]
+        if len(tb_stack) > 0:
+            frame = tb_stack[0]
+            location = 'File {}, line {} in {}'.format(frame.filename, frame.lineno, frame.name)
+
+        self._contract = Contract(condition=condition, description=description, a_repr=a_repr, error=error, location=location)
 
     def __call__(self, func: CallableT) -> CallableT:
         """
@@ -214,7 +220,13 @@ class ensure:  # pylint: disable=invalid-name
         if not enabled:
             return
 
-        self._contract = Contract(condition=condition, description=description, a_repr=a_repr, error=error)
+        location = None  # type: Optional[str]
+        tb_stack = traceback.extract_stack(limit=2)[:1]
+        if len(tb_stack) > 0:
+            frame = tb_stack[0]
+            location = 'File {}, line {} in {}'.format(frame.filename, frame.lineno, frame.name)
+
+        self._contract = Contract(condition=condition, description=description, a_repr=a_repr, error=error, location=location)
 
     def __call__(self, func: CallableT) -> CallableT:
         """

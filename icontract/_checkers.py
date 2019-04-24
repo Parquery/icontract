@@ -66,6 +66,16 @@ def _kwargs_from_call(param_names: List[str], kwdefaults: Dict[str, Any], args: 
     return mapping
 
 
+def safe_not(check, contract):
+    """ Not that catches numpy boolean insanity """
+    try:
+        return not check
+    except Exception as exc:
+        raise ViolationError(
+            f"{contract.location} {contract.description} failed boolean check"
+        ) from exc
+
+
 def _assert_precondition(contract: Contract, resolved_kwargs: Mapping[str, Any]) -> None:
     """
     Assert that the contract holds as a precondition.
@@ -88,7 +98,7 @@ def _assert_precondition(contract: Contract, resolved_kwargs: Mapping[str, Any])
 
     check = contract.condition(**condition_kwargs)
 
-    if not check:
+    if safe_not(check, contract):
         if contract.error is not None and (inspect.ismethod(contract.error) or inspect.isfunction(contract.error)):
             assert contract.error_arg_set is not None, "Expected error_arg_set non-None if contract.error a function."
             assert contract.error_args is not None, "Expected error_args non-None if contract.error a function."
@@ -127,7 +137,7 @@ def _assert_invariant(contract: Contract, instance: Any) -> None:
     else:
         check = contract.condition()
 
-    if not check:
+    if safe_not(check, contract):
         if contract.error is not None and (inspect.ismethod(contract.error) or inspect.isfunction(contract.error)):
             assert contract.error_arg_set is not None, "Expected error_arg_set non-None if contract.error a function."
             assert contract.error_args is not None, "Expected error_args non-None if contract.error a function."
@@ -199,7 +209,7 @@ def _assert_postcondition(contract: Contract, resolved_kwargs: Mapping[str, Any]
 
     check = contract.condition(**condition_kwargs)
 
-    if not check:
+    if safe_not(check, contract):
         if contract.error is not None and (inspect.ismethod(contract.error) or inspect.isfunction(contract.error)):
             assert contract.error_arg_set is not None, "Expected error_arg_set non-None if contract.error a function."
             assert contract.error_args is not None, "Expected error_args non-None if contract.error a function."
