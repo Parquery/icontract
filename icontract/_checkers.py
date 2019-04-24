@@ -85,7 +85,7 @@ def _assert_precondition(contract: Contract, resolved_kwargs: Mapping[str, Any])
     :return:
     """
     # Check that all arguments to the condition function have been set.
-    missing_args = [arg_name for arg_name in contract.condition_args if arg_name not in resolved_kwargs]
+    missing_args = [arg_name for arg_name in contract.mandatory_args if arg_name not in resolved_kwargs]
     if missing_args:
         raise TypeError(
             ("The argument(s) of the precondition have not been set: {}. "
@@ -196,7 +196,7 @@ def _assert_postcondition(contract: Contract, resolved_kwargs: Mapping[str, Any]
         "Expected 'result' to be set in the resolved keyword arguments of a postcondition."
 
     # Check that all arguments to the condition function have been set.
-    missing_args = [arg_name for arg_name in contract.condition_args if arg_name not in resolved_kwargs]
+    missing_args = [arg_name for arg_name in contract.mandatory_args if arg_name not in resolved_kwargs]
     if missing_args:
         raise TypeError(
             ("The argument(s) of the postcondition have not been set: {}. "
@@ -276,6 +276,7 @@ def decorate_with_checker(func: CallableT) -> CallableT:
 
     # Determine the default argument values.
     kwdefaults = dict()  # type: Dict[str, Any]
+
 
     # Add to the defaults all the values that are needed by the contracts.
     for param in sign.parameters.values():

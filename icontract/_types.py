@@ -40,6 +40,11 @@ class Contract:
         self.condition_args = list(inspect.signature(condition).parameters.keys())  # type: List[str]
         self.condition_arg_set = set(self.condition_args)  # type: Set[str]
 
+        self.mandatory_args = [
+            name for name, param in inspect.signature(condition).parameters.items()
+            if param.default == inspect._empty
+        ]
+
         self.description = description
         self._a_repr = a_repr
 
