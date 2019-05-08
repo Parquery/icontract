@@ -147,7 +147,7 @@ class TestViolation(unittest.TestCase):
             icontract_violation_error = err
 
         self.assertIsNotNone(icontract_violation_error)
-        self.assertEqual("c < 10: c was 22", str(icontract_violation_error))
+        self.assertEqual("c < 10: c was 22", tests.violation_error.lstrip_location(str(icontract_violation_error)))
 
         icontract_violation_error = None  # type: Optional[icontract.ViolationError]
         try:
@@ -220,7 +220,7 @@ class TestError(unittest.TestCase):
 
         self.assertIsNotNone(value_error)
         self.assertIsInstance(value_error, ValueError)
-        self.assertEqual('x > 0: x was 0', str(value_error))
+        self.assertEqual('x > 0: x was 0', tests.violation_error.lstrip_location(str(value_error)))
 
     def test_as_function(self):
         @icontract.require(lambda x: x > 0, error=lambda x: ValueError("x non-negative"))
@@ -451,7 +451,8 @@ class TestInvalid(unittest.TestCase):
 
         self.assertIsNotNone(type_error)
         self.assertEqual("The argument(s) of the precondition error have not been set: ['z']. "
-                         "Does the original function define them? Did you supply them in the call?", str(type_error))
+                         "Does the original function define them? Did you supply them in the call?",
+                         tests.violation_error.lstrip_location(str(type_error)))
 
 
 if __name__ == '__main__':

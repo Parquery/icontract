@@ -56,7 +56,7 @@ class Contract:
 class Snapshot:
     """Define a snapshot of an argument *prior* to the function invocation that is later supplied to a postcondition."""
 
-    def __init__(self, capture: Callable[..., Any], name: Optional[str] = None) -> None:
+    def __init__(self, capture: Callable[..., Any], name: Optional[str] = None, location: Optional[str] = None) -> None:
         """
         Initialize.
 
@@ -65,6 +65,7 @@ class Snapshot:
             of the original function)
 
         :param name: name of the captured variable in OLD that is passed to postconditions
+        :param location: indicate where the snapshot was defined (*e.g.*, path and line number)
 
         """
         self.capture = capture
@@ -88,3 +89,5 @@ class Snapshot:
             self.arg = args[0]
         else:
             assert len(args) == 0, "There can be at most one argument to a snapshot capture, but got: {}".format(args)
+
+        self.location = location

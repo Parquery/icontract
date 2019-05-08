@@ -80,7 +80,7 @@ class TestViolation(unittest.TestCase):
                          'OLD was a bunch of OLD values\n'
                          'OLD.len_lst was 1\n'
                          'len(lst) was 3\n'
-                         'lst was [1, 2, 1984]', str(icontract_violation_error))
+                         'lst was [1, 2, 1984]', tests.violation_error.lstrip_location(str(icontract_violation_error)))
 
 
 class TestInvalid(unittest.TestCase):

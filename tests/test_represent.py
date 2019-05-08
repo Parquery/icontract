@@ -390,7 +390,7 @@ class TestReprValues(unittest.TestCase):
         self.assertEqual("all(single_res[1].is_absolute() for single_res in result):\n"
                          "all(single_res[1].is_absolute() for single_res in result) was False\n"
                          "result was [(PosixPath('/home/file1'), PosixPath('home/file2'))]",
-                         str(icontract_violation_error))
+                         tests.violation_error.lstrip_location(str(icontract_violation_error)))
 
     def test_generator_expression_multiple_for(self):
         lst = [[1, 2], [3]]
@@ -491,7 +491,7 @@ class TestConditionAsText(unittest.TestCase):
             violation_err = err
 
         self.assertIsNotNone(violation_err)
-        self.assertEqual("x > 3: x was 0", str(violation_err))
+        self.assertEqual("x > 3: x was 0", tests.violation_error.lstrip_location(str(violation_err)))
 
     def test_condition_on_next_line(self):
         # yapf: disable
@@ -509,7 +509,7 @@ class TestConditionAsText(unittest.TestCase):
             violation_err = err
 
         self.assertIsNotNone(violation_err)
-        self.assertEqual("x > 3: x was 0", str(violation_err))
+        self.assertEqual("x > 3: x was 0", tests.violation_error.lstrip_location(str(violation_err)))
 
     def test_condition_on_multiple_lines(self):
         # yapf: disable
@@ -530,7 +530,7 @@ class TestConditionAsText(unittest.TestCase):
             violation_err = err
 
         self.assertIsNotNone(violation_err)
-        self.assertEqual('x\n    >\n    3: x was 0', str(violation_err))
+        self.assertEqual('x\n    >\n    3: x was 0', tests.violation_error.lstrip_location(str(violation_err)))
 
     def test_with_multiple_lambdas_on_a_line(self):
         # pylint: disable=unnecessary-lambda

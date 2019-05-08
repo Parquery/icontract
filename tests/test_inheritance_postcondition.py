@@ -132,7 +132,8 @@ class TestViolation(unittest.TestCase):
             icontract_violation_error = err
 
         self.assertIsNotNone(icontract_violation_error)
-        self.assertEqual("result % 2 == 0: result was 3", str(icontract_violation_error))
+        self.assertEqual("result % 2 == 0: result was 3",
+                         tests.violation_error.lstrip_location(str(icontract_violation_error)))
 
     def test_ensure_then_violated_in_child(self):
         class A(icontract.DBC):

@@ -84,7 +84,8 @@ If you want to customize the error, see Section "Custom Errors".
     >>> some_func(x=1)
     Traceback (most recent call last):
       ...
-    icontract.errors.ViolationError: x > 3: x was 1
+    icontract.errors.ViolationError: File <doctest README.rst[1]>, line 1 in <module>:
+    x > 3: x was 1
 
     # Pre-condition violation with a description
     >>> @icontract.require(lambda x: x > 3, "x must not be small")
@@ -94,7 +95,8 @@ If you want to customize the error, see Section "Custom Errors".
     >>> some_func(x=1)
     Traceback (most recent call last):
       ...
-    icontract.errors.ViolationError: x must not be small: x > 3: x was 1
+    icontract.errors.ViolationError: File <doctest README.rst[4]>, line 1 in <module>:
+    x must not be small: x > 3: x was 1
 
     # Pre-condition violation with more complex values
     >>> class B:
@@ -123,7 +125,8 @@ If you want to customize the error, see Section "Custom Errors".
     >>> some_func(an_a)
     Traceback (most recent call last):
       ...
-    icontract.errors.ViolationError: a.b.x + a.b.y() > SOME_GLOBAL_VAR:
+    icontract.errors.ViolationError: File <doctest README.rst[9]>, line 1 in <module>:
+    a.b.x + a.b.y() > SOME_GLOBAL_VAR:
     SOME_GLOBAL_VAR was 13
     a was instance of A
     a.b was instance of B
@@ -138,7 +141,8 @@ If you want to customize the error, see Section "Custom Errors".
     >>> some_func(x=10)
     Traceback (most recent call last):
       ...
-    icontract.errors.ViolationError: result > x:
+    icontract.errors.ViolationError: File <doctest README.rst[12]>, line 1 in <module>:
+    result > x:
     result was 5
     x was 10
 
@@ -292,7 +296,8 @@ Here is an example that uses snapshots to check that a value was appended to the
     >>> some_func(lst=[1, 2], value=3)
     Traceback (most recent call last):
         ...
-    icontract.errors.ViolationError: lst == OLD.lst + [value]:
+    icontract.errors.ViolationError: File <doctest README.rst[28]>, line 2 in <module>:
+    lst == OLD.lst + [value]:
     OLD was a bunch of OLD values
     OLD.lst was [1, 2]
     lst was [1, 2, 3, 1984]
@@ -314,7 +319,8 @@ The following example shows how you can name the snapshot:
     >>> some_func(lst=[1, 2], value=3)
     Traceback (most recent call last):
         ...
-    icontract.errors.ViolationError: len(lst) == OLD.len_lst + 1:
+    icontract.errors.ViolationError: File <doctest README.rst[32]>, line 2 in <module>:
+    len(lst) == OLD.len_lst + 1:
     OLD was a bunch of OLD values
     OLD.len_lst was 2
     len(lst) was 4
@@ -392,7 +398,8 @@ The following example shows an abstract parent class and a child class that inhe
         >>> some_b.func(y=0)
         Traceback (most recent call last):
             ...
-        icontract.errors.ViolationError: result < y:
+        icontract.errors.ViolationError: File <doctest README.rst[36]>, line 7 in A:
+        result < y:
         result was 1
         y was 0
 
@@ -445,7 +452,8 @@ The following example shows how preconditions are weakened:
         >>> b.func(x=5)
         Traceback (most recent call last):
             ...
-        icontract.errors.ViolationError: x % 3 == 0: x was 5
+        icontract.errors.ViolationError: File <doctest README.rst[45]>, line 2 in B:
+        x % 3 == 0: x was 5
 
 The example below illustrates how snaphots are inherited:
 
@@ -469,7 +477,8 @@ The example below illustrates how snaphots are inherited:
         >>> b.func(lst=[1, 2], value=3)
         Traceback (most recent call last):
             ...
-        icontract.errors.ViolationError: len(lst) == len(OLD.lst) + 1:
+        icontract.errors.ViolationError: File <doctest README.rst[50]>, line 4 in A:
+        len(lst) == len(OLD.lst) + 1:
         OLD was a bunch of OLD values
         OLD.lst was [1, 2]
         len(OLD.lst) was 2
@@ -567,7 +576,8 @@ Here is an example of the error given as an exception class:
     >>> some_func(x=0)
     Traceback (most recent call last):
         ...
-    ValueError: x > 0: x was 0
+    ValueError: File <doctest README.rst[56]>, line 1 in <module>:
+    x > 0: x was 0
 
 Here is an example of the error given as a callable:
 

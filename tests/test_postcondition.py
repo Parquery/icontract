@@ -147,7 +147,7 @@ class TestError(unittest.TestCase):
 
         self.assertIsNotNone(value_error)
         self.assertIsInstance(value_error, ValueError)
-        self.assertEqual('result > 0: result was 0', str(value_error))
+        self.assertEqual('result > 0: result was 0', tests.violation_error.lstrip_location(str(value_error)))
 
     def test_as_function(self):
         @icontract.ensure(lambda result: result > 0, error=lambda result: ValueError("result must be positive."))
@@ -442,4 +442,5 @@ class TestInvalid(unittest.TestCase):
 
         self.assertIsNotNone(type_error)
         self.assertEqual("The argument(s) of the postcondition error have not been set: ['z']. "
-                         "Does the original function define them? Did you supply them in the call?", str(type_error))
+                         "Does the original function define them? Did you supply them in the call?",
+                         tests.violation_error.lstrip_location(str(type_error)))
