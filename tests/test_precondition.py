@@ -37,7 +37,7 @@ class TestViolation(unittest.TestCase):
             icontract_violation_error = err
 
         self.assertIsNotNone(icontract_violation_error)
-        self.assertEqual("x > 3: x was 1", tests.violation_error.lstrip_location(str(icontract_violation_error)))
+        self.assertEqual("x > 3: x was 1", tests.violation_error.wo_mandatory_location(str(icontract_violation_error)))
 
     def test_with_description(self):
         @icontract.require(lambda x: x > 3, "x must not be small")
@@ -52,7 +52,7 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(icontract_violation_error)
         self.assertEqual("x must not be small: x > 3: x was 1",
-                         tests.violation_error.lstrip_location(str(icontract_violation_error)))
+                         tests.violation_error.wo_mandatory_location(str(icontract_violation_error)))
 
     def test_condition_as_function(self):
         def some_condition(x: int):
@@ -69,8 +69,8 @@ class TestViolation(unittest.TestCase):
             icontract_violation_error = err
 
         self.assertIsNotNone(icontract_violation_error)
-        self.assertEqual("some_condition: x was 1", tests.violation_error.lstrip_location(
-            str(icontract_violation_error)))
+        self.assertEqual("some_condition: x was 1",
+                         tests.violation_error.wo_mandatory_location(str(icontract_violation_error)))
 
     def test_with_pathlib(self):
         @icontract.require(lambda path: path.exists())
@@ -86,8 +86,8 @@ class TestViolation(unittest.TestCase):
         self.assertIsNotNone(icontract_violation_error)
         self.assertEqual("path.exists():\n"
                          "path was PosixPath('/doesnt/exist/test_contract')\n"
-                         "path.exists() was False", tests.violation_error.lstrip_location(
-                             str(icontract_violation_error)))
+                         "path.exists() was False",
+                         tests.violation_error.wo_mandatory_location(str(icontract_violation_error)))
 
     def test_with_multiple_comparators(self):
         @icontract.require(lambda x: 0 < x < 3)
@@ -101,7 +101,8 @@ class TestViolation(unittest.TestCase):
             icontract_violation_error = err
 
         self.assertIsNotNone(icontract_violation_error)
-        self.assertEqual("0 < x < 3: x was 10", tests.violation_error.lstrip_location(str(icontract_violation_error)))
+        self.assertEqual("0 < x < 3: x was 10",
+                         tests.violation_error.wo_mandatory_location(str(icontract_violation_error)))
 
     def test_with_stacked_decorators(self):
         def mydecorator(f):
@@ -131,7 +132,7 @@ class TestViolation(unittest.TestCase):
         self.assertIsNotNone(icontract_violation_error)
         self.assertEqual("x > another_var:\n"
                          "another_var was 0\n"
-                         "x was 0", tests.violation_error.lstrip_location(str(icontract_violation_error)))
+                         "x was 0", tests.violation_error.wo_mandatory_location(str(icontract_violation_error)))
 
     def test_with_default_values(self):
         @icontract.require(lambda a: a < 10)
@@ -147,7 +148,8 @@ class TestViolation(unittest.TestCase):
             icontract_violation_error = err
 
         self.assertIsNotNone(icontract_violation_error)
-        self.assertEqual("c < 10: c was 22", str(icontract_violation_error))
+        self.assertEqual("c < 10: c was 22", tests.violation_error.wo_mandatory_location(
+            str(icontract_violation_error)))
 
         icontract_violation_error = None  # type: Optional[icontract.ViolationError]
         try:
@@ -156,7 +158,8 @@ class TestViolation(unittest.TestCase):
             icontract_violation_error = err
 
         self.assertIsNotNone(icontract_violation_error)
-        self.assertEqual("b < 10: b was 21", tests.violation_error.lstrip_location(str(icontract_violation_error)))
+        self.assertEqual("b < 10: b was 21", tests.violation_error.wo_mandatory_location(
+            str(icontract_violation_error)))
 
 
 class TestBenchmark(unittest.TestCase):
@@ -220,7 +223,7 @@ class TestError(unittest.TestCase):
 
         self.assertIsNotNone(value_error)
         self.assertIsInstance(value_error, ValueError)
-        self.assertEqual('x > 0: x was 0', str(value_error))
+        self.assertEqual('x > 0: x was 0', tests.violation_error.wo_mandatory_location(str(value_error)))
 
     def test_as_function(self):
         @icontract.require(lambda x: x > 0, error=lambda x: ValueError("x non-negative"))
@@ -328,7 +331,7 @@ class TestInClass(unittest.TestCase):
             icontract_violation_error = err
 
         self.assertIsNotNone(icontract_violation_error)
-        self.assertEqual("x > 3: x was 1", tests.violation_error.lstrip_location(str(icontract_violation_error)))
+        self.assertEqual("x > 3: x was 1", tests.violation_error.wo_mandatory_location(str(icontract_violation_error)))
 
         # Test method with self
         icontract_violation_error = None  # type: Optional[icontract.ViolationError]
@@ -340,7 +343,7 @@ class TestInClass(unittest.TestCase):
         self.assertIsNotNone(icontract_violation_error)
         self.assertEqual('self.y > 10:\n'
                          'self was A\n'
-                         'self.y was 5', tests.violation_error.lstrip_location(str(icontract_violation_error)))
+                         'self.y was 5', tests.violation_error.wo_mandatory_location(str(icontract_violation_error)))
 
     def test_getter(self):
         class SomeClass:
@@ -366,8 +369,8 @@ class TestInClass(unittest.TestCase):
         self.assertIsNotNone(icontract_violation_error)
         self.assertEqual('self._some_prop > 0:\n'
                          'self was SomeClass\n'
-                         'self._some_prop was -1', tests.violation_error.lstrip_location(
-                             str(icontract_violation_error)))
+                         'self._some_prop was -1',
+                         tests.violation_error.wo_mandatory_location(str(icontract_violation_error)))
 
     def test_setter(self):
         class SomeClass:
@@ -389,8 +392,8 @@ class TestInClass(unittest.TestCase):
             icontract_violation_error = err
 
         self.assertIsNotNone(icontract_violation_error)
-        self.assertEqual('value > 0: value was -1', tests.violation_error.lstrip_location(
-            str(icontract_violation_error)))
+        self.assertEqual('value > 0: value was -1',
+                         tests.violation_error.wo_mandatory_location(str(icontract_violation_error)))
 
     def test_deleter(self):
         class SomeClass:
@@ -419,7 +422,7 @@ class TestInClass(unittest.TestCase):
 
         self.assertIsNotNone(icontract_violation_error)
         self.assertEqual('self.some_prop > 0:\nself was SomeClass\nself.some_prop was -1',
-                         tests.violation_error.lstrip_location(str(icontract_violation_error)))
+                         tests.violation_error.wo_mandatory_location(str(icontract_violation_error)))
 
 
 class TestInvalid(unittest.TestCase):
@@ -451,7 +454,8 @@ class TestInvalid(unittest.TestCase):
 
         self.assertIsNotNone(type_error)
         self.assertEqual("The argument(s) of the precondition error have not been set: ['z']. "
-                         "Does the original function define them? Did you supply them in the call?", str(type_error))
+                         "Does the original function define them? Did you supply them in the call?",
+                         tests.violation_error.wo_mandatory_location(str(type_error)))
 
 
 if __name__ == '__main__':
