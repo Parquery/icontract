@@ -57,7 +57,7 @@ class TestViolation(unittest.TestCase):
                          'OLD.lst was []\n'
                          'self was B\n'
                          'self.lst was [2, 1984]\n'
-                         'val was 2', tests.violation_error.lstrip_location(str(icontract_violation_error)))
+                         'val was 2', tests.violation_error.wo_mandatory_location(str(icontract_violation_error)))
 
     def test_with_inherited_snapshot(self):
         class A(icontract.DBC):
@@ -92,8 +92,8 @@ class TestViolation(unittest.TestCase):
                          'OLD.len_lst was 0\n'
                          'len(self.lst) was 2\n'
                          'self was B\n'
-                         'self.lst was [2, 1984]', tests.violation_error.lstrip_location(
-                             str(icontract_violation_error)))
+                         'self.lst was [2, 1984]',
+                         tests.violation_error.wo_mandatory_location(str(icontract_violation_error)))
 
 
 class TestPropertyOK(unittest.TestCase):
@@ -185,7 +185,7 @@ class TestPropertyViolation(unittest.TestCase):
                          'OLD was a bunch of OLD values\n'
                          'OLD.gets was 0\n'
                          'self was SomeClass\n'
-                         'self.gets was 0', tests.violation_error.lstrip_location(str(icontract_violation_error)))
+                         'self.gets was 0', tests.violation_error.wo_mandatory_location(str(icontract_violation_error)))
 
         # setter fails
         icontract_violation_error = None
@@ -199,7 +199,7 @@ class TestPropertyViolation(unittest.TestCase):
                          'OLD was a bunch of OLD values\n'
                          'OLD.sets was 0\n'
                          'self was SomeClass\n'
-                         'self.sets was 0', tests.violation_error.lstrip_location(str(icontract_violation_error)))
+                         'self.sets was 0', tests.violation_error.wo_mandatory_location(str(icontract_violation_error)))
 
         # deleter fails
         icontract_violation_error = None
@@ -213,7 +213,7 @@ class TestPropertyViolation(unittest.TestCase):
                          'OLD was a bunch of OLD values\n'
                          'OLD.dels was 0\n'
                          'self was SomeClass\n'
-                         'self.dels was 0', tests.violation_error.lstrip_location(str(icontract_violation_error)))
+                         'self.dels was 0', tests.violation_error.wo_mandatory_location(str(icontract_violation_error)))
 
 
 class TestInvalid(unittest.TestCase):
