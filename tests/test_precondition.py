@@ -12,6 +12,7 @@ from typing import Optional  # pylint: disable=unused-import
 
 import icontract
 import tests.error
+import tests.mock
 
 
 class TestOK(unittest.TestCase):
@@ -449,6 +450,21 @@ class TestInvalid(unittest.TestCase):
         self.assertEqual("The argument(s) of the precondition error have not been set: ['z']. "
                          "Does the original function define them? Did you supply them in the call?",
                          tests.error.wo_mandatory_location(str(type_error)))
+
+    def test_no_boolyness(self):
+        @icontract.require(lambda: tests.mock.NumpyArray([True, False]))
+        def some_func() -> None:
+            pass
+
+        value_error = None  # type: Optional[ValueError]
+        try:
+            some_func()
+        except ValueError as err:
+            value_error = err
+
+        self.assertIsNotNone(value_error)
+        self.assertEqual('Failed to negate the evaluation of the condition.',
+                         tests.error.wo_mandatory_location(str(value_error)))
 
 
 if __name__ == '__main__':

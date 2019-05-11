@@ -9,6 +9,7 @@ from typing import Optional  # pylint: disable=unused-import
 
 import icontract
 import tests.error
+import tests.mock
 
 
 class TestOK(unittest.TestCase):
@@ -587,3 +588,19 @@ class TestInvalid(unittest.TestCase):
         self.assertIsNotNone(val_err)
         self.assertEqual("Expected an invariant condition with at most an argument 'self', but got: ['self', 'z']",
                          str(val_err))
+
+    def test_no_boolyness(self):
+        @icontract.invariant(lambda self: tests.mock.NumpyArray([True, False]))
+        class A:
+            def __init__(self) -> None:
+                pass
+
+        value_error = None  # type: Optional[ValueError]
+        try:
+            _ = A()
+        except ValueError as err:
+            value_error = err
+
+        self.assertIsNotNone(value_error)
+        self.assertEqual('Failed to negate the evaluation of the condition.',
+                         tests.error.wo_mandatory_location(str(value_error)))
