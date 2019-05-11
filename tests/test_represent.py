@@ -5,10 +5,11 @@
 import pathlib
 import reprlib
 import unittest
-from typing import Optional, List, Tuple, Union  # pylint: disable=unused-import
+from typing import Optional, List, Tuple  # pylint: disable=unused-import
 
 import icontract._represent
 import tests.violation_error
+import tests.mock
 
 
 class TestReprValues(unittest.TestCase):
@@ -739,37 +740,9 @@ class TestClosures(unittest.TestCase):
                          "y was 4", tests.violation_error.wo_mandatory_location(str(icontract_violation_error)))
 
 
-class MockArray:
-    """Represent a class that mocks a numpy.array and it's behavior on less-then operator."""
-
-    def __init__(self, values: List[Union[int, bool]]) -> None:
-        """Initialize with the given values."""
-        self.values = values
-
-    def __lt__(self, other: int) -> 'MockArray':
-        """Map the value to each comparison with ``other``."""
-        return MockArray(values=[value < other for value in self.values])
-
-    def __gt__(self, other: int) -> 'MockArray':
-        """Map the value to each comparison with ``other``."""
-        return MockArray(values=[value > other for value in self.values])
-
-    def __bool__(self) -> bool:
-        """Raise a ValueError."""
-        raise ValueError("The truth value of an array with more than one element is ambiguous.")
-
-    def all(self) -> bool:
-        """Return True if all values are True."""
-        return all(self.values)
-
-    def __repr__(self) -> str:
-        """Represent with the constructor."""
-        return 'MockArray({!r})'.format(self.values)
-
-
 class TestWithNumpyMock(unittest.TestCase):
     def test_that_mock_works(self) -> None:
-        arr = MockArray(values=[-3, 3])
+        arr = tests.mock.NumpyArray(values=[-3, 3])
 
         value_err = None  # type: Optional[ValueError]
         try:
@@ -782,19 +755,19 @@ class TestWithNumpyMock(unittest.TestCase):
 
     def test_that_single_comparator_works(self) -> None:
         @icontract.require(lambda arr: (arr > 0).all())
-        def some_func(arr: MockArray) -> None:
+        def some_func(arr: tests.mock.NumpyArray) -> None:
             pass
 
         icontract_violation_error = None  # type: Optional[icontract.ViolationError]
         try:
-            some_func(arr=MockArray(values=[-3, 3]))
+            some_func(arr=tests.mock.NumpyArray(values=[-3, 3]))
         except icontract.ViolationError as err:
             icontract_violation_error = err
 
         self.assertIsNotNone(icontract_violation_error)
         self.assertEqual('(arr > 0).all():\n'
                          '(arr > 0).all() was False\n'
-                         'arr was MockArray([-3, 3])',
+                         'arr was NumpyArray([-3, 3])',
                          tests.violation_error.wo_mandatory_location(str(icontract_violation_error)))
 
     def test_that_multiple_comparators_fail(self) -> None:
@@ -818,12 +791,12 @@ class TestWithNumpyMock(unittest.TestCase):
         """
 
         @icontract.require(lambda arr: (-3 < arr < 0).all())
-        def some_func(arr: MockArray) -> None:
+        def some_func(arr: tests.mock.NumpyArray) -> None:
             pass
 
         value_err = None  # type: Optional[ValueError]
         try:
-            some_func(arr=MockArray(values=[-10, -1]))
+            some_func(arr=tests.mock.NumpyArray(values=[-10, -1]))
         except ValueError as err:
             value_err = err
 
