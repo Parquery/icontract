@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Manipulate the text of the violation error."""
+"""Manipulate the error text."""
 import re
 
 _LOCATION_RE = re.compile(r'\AFile [^\n]+, line [0-9]+ in [a-zA-Z_0-9]+:\n(.*)\Z', flags=re.MULTILINE | re.DOTALL)
@@ -7,11 +7,11 @@ _LOCATION_RE = re.compile(r'\AFile [^\n]+, line [0-9]+ in [a-zA-Z_0-9]+:\n(.*)\Z
 
 def wo_mandatory_location(text: str) -> str:
     r"""
-    Strip the location of the contract from the text of the violation error.
+    Strip the location of the contract from the text of the error.
 
-    :param text: text of the violation error
+    :param text: text of the error
     :return: text without the location prefix
-    :raise AssertionError: if the location is not present in the text of the violation error.
+    :raise AssertionError: if the location is not present in the text of the error.
 
     >>> wo_mandatory_location(text='File /some/file.py, line 233 in some_module:\nsome\ntext')
     'some\ntext'

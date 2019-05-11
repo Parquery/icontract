@@ -7,7 +7,7 @@ import unittest
 from typing import Optional  # pylint: disable=unused-import
 
 import icontract
-import tests.violation_error
+import tests.error
 
 
 class TestOK(unittest.TestCase):
@@ -89,7 +89,7 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(icontract_violation_error)
         self.assertEqual("result < 100: result was 1000",
-                         tests.violation_error.wo_mandatory_location(str(icontract_violation_error)))
+                         tests.error.wo_mandatory_location(str(icontract_violation_error)))
 
     def test_inherited_with_modified_implementation(self):
         class A(icontract.DBC):
@@ -110,7 +110,7 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(icontract_violation_error)
         self.assertEqual("result < 100: result was 10000",
-                         tests.violation_error.wo_mandatory_location(str(icontract_violation_error)))
+                         tests.error.wo_mandatory_location(str(icontract_violation_error)))
 
     def test_ensure_then_violated_in_base(self):
         class A(icontract.DBC):
@@ -133,7 +133,7 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(icontract_violation_error)
         self.assertEqual("result % 2 == 0: result was 3",
-                         tests.violation_error.wo_mandatory_location(str(icontract_violation_error)))
+                         tests.error.wo_mandatory_location(str(icontract_violation_error)))
 
     def test_ensure_then_violated_in_child(self):
         class A(icontract.DBC):
@@ -156,7 +156,7 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(icontract_violation_error)
         self.assertEqual("result % 3 == 0: result was 2",
-                         tests.violation_error.wo_mandatory_location(str(icontract_violation_error)))
+                         tests.error.wo_mandatory_location(str(icontract_violation_error)))
 
     def test_abstract_method(self):
         class A(icontract.DBC):
@@ -178,7 +178,7 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(icontract_violation_error)
         self.assertEqual("result < 100: result was 1000",
-                         tests.violation_error.wo_mandatory_location(str(icontract_violation_error)))
+                         tests.error.wo_mandatory_location(str(icontract_violation_error)))
 
     def test_that_base_postconditions_apply_to_init_if_not_defined(self):
         class A(icontract.DBC):
@@ -201,7 +201,7 @@ class TestViolation(unittest.TestCase):
         self.assertIsNotNone(icontract_violation_error)
         self.assertEqual('self.x >= 0:\n'
                          'self was B\n'
-                         'self.x was -1', tests.violation_error.wo_mandatory_location(str(icontract_violation_error)))
+                         'self.x was -1', tests.error.wo_mandatory_location(str(icontract_violation_error)))
 
     def test_that_base_postconditions_dont_apply_to_init_if_overridden(self):
         class A(icontract.DBC):
@@ -230,7 +230,7 @@ class TestViolation(unittest.TestCase):
         self.assertIsNotNone(icontract_violation_error)
         self.assertEqual('self.x < 0:\n'
                          'self was B\n'
-                         'self.x was 0', tests.violation_error.wo_mandatory_location(str(icontract_violation_error)))
+                         'self.x was 0', tests.error.wo_mandatory_location(str(icontract_violation_error)))
 
 
 class TestPropertyOK(unittest.TestCase):
@@ -296,8 +296,7 @@ class TestPropertyViolation(unittest.TestCase):
         self.assertIsNotNone(icontract_violation_error)
         self.assertEqual('not self.toggled:\n'
                          'self was SomeClass\n'
-                         'self.toggled was True',
-                         tests.violation_error.wo_mandatory_location(str(icontract_violation_error)))
+                         'self.toggled was True', tests.error.wo_mandatory_location(str(icontract_violation_error)))
 
     def test_setter(self):
         class SomeBase(icontract.DBC):
@@ -332,8 +331,7 @@ class TestPropertyViolation(unittest.TestCase):
         self.assertIsNotNone(icontract_violation_error)
         self.assertEqual('not self.toggled:\n'
                          'self was SomeClass\n'
-                         'self.toggled was True',
-                         tests.violation_error.wo_mandatory_location(str(icontract_violation_error)))
+                         'self.toggled was True', tests.error.wo_mandatory_location(str(icontract_violation_error)))
 
     def test_deleter(self):
         class SomeBase(icontract.DBC):
@@ -368,8 +366,7 @@ class TestPropertyViolation(unittest.TestCase):
         self.assertIsNotNone(icontract_violation_error)
         self.assertEqual('not self.toggled:\n'
                          'self was SomeClass\n'
-                         'self.toggled was True',
-                         tests.violation_error.wo_mandatory_location(str(icontract_violation_error)))
+                         'self.toggled was True', tests.error.wo_mandatory_location(str(icontract_violation_error)))
 
     def test_setter_strengthened(self):
         class SomeBase(icontract.DBC):
@@ -404,8 +401,7 @@ class TestPropertyViolation(unittest.TestCase):
         self.assertIsNotNone(icontract_violation_error)
         self.assertEqual('not self.toggled:\n'
                          'self was SomeClass\n'
-                         'self.toggled was True',
-                         tests.violation_error.wo_mandatory_location(str(icontract_violation_error)))
+                         'self.toggled was True', tests.error.wo_mandatory_location(str(icontract_violation_error)))
 
 
 class TestInvalid(unittest.TestCase):
