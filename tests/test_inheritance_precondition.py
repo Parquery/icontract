@@ -57,14 +57,14 @@ class TestViolation(unittest.TestCase):
             pass
 
         b = B()
-        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             b.func(x=1000)
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNotNone(icontract_violation_error)
-        self.assertEqual("x < 100: x was 1000", tests.error.wo_mandatory_location(str(icontract_violation_error)))
+        self.assertIsNotNone(violation_error)
+        self.assertEqual("x < 100: x was 1000", tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_inherited_with_implementation(self):
         class A(icontract.DBC):
@@ -77,14 +77,14 @@ class TestViolation(unittest.TestCase):
                 pass
 
         b = B()
-        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             b.func(x=1000)
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNotNone(icontract_violation_error)
-        self.assertEqual("x < 100: x was 1000", tests.error.wo_mandatory_location(str(icontract_violation_error)))
+        self.assertIsNotNone(violation_error)
+        self.assertEqual("x < 100: x was 1000", tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_require_else(self):
         class A(icontract.DBC):
@@ -99,14 +99,14 @@ class TestViolation(unittest.TestCase):
 
         b = B()
 
-        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             b.func(x=5)
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNotNone(icontract_violation_error)
-        self.assertEqual("x % 3 == 0: x was 5", tests.error.wo_mandatory_location(str(icontract_violation_error)))
+        self.assertIsNotNone(violation_error)
+        self.assertEqual("x % 3 == 0: x was 5", tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_triple_inheritance_wo_implementation(self):
         class A(icontract.DBC):
@@ -121,14 +121,14 @@ class TestViolation(unittest.TestCase):
             pass
 
         c = C()
-        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             c.func(x=1000)
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNotNone(icontract_violation_error)
-        self.assertEqual("x < 100: x was 1000", tests.error.wo_mandatory_location(str(icontract_violation_error)))
+        self.assertIsNotNone(violation_error)
+        self.assertEqual("x < 100: x was 1000", tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_triple_inheritance_with_implementation(self):
         class A(icontract.DBC):
@@ -144,14 +144,14 @@ class TestViolation(unittest.TestCase):
                 pass
 
         c = C()
-        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             c.func(x=1000)
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNotNone(icontract_violation_error)
-        self.assertEqual("x < 100: x was 1000", tests.error.wo_mandatory_location(str(icontract_violation_error)))
+        self.assertIsNotNone(violation_error)
+        self.assertEqual("x < 100: x was 1000", tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_triple_inheritance_with_require_else(self):
         class A(icontract.DBC):
@@ -171,14 +171,14 @@ class TestViolation(unittest.TestCase):
 
         c = C()
 
-        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             c.func(x=7)
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNotNone(icontract_violation_error)
-        self.assertEqual("x % 5 == 0: x was 7", tests.error.wo_mandatory_location(str(icontract_violation_error)))
+        self.assertIsNotNone(violation_error)
+        self.assertEqual("x % 5 == 0: x was 7", tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_abstract_method(self):
         class A(icontract.DBC):
@@ -192,14 +192,14 @@ class TestViolation(unittest.TestCase):
                 return 1000
 
         b = B()
-        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             b.func(x=-1)
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNotNone(icontract_violation_error)
-        self.assertEqual("x > 0: x was -1", tests.error.wo_mandatory_location(str(icontract_violation_error)))
+        self.assertIsNotNone(violation_error)
+        self.assertEqual("x > 0: x was -1", tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_that_base_preconditions_apply_to_init_if_not_defined(self):
         class A(icontract.DBC):
@@ -210,14 +210,14 @@ class TestViolation(unittest.TestCase):
         class B(A):
             pass
 
-        icontract_violation_error = None  # Optional[icontract.ViolationError]
+        violation_error = None  # Optional[icontract.ViolationError]
         try:
             _ = B(x=-1)
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNotNone(icontract_violation_error)
-        self.assertEqual("x >= 0: x was -1", tests.error.wo_mandatory_location(str(icontract_violation_error)))
+        self.assertIsNotNone(violation_error)
+        self.assertEqual("x >= 0: x was -1", tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_that_base_preconditions_dont_apply_to_init_if_overridden(self):
         class A(icontract.DBC):
@@ -234,14 +234,14 @@ class TestViolation(unittest.TestCase):
         # Preconditions of B need to be satisfied, but not from A
         _ = B(x=-100)
 
-        icontract_violation_error = None  # Optional[icontract.ViolationError]
+        violation_error = None  # Optional[icontract.ViolationError]
         try:
             _ = B(x=0)
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNotNone(icontract_violation_error)
-        self.assertEqual("x < 0: x was 0", tests.error.wo_mandatory_location(str(icontract_violation_error)))
+        self.assertIsNotNone(violation_error)
+        self.assertEqual("x < 0: x was 0", tests.error.wo_mandatory_location(str(violation_error)))
 
 
 class TestPropertyOK(unittest.TestCase):
@@ -298,16 +298,16 @@ class TestPropertyViolation(unittest.TestCase):
 
         some_inst = SomeClass()
 
-        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             _ = some_inst.some_prop
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNotNone(icontract_violation_error)
+        self.assertIsNotNone(violation_error)
         self.assertEqual('not self.toggled:\n'
                          'self was SomeClass\n'
-                         'self.toggled was True', tests.error.wo_mandatory_location(str(icontract_violation_error)))
+                         'self.toggled was True', tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_setter(self):
         class SomeBase(icontract.DBC):
@@ -330,14 +330,14 @@ class TestPropertyViolation(unittest.TestCase):
 
         some_inst = SomeClass()
 
-        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             some_inst.some_prop = 0
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNotNone(icontract_violation_error)
-        self.assertEqual('value > 0: value was 0', tests.error.wo_mandatory_location(str(icontract_violation_error)))
+        self.assertIsNotNone(violation_error)
+        self.assertEqual('value > 0: value was 0', tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_deleter(self):
         class SomeBase(icontract.DBC):
@@ -363,16 +363,16 @@ class TestPropertyViolation(unittest.TestCase):
 
         some_inst = SomeClass()
 
-        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             del some_inst.some_prop
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNotNone(icontract_violation_error)
+        self.assertIsNotNone(violation_error)
         self.assertEqual('not self.toggled:\n'
                          'self was SomeClass\n'
-                         'self.toggled was True', tests.error.wo_mandatory_location(str(icontract_violation_error)))
+                         'self.toggled was True', tests.error.wo_mandatory_location(str(violation_error)))
 
 
 class TestInvalid(unittest.TestCase):

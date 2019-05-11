@@ -49,18 +49,18 @@ class TestViolation(unittest.TestCase):
             lst.append(val)
             lst.append(1984)
 
-        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             some_func([1], 2)
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNotNone(icontract_violation_error)
+        self.assertIsNotNone(violation_error)
         self.assertEqual('OLD.lst + [val] == lst:\n'
                          'OLD was a bunch of OLD values\n'
                          'OLD.lst was [1]\n'
                          'lst was [1, 2, 1984]\n'
-                         'val was 2', tests.error.wo_mandatory_location(str(icontract_violation_error)))
+                         'val was 2', tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_with_custom_name(self):
         @icontract.snapshot(lambda lst: len(lst), name="len_lst")
@@ -69,18 +69,18 @@ class TestViolation(unittest.TestCase):
             lst.append(val)
             lst.append(1984)
 
-        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             some_func([1], 2)
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNotNone(icontract_violation_error)
+        self.assertIsNotNone(violation_error)
         self.assertEqual('OLD.len_lst + 1 == len(lst):\n'
                          'OLD was a bunch of OLD values\n'
                          'OLD.len_lst was 1\n'
                          'len(lst) was 3\n'
-                         'lst was [1, 2, 1984]', tests.error.wo_mandatory_location(str(icontract_violation_error)))
+                         'lst was [1, 2, 1984]', tests.error.wo_mandatory_location(str(violation_error)))
 
 
 class TestInvalid(unittest.TestCase):
