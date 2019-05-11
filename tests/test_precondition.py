@@ -31,29 +31,28 @@ class TestViolation(unittest.TestCase):
         def some_func(x: int, y: int = 5) -> None:
             pass
 
-        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             some_func(x=1)
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNotNone(icontract_violation_error)
-        self.assertEqual("x > 3: x was 1", tests.error.wo_mandatory_location(str(icontract_violation_error)))
+        self.assertIsNotNone(violation_error)
+        self.assertEqual("x > 3: x was 1", tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_with_description(self):
         @icontract.require(lambda x: x > 3, "x must not be small")
         def some_func(x: int, y: int = 5) -> None:
             pass
 
-        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             some_func(x=1)
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNotNone(icontract_violation_error)
-        self.assertEqual("x must not be small: x > 3: x was 1",
-                         tests.error.wo_mandatory_location(str(icontract_violation_error)))
+        self.assertIsNotNone(violation_error)
+        self.assertEqual("x must not be small: x > 3: x was 1", tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_condition_as_function(self):
         def some_condition(x: int):
@@ -63,44 +62,44 @@ class TestViolation(unittest.TestCase):
         def some_func(x: int, y: int = 5) -> str:
             return str(x)
 
-        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             some_func(x=1)
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNotNone(icontract_violation_error)
-        self.assertEqual("some_condition: x was 1", tests.error.wo_mandatory_location(str(icontract_violation_error)))
+        self.assertIsNotNone(violation_error)
+        self.assertEqual("some_condition: x was 1", tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_with_pathlib(self):
         @icontract.require(lambda path: path.exists())
         def some_func(path: pathlib.Path) -> None:
             pass
 
-        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             some_func(path=pathlib.Path("/doesnt/exist/test_contract"))
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNotNone(icontract_violation_error)
+        self.assertIsNotNone(violation_error)
         self.assertEqual("path.exists():\n"
                          "path was PosixPath('/doesnt/exist/test_contract')\n"
-                         "path.exists() was False", tests.error.wo_mandatory_location(str(icontract_violation_error)))
+                         "path.exists() was False", tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_with_multiple_comparators(self):
         @icontract.require(lambda x: 0 < x < 3)
         def some_func(x: int) -> str:
             return str(x)
 
-        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             some_func(x=10)
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNotNone(icontract_violation_error)
-        self.assertEqual("0 < x < 3: x was 10", tests.error.wo_mandatory_location(str(icontract_violation_error)))
+        self.assertIsNotNone(violation_error)
+        self.assertEqual("0 < x < 3: x was 10", tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_with_stacked_decorators(self):
         def mydecorator(f):
@@ -121,16 +120,16 @@ class TestViolation(unittest.TestCase):
         def some_func(x: int) -> str:
             return str(x)
 
-        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             some_func(x=0)
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNotNone(icontract_violation_error)
+        self.assertIsNotNone(violation_error)
         self.assertEqual("x > another_var:\n"
                          "another_var was 0\n"
-                         "x was 0", tests.error.wo_mandatory_location(str(icontract_violation_error)))
+                         "x was 0", tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_with_default_values(self):
         @icontract.require(lambda a: a < 10)
@@ -139,23 +138,23 @@ class TestViolation(unittest.TestCase):
         def some_func(a: int, b: int = 21, c: int = 22) -> int:
             return a + b
 
-        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             some_func(a=2)
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNotNone(icontract_violation_error)
-        self.assertEqual("c < 10: c was 22", tests.error.wo_mandatory_location(str(icontract_violation_error)))
+        self.assertIsNotNone(violation_error)
+        self.assertEqual("c < 10: c was 22", tests.error.wo_mandatory_location(str(violation_error)))
 
-        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             some_func(a=2, c=8)
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNotNone(icontract_violation_error)
-        self.assertEqual("b < 10: b was 21", tests.error.wo_mandatory_location(str(icontract_violation_error)))
+        self.assertIsNotNone(violation_error)
+        self.assertEqual("b < 10: b was 21", tests.error.wo_mandatory_location(str(violation_error)))
 
 
 class TestBenchmark(unittest.TestCase):
@@ -290,14 +289,14 @@ class TestToggling(unittest.TestCase):
         def some_func(x: int) -> int:
             return 123
 
-        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             result = some_func(x=0)
             self.assertEqual(123, result)
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNone(icontract_violation_error)
+        self.assertIsNone(violation_error)
 
 
 class TestInClass(unittest.TestCase):
@@ -320,26 +319,26 @@ class TestInClass(unittest.TestCase):
         a = A()
 
         # Test method without self
-        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             a.some_method(x=1)
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNotNone(icontract_violation_error)
-        self.assertEqual("x > 3: x was 1", tests.error.wo_mandatory_location(str(icontract_violation_error)))
+        self.assertIsNotNone(violation_error)
+        self.assertEqual("x > 3: x was 1", tests.error.wo_mandatory_location(str(violation_error)))
 
         # Test method with self
-        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             a.some_method_with_self()
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNotNone(icontract_violation_error)
+        self.assertIsNotNone(violation_error)
         self.assertEqual('self.y > 10:\n'
                          'self was A\n'
-                         'self.y was 5', tests.error.wo_mandatory_location(str(icontract_violation_error)))
+                         'self.y was 5', tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_getter(self):
         class SomeClass:
@@ -356,16 +355,16 @@ class TestInClass(unittest.TestCase):
 
         some_inst = SomeClass()
 
-        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             _ = some_inst.some_prop
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNotNone(icontract_violation_error)
+        self.assertIsNotNone(violation_error)
         self.assertEqual('self._some_prop > 0:\n'
                          'self was SomeClass\n'
-                         'self._some_prop was -1', tests.error.wo_mandatory_location(str(icontract_violation_error)))
+                         'self._some_prop was -1', tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_setter(self):
         class SomeClass:
@@ -380,14 +379,14 @@ class TestInClass(unittest.TestCase):
 
         some_inst = SomeClass()
 
-        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             some_inst.some_prop = -1
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNotNone(icontract_violation_error)
-        self.assertEqual('value > 0: value was -1', tests.error.wo_mandatory_location(str(icontract_violation_error)))
+        self.assertIsNotNone(violation_error)
+        self.assertEqual('value > 0: value was -1', tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_deleter(self):
         class SomeClass:
@@ -408,15 +407,15 @@ class TestInClass(unittest.TestCase):
 
         some_inst = SomeClass()
 
-        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             del some_inst.some_prop
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNotNone(icontract_violation_error)
+        self.assertIsNotNone(violation_error)
         self.assertEqual('self.some_prop > 0:\nself was SomeClass\nself.some_prop was -1',
-                         tests.error.wo_mandatory_location(str(icontract_violation_error)))
+                         tests.error.wo_mandatory_location(str(violation_error)))
 
 
 class TestInvalid(unittest.TestCase):

@@ -45,19 +45,19 @@ class TestViolation(unittest.TestCase):
 
         b = B()
 
-        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             b.some_func(2)
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNotNone(icontract_violation_error)
+        self.assertIsNotNone(violation_error)
         self.assertEqual('OLD.lst + [val] == self.lst:\n'
                          'OLD was a bunch of OLD values\n'
                          'OLD.lst was []\n'
                          'self was B\n'
                          'self.lst was [2, 1984]\n'
-                         'val was 2', tests.error.wo_mandatory_location(str(icontract_violation_error)))
+                         'val was 2', tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_with_inherited_snapshot(self):
         class A(icontract.DBC):
@@ -80,19 +80,19 @@ class TestViolation(unittest.TestCase):
 
         b = B()
 
-        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             b.some_func(2)
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNotNone(icontract_violation_error)
+        self.assertIsNotNone(violation_error)
         self.assertEqual('OLD.len_lst + 1 == len(self.lst):\n'
                          'OLD was a bunch of OLD values\n'
                          'OLD.len_lst was 0\n'
                          'len(self.lst) was 2\n'
                          'self was B\n'
-                         'self.lst was [2, 1984]', tests.error.wo_mandatory_location(str(icontract_violation_error)))
+                         'self.lst was [2, 1984]', tests.error.wo_mandatory_location(str(violation_error)))
 
 
 class TestPropertyOK(unittest.TestCase):
@@ -173,46 +173,46 @@ class TestPropertyViolation(unittest.TestCase):
         some_inst = SomeClass()
 
         # getter fails
-        icontract_violation_error = None  # type: Optional[icontract.ViolationError]
+        violation_error = None  # type: Optional[icontract.ViolationError]
         try:
             _ = some_inst.some_prop
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNotNone(icontract_violation_error)
+        self.assertIsNotNone(violation_error)
         self.assertEqual('self.gets == OLD.gets + 1:\n'
                          'OLD was a bunch of OLD values\n'
                          'OLD.gets was 0\n'
                          'self was SomeClass\n'
-                         'self.gets was 0', tests.error.wo_mandatory_location(str(icontract_violation_error)))
+                         'self.gets was 0', tests.error.wo_mandatory_location(str(violation_error)))
 
         # setter fails
-        icontract_violation_error = None
+        violation_error = None
         try:
             some_inst.some_prop = 1
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNotNone(icontract_violation_error)
+        self.assertIsNotNone(violation_error)
         self.assertEqual('self.sets == OLD.sets + 1:\n'
                          'OLD was a bunch of OLD values\n'
                          'OLD.sets was 0\n'
                          'self was SomeClass\n'
-                         'self.sets was 0', tests.error.wo_mandatory_location(str(icontract_violation_error)))
+                         'self.sets was 0', tests.error.wo_mandatory_location(str(violation_error)))
 
         # deleter fails
-        icontract_violation_error = None
+        violation_error = None
         try:
             del some_inst.some_prop
         except icontract.ViolationError as err:
-            icontract_violation_error = err
+            violation_error = err
 
-        self.assertIsNotNone(icontract_violation_error)
+        self.assertIsNotNone(violation_error)
         self.assertEqual('self.dels == OLD.dels + 1:\n'
                          'OLD was a bunch of OLD values\n'
                          'OLD.dels was 0\n'
                          'self was SomeClass\n'
-                         'self.dels was 0', tests.error.wo_mandatory_location(str(icontract_violation_error)))
+                         'self.dels was 0', tests.error.wo_mandatory_location(str(violation_error)))
 
 
 class TestInvalid(unittest.TestCase):
