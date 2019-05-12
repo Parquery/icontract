@@ -326,7 +326,7 @@ class invariant:  # pylint: disable=invalid-name
         self._contract = Contract(
             condition=condition, description=description, a_repr=a_repr, error=error, location=location)
 
-        if self._contract.condition_args and self._contract.condition_args != ['self']:
+        if self._contract.mandatory_args and self._contract.mandatory_args != ['self']:
             raise ValueError("Expected an invariant condition with at most an argument 'self', but got: {}".format(
                 self._contract.condition_args))
 
