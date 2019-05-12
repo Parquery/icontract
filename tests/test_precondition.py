@@ -509,6 +509,34 @@ class TestInvalid(unittest.TestCase):
         self.assertEqual('Failed to negate the evaluation of the condition.',
                          tests.error.wo_mandatory_location(str(value_error)))
 
+    def test_unexpected_positional_argument(self):
+        @icontract.require(lambda: True)
+        def some_func() -> None:
+            pass
+
+        type_error = None  # type: Optional[TypeError]
+        try:
+            some_func(0)  # pylint: disable=too-many-function-args
+        except TypeError as err:
+            type_error = err
+
+        self.assertIsNotNone(type_error)
+        self.assertEqual('some_func() takes 0 positional arguments but 1 was given', str(type_error))
+
+    def test_unexpected_keyword_argument(self):
+        @icontract.require(lambda: True)
+        def some_func() -> None:
+            pass
+
+        type_error = None  # type: Optional[TypeError]
+        try:
+            some_func(x=0)  # pylint: disable=unexpected-keyword-arg
+        except TypeError as err:
+            type_error = err
+
+        self.assertIsNotNone(type_error)
+        self.assertEqual("some_func() got an unexpected keyword argument 'x'", str(type_error))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -58,7 +58,13 @@ def _kwargs_from_call(param_names: List[str], kwdefaults: Dict[str, Any], args: 
 
     # Override the defaults with the values actually suplied to the function.
     for i, func_arg in enumerate(args):
-        mapping[param_names[i]] = func_arg
+        if i < len(param_names):
+            mapping[param_names[i]] = func_arg
+        else:
+            # Silently ignore call arguments that were not specified in the function.
+            # This way we let the underlying decorated function raise the exception
+            # instead of frankensteining the exception here.
+            pass
 
     for key, val in kwargs.items():
         mapping[key] = val
@@ -336,7 +342,9 @@ def decorate_with_checker(func: CallableT) -> CallableT:
 
             resolved_kwargs['OLD'] = _Old(mapping=old_as_mapping)
 
-        # Execute the wrapped function
+        # Ideally, we would catch any exception here and strip the checkers from the traceback.
+        # Unfortunately, this can not be done in Python 3, see
+        # https://stackoverflow.com/questions/44813333/how-can-i-elide-a-function-wrapper-from-the-traceback-in-python-3
         result = func(*args, **kwargs)
 
         if postconditions:
