@@ -386,6 +386,62 @@ class TestViolation(unittest.TestCase):
         self.assertIsNotNone(violation_error)
         self.assertEqual("z != 42: z was 42", tests.error.wo_mandatory_location(str(violation_error)))
 
+    def test_condition_as_function(self):
+        def some_condition(self: 'A') -> bool:  # type: ignore
+            return self.x > 0
+
+        @icontract.invariant(some_condition)
+        class A:
+            def __init__(self) -> None:
+                self.x = 100
+
+            def some_method(self) -> None:
+                self.x = -1
+
+            def __repr__(self) -> str:
+                return "A(x={})".format(self.x)
+
+        # Valid call
+        a = A()
+
+        # Invalid call
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            a.some_method()
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual('some_condition: self was A(x=-1)', tests.error.wo_mandatory_location(str(violation_error)))
+
+    def test_condition_as_function_with_default_argument_value(self):
+        def some_condition(self: 'A', y: int = 0) -> bool:  # type: ignore
+            return self.x > y
+
+        @icontract.invariant(some_condition)
+        class A:
+            def __init__(self) -> None:
+                self.x = 100
+
+            def some_method(self) -> None:
+                self.x = -1
+
+            def __repr__(self) -> str:
+                return "A(x={})".format(self.x)
+
+        # Valid call
+        a = A()
+
+        # Invalid call
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            a.some_method()
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual('some_condition: self was A(x=-1)', tests.error.wo_mandatory_location(str(violation_error)))
+
 
 class TestProperty(unittest.TestCase):
     def test_property_getter(self):

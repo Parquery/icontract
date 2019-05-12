@@ -37,8 +37,16 @@ class Contract:
         # pylint: disable=too-many-arguments
         self.condition = condition
 
-        self.condition_args = list(inspect.signature(condition).parameters.keys())  # type: List[str]
+        signature = inspect.signature(condition)
+
+        # All argument names of the condition
+        self.condition_args = list(signature.parameters.keys())  # type: List[str]
         self.condition_arg_set = set(self.condition_args)  # type: Set[str]
+
+        # Names of the mandatory arguments of the condition
+        self.mandatory_args = [
+            name for name, param in signature.parameters.items() if param.default == inspect.Parameter.empty
+        ]
 
         self.description = description
         self._a_repr = a_repr

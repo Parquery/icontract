@@ -55,7 +55,7 @@ class TestViolation(unittest.TestCase):
         self.assertEqual("x must not be small: x > 3: x was 1", tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_condition_as_function(self):
-        def some_condition(x: int):
+        def some_condition(x: int) -> bool:
             return x > 3
 
         @icontract.require(some_condition)
@@ -70,6 +70,50 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual("some_condition: x was 1", tests.error.wo_mandatory_location(str(violation_error)))
+
+    def test_condition_as_function_with_default_argument_value(self):
+        def some_condition(x: int, y: int = 0) -> bool:
+            return x > y
+
+        @icontract.require(some_condition)
+        def some_func(x: int) -> None:
+            pass
+
+        # Valid call
+        some_func(x=1)
+
+        # Invalid call
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            some_func(x=-1)
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual("some_condition: x was -1", tests.error.wo_mandatory_location(str(violation_error)))
+
+    def test_condition_as_function_with_default_argument_value_set(self):
+        def some_condition(x: int, y: int = 0) -> bool:
+            return x > y
+
+        @icontract.require(some_condition)
+        def some_func(x: int, y: int) -> None:
+            pass
+
+        # Valid call
+        some_func(x=3, y=1)
+
+        # Invalid call
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            some_func(x=-1, y=1)
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual('some_condition:\n'
+                         'x was -1\n'
+                         'y was 1', tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_with_pathlib(self):
         @icontract.require(lambda path: path.exists())

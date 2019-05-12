@@ -41,6 +41,71 @@ class TestViolation(unittest.TestCase):
                          "result was -4\n"
                          "x was 1", tests.error.wo_mandatory_location(str(violation_error)))
 
+    def test_condition_as_function(self):
+        def some_condition(result: int) -> bool:
+            return result > 3
+
+        @icontract.ensure(some_condition)
+        def some_func(x: int) -> int:
+            return x
+
+        # Valid call
+        some_func(x=4)
+
+        # Invalid call
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            some_func(x=1)
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual('some_condition: result was 1', tests.error.wo_mandatory_location(str(violation_error)))
+
+    def test_condition_as_function_with_default_argument_value(self):
+        def some_condition(result: int, y: int = 0) -> bool:
+            return result > y
+
+        @icontract.ensure(some_condition)
+        def some_func(x: int) -> int:
+            return x
+
+        # Valid call
+        some_func(x=1)
+
+        # Invalid call
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            some_func(x=-1)
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual('some_condition: result was -1', tests.error.wo_mandatory_location(str(violation_error)))
+
+    def test_condition_as_function_with_default_argument_value_set(self):
+        def some_condition(result: int, y: int = 0) -> bool:
+            return result > y
+
+        @icontract.ensure(some_condition)
+        def some_func(x: int, y: int) -> int:
+            return x
+
+        # Valid call
+        some_func(x=-1, y=-2)
+
+        # Invalid call
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            some_func(x=1, y=3)
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual('some_condition:\n'
+                         'result was 1\n'
+                         'y was 3', tests.error.wo_mandatory_location(str(violation_error)))
+
     def test_with_description(self):
         @icontract.ensure(lambda result, x: result > x, "expected summation")
         def some_func(x: int, y: int = 5) -> int:
