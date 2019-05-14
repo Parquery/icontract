@@ -1,3 +1,14 @@
+2.0.5
+=====
+* Improved error message on unexpected arguments in a call
+* Distinguished between optional and mandatory arguments in conditions.
+  Default argument values in conditions are accepted instead of raising a misleading "missing argument" exception.
+* Added a boolyness check to detect if the condition evaluation can be negated.
+  If the condition evaluation lacks boolyness, a more informative exception is now raised.
+  For example, this is important for all the code operating with numpy arrays where boolyness is not given.
+* Added contract location to ``require``, ``ensure`` and ``snapshot``.
+  This feature had been erroneously omitted in 2.0.4.
+
 2.0.4
 =====
 * Added contract location to the message of the violation error
