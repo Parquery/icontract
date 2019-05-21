@@ -457,7 +457,8 @@ class TestInvalid(unittest.TestCase):
 
         self.assertIsNotNone(type_err)
         self.assertEqual("The argument(s) of the postcondition have not been set: ['b']. "
-                         "Does the original function define them? Did you supply them in the call?", str(type_err))
+                         "Does the original function define them? Did you supply them in the call?",
+                         tests.error.wo_mandatory_location(str(type_err)))
 
     def test_conflicting_result_argument(self):
         @icontract.ensure(lambda a, result: a > result)
