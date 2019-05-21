@@ -1,3 +1,7 @@
+2.0.6
+=====
+* Added location to errors on calls with missing arguments
+
 2.0.5
 =====
 * Improved error message on unexpected arguments in a call
@@ -20,7 +24,7 @@
 
 2.0.2
 =====
-* Specified ``require`` and ``ensure`` to use generics in order to fix typing erasure of the decorated functions.
+* Specified ``require`` and ``ensure`` to use generics in order to fix typing erasure of the decorated functions
 
 2.0.1
 =====
