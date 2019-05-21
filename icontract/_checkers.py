@@ -105,9 +105,15 @@ def _assert_precondition(contract: Contract, resolved_kwargs: Mapping[str, Any])
     # Check that all arguments to the condition function have been set.
     missing_args = [arg_name for arg_name in contract.mandatory_args if arg_name not in resolved_kwargs]
     if missing_args:
-        raise TypeError(
+        msg_parts = []  # type: List[str]
+        if contract.location is not None:
+            msg_parts.append("{}:\n".format(contract.location))
+
+        msg_parts.append(
             ("The argument(s) of the precondition have not been set: {}. "
              "Does the original function define them? Did you supply them in the call?").format(missing_args))
+
+        raise TypeError(''.join(msg_parts))
 
     condition_kwargs = {
         arg_name: value
@@ -128,7 +134,7 @@ def _assert_precondition(contract: Contract, resolved_kwargs: Mapping[str, Any])
 
             missing_args = [arg_name for arg_name in contract.error_args if arg_name not in resolved_kwargs]
             if missing_args:
-                msg_parts = []  # type: List[str]
+                msg_parts = []
                 if contract.location is not None:
                     msg_parts.append("{}:\n".format(contract.location))
 
@@ -188,9 +194,15 @@ def _capture_snapshot(a_snapshot: Snapshot, resolved_kwargs: Mapping[str, Any]) 
     """
     if a_snapshot.arg is not None:
         if a_snapshot.arg not in resolved_kwargs:
-            raise TypeError(("The argument of the snapshot has not been set: {}. "
-                             "Does the original function define it? Did you supply it in the call?").format(
-                                 a_snapshot.arg))
+            msg_parts = []  # type: List[str]
+            if a_snapshot.location is not None:
+                msg_parts.append("{}:\n".format(a_snapshot.location))
+
+            msg_parts.append(("The argument of the snapshot has not been set: {}. "
+                              "Does the original function define it? Did you supply it in the call?").format(
+                                  a_snapshot.arg))
+
+            raise TypeError(''.join(msg_parts))
 
         value = a_snapshot.capture(**{a_snapshot.arg: resolved_kwargs[a_snapshot.arg]})
     else:
@@ -216,9 +228,15 @@ def _assert_postcondition(contract: Contract, resolved_kwargs: Mapping[str, Any]
     # Check that all arguments to the condition function have been set.
     missing_args = [arg_name for arg_name in contract.mandatory_args if arg_name not in resolved_kwargs]
     if missing_args:
-        raise TypeError(
+        msg_parts = []  # type: List[str]
+        if contract.location is not None:
+            msg_parts.append("{}:\n".format(contract.location))
+
+        msg_parts.append(
             ("The argument(s) of the postcondition have not been set: {}. "
              "Does the original function define them? Did you supply them in the call?").format(missing_args))
+
+        raise TypeError(''.join(msg_parts))
 
     condition_kwargs = {
         arg_name: value
@@ -239,7 +257,7 @@ def _assert_postcondition(contract: Contract, resolved_kwargs: Mapping[str, Any]
 
             missing_args = [arg_name for arg_name in contract.error_args if arg_name not in resolved_kwargs]
             if missing_args:
-                msg_parts = []  # type: List[str]
+                msg_parts = []
                 if contract.location is not None:
                     msg_parts.append("{}:\n".format(contract.location))
 

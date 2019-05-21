@@ -150,7 +150,8 @@ class TestInvalid(unittest.TestCase):
 
         self.assertIsNotNone(type_error)
         self.assertEqual("The argument of the snapshot has not been set: lst. "
-                         "Does the original function define it? Did you supply it in the call?", str(type_error))
+                         "Does the original function define it? Did you supply it in the call?",
+                         tests.error.wo_mandatory_location(str(type_error)))
 
     def test_with_invalid_arguments(self):
         # lst versus a_list
