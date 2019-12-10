@@ -2,7 +2,7 @@
 
 import os
 import reprlib
-from typing import TypeVar, Callable
+from typing import TypeVar, Callable  # pylint: disable=unused-import
 
 # Default representation instance.
 #
