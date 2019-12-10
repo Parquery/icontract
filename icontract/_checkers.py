@@ -318,7 +318,7 @@ def decorate_with_checker(func: CallableT) -> CallableT:
         if param.default != inspect.Parameter.empty:
             kwdefaults[param.name] = param.default
 
-    def wrapper(*args, **kwargs):
+    def wrapper(*args, **kwargs):  # type: ignore
         """Wrap func by checking the preconditions and postconditions."""
         preconditions = getattr(wrapper, "__preconditions__")  # type: List[List[Contract]]
         snapshots = getattr(wrapper, "__postcondition_snapshots__")  # type: List[Snapshot]
@@ -372,7 +372,7 @@ def decorate_with_checker(func: CallableT) -> CallableT:
             for contract in postconditions:
                 _assert_postcondition(contract=contract, resolved_kwargs=resolved_kwargs)
 
-        return result  # type: ignore
+        return result
 
     # Copy __doc__ and other properties so that doctests can run
     functools.update_wrapper(wrapper=wrapper, wrapped=func)
@@ -423,7 +423,7 @@ def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
 
     if is_init:
 
-        def wrapper(*args, **kwargs):
+        def wrapper(*args, **kwargs):  # type: ignore
             """Wrap __init__ method of a class by checking the invariants *after* the invocation."""
             result = func(*args, **kwargs)
             instance = _find_self(param_names=param_names, args=args, kwargs=kwargs)
@@ -434,7 +434,7 @@ def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
             return result
     else:
 
-        def wrapper(*args, **kwargs):
+        def wrapper(*args, **kwargs):  # type: ignore
             """Wrap a function of a class by checking the invariants *before* and *after* the invocation."""
             instance = _find_self(param_names=param_names, args=args, kwargs=kwargs)
 
@@ -526,9 +526,9 @@ def add_invariant_checks(cls: type) -> None:
         setattr(cls, name, wrapper)
 
     for name, prop in names_properties:
-        new_prop = property(  # type: ignore
-            fget=_decorate_with_invariants(func=prop.fget, is_init=False) if prop.fget else None,
-            fset=_decorate_with_invariants(func=prop.fset, is_init=False) if prop.fset else None,
-            fdel=_decorate_with_invariants(func=prop.fdel, is_init=False) if prop.fdel else None,
+        new_prop = property(
+            fget=_decorate_with_invariants(func=prop.fget, is_init=False) if prop.fget else None,  # type: ignore
+            fset=_decorate_with_invariants(func=prop.fset, is_init=False) if prop.fset else None,  # type: ignore
+            fdel=_decorate_with_invariants(func=prop.fdel, is_init=False) if prop.fdel else None,  # type: ignore
             doc=prop.__doc__)
         setattr(cls, name, new_prop)

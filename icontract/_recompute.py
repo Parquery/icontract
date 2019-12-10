@@ -50,6 +50,8 @@ class Visitor(ast.NodeVisitor):
         result = node.n
 
         self.recomputed_values[node] = result
+
+        assert isinstance(result, (int, float))
         return result
 
     def visit_Str(self, node: ast.Str) -> str:
@@ -97,6 +99,9 @@ class Visitor(ast.NodeVisitor):
         """Visit keys and values and assemble a dictionary with the results."""
         recomputed_dict = dict()  # type: Dict[Any, Any]
         for key, val in zip(node.keys, node.values):
+            assert isinstance(key, ast.AST)
+            assert isinstance(val, ast.AST)
+
             recomputed_dict[self.visit(node=key)] = self.visit(node=val)
 
         self.recomputed_values[node] = recomputed_dict
@@ -403,7 +408,7 @@ class Visitor(ast.NodeVisitor):
         self.recomputed_values[node] = result
         return result
 
-    def visit_Lambda(self, node: ast.Lambda) -> Callable:
+    def visit_Lambda(self, node: ast.Lambda) -> Callable[..., Any]:
         """Do not support inline lambda until there is a feature request since this is quite tricky to implement."""
         raise NotImplementedError(
             "Recomputation of in-line lambda functions is not supported since it is quite tricky to implement and "
