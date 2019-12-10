@@ -10,7 +10,7 @@ import tests.error
 
 
 class TestOK(unittest.TestCase):
-    def test_with_no_override(self):
+    def test_with_no_override(self) -> None:
         class A(icontract.DBC):
             def __init__(self) -> None:
                 self.lst = []  # type: List[int]
@@ -28,7 +28,7 @@ class TestOK(unittest.TestCase):
 
 
 class TestViolation(unittest.TestCase):
-    def test_with_no_override(self):
+    def test_with_no_override(self) -> None:
         class A(icontract.DBC):
             def __init__(self) -> None:
                 self.lst = []  # type: List[int]
@@ -59,7 +59,7 @@ class TestViolation(unittest.TestCase):
                          'self.lst was [2, 1984]\n'
                          'val was 2', tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_with_inherited_snapshot(self):
+    def test_with_inherited_snapshot(self) -> None:
         class A(icontract.DBC):
             def __init__(self) -> None:
                 self.lst = []  # type: List[int]
@@ -96,28 +96,28 @@ class TestViolation(unittest.TestCase):
 
 
 class TestPropertyOK(unittest.TestCase):
-    def test_getter_setter_deleter(self):
+    def test_getter_setter_deleter(self) -> None:
         class SomeBase(icontract.DBC):
             def __init__(self) -> None:
                 self.gets = 0
                 self.sets = 0
                 self.dels = 0
 
-            @property
+            @property  # type: ignore
             @icontract.snapshot(lambda self: self.gets, name="gets")
             @icontract.ensure(lambda OLD, self: self.gets == OLD.gets + 1)
             def some_prop(self) -> int:
                 self.gets += 1
                 return 0
 
-            @some_prop.setter
+            @some_prop.setter  # type: ignore
             @icontract.snapshot(lambda self: self.sets, name="sets")
             @icontract.ensure(lambda OLD, self: self.sets == OLD.sets + 1)
             def some_prop(self, value: int) -> None:
                 # pylint: disable=unused-argument
                 self.sets += 1
 
-            @some_prop.deleter
+            @some_prop.deleter  # type: ignore
             @icontract.snapshot(lambda self: self.dels, name="dels")
             @icontract.ensure(lambda OLD, self: self.dels == OLD.dels + 1)
             def some_prop(self) -> None:
@@ -128,7 +128,7 @@ class TestPropertyOK(unittest.TestCase):
 
         some_inst = SomeClass()
         _ = some_inst.some_prop
-        some_inst.some_prop = 3
+        some_inst.some_prop = 3  # type: ignore
         del some_inst.some_prop
 
         self.assertEqual(1, some_inst.gets)
@@ -137,21 +137,21 @@ class TestPropertyOK(unittest.TestCase):
 
 
 class TestPropertyViolation(unittest.TestCase):
-    def test_getter_setter_deleter_fail(self):
+    def test_getter_setter_deleter_fail(self) -> None:
         class SomeBase(icontract.DBC):
             def __init__(self) -> None:
                 self.gets = 0
                 self.sets = 0
                 self.dels = 0
 
-            @property
+            @property  # type: ignore
             @icontract.snapshot(lambda self: self.gets, name="gets")
             @icontract.ensure(lambda OLD, self: self.gets == OLD.gets + 1)
             def some_prop(self) -> int:
                 # no self.gets increment
                 return 0
 
-            @some_prop.setter
+            @some_prop.setter  # type: ignore
             @icontract.snapshot(lambda self: self.sets, name="sets")
             @icontract.ensure(lambda OLD, self: self.sets == OLD.sets + 1)
             def some_prop(self, value: int) -> None:
@@ -159,7 +159,7 @@ class TestPropertyViolation(unittest.TestCase):
                 # no self.sets increment
                 return
 
-            @some_prop.deleter
+            @some_prop.deleter  # type: ignore
             @icontract.snapshot(lambda self: self.dels, name="dels")
             @icontract.ensure(lambda OLD, self: self.dels == OLD.dels + 1)
             def some_prop(self) -> None:
@@ -189,7 +189,7 @@ class TestPropertyViolation(unittest.TestCase):
         # setter fails
         violation_error = None
         try:
-            some_inst.some_prop = 1
+            some_inst.some_prop = 1  # type: ignore
         except icontract.ViolationError as err:
             violation_error = err
 
@@ -216,7 +216,7 @@ class TestPropertyViolation(unittest.TestCase):
 
 
 class TestInvalid(unittest.TestCase):
-    def test_conflicting_snapshot_names(self):
+    def test_conflicting_snapshot_names(self) -> None:
         value_error = None  # type: Optional[ValueError]
         try:
 
@@ -248,12 +248,12 @@ class TestInvalid(unittest.TestCase):
 
 
 class TestPropertyInvalid(unittest.TestCase):
-    def test_getter_with_conflicting_snapshot_names(self):
+    def test_getter_with_conflicting_snapshot_names(self) -> None:
         class SomeBase(icontract.DBC):
             def __init__(self) -> None:
                 self.gets = 0
 
-            @property
+            @property  # type: ignore
             @icontract.snapshot(lambda self: self.gets, name="gets")
             @icontract.ensure(lambda OLD, self: self.gets == OLD.gets + 1)
             def some_prop(self) -> int:
@@ -265,7 +265,7 @@ class TestPropertyInvalid(unittest.TestCase):
             # pylint: disable=unused-variable
 
             class SomeClass(SomeBase):
-                @property
+                @property  # type: ignore
                 @icontract.snapshot(lambda self: self.gets, name="gets")
                 @icontract.ensure(lambda OLD, self: self.gets == OLD.gets + 1)
                 def some_prop(self) -> int:
@@ -279,7 +279,7 @@ class TestPropertyInvalid(unittest.TestCase):
                          "Please mind that the snapshots are inherited from the base classes. "
                          "Does one of the base classes defines a snapshot with the same name?", str(value_error))
 
-    def test_setter_with_conflicting_snapshot_names(self):
+    def test_setter_with_conflicting_snapshot_names(self) -> None:
         class SomeBase(icontract.DBC):
             def __init__(self) -> None:
                 self.sets = 0
@@ -288,7 +288,7 @@ class TestPropertyInvalid(unittest.TestCase):
             def some_prop(self) -> int:
                 return 0
 
-            @some_prop.setter
+            @some_prop.setter  # type: ignore
             @icontract.snapshot(lambda self: self.sets, name="sets")
             @icontract.ensure(lambda OLD, self: self.sets == OLD.sets + 1)
             def some_prop(self, value: int) -> None:
@@ -304,7 +304,7 @@ class TestPropertyInvalid(unittest.TestCase):
                 def some_prop(self) -> int:
                     return 0
 
-                @some_prop.setter
+                @some_prop.setter  # type: ignore
                 @icontract.snapshot(lambda self: self.sets, name="sets")
                 @icontract.ensure(lambda OLD, self: self.sets == OLD.sets + 1)
                 def some_prop(self, value: int) -> None:
@@ -319,7 +319,7 @@ class TestPropertyInvalid(unittest.TestCase):
                          "Please mind that the snapshots are inherited from the base classes. "
                          "Does one of the base classes defines a snapshot with the same name?", str(value_error))
 
-    def test_deleter_with_conflicting_snapshot_names(self):
+    def test_deleter_with_conflicting_snapshot_names(self) -> None:
         class SomeBase(icontract.DBC):
             def __init__(self) -> None:
                 self.dels = 0
@@ -328,7 +328,7 @@ class TestPropertyInvalid(unittest.TestCase):
             def some_prop(self) -> int:
                 return 0
 
-            @some_prop.deleter
+            @some_prop.deleter  # type: ignore
             @icontract.snapshot(lambda self: self.dels, name="dels")
             @icontract.ensure(lambda OLD, self: self.dels == OLD.dels + 1)
             def some_prop(self) -> None:
@@ -343,7 +343,7 @@ class TestPropertyInvalid(unittest.TestCase):
                 def some_prop(self) -> int:
                     return 0
 
-                @some_prop.deleter
+                @some_prop.deleter  # type: ignore
                 @icontract.snapshot(lambda self: self.dels, name="dels")
                 @icontract.ensure(lambda OLD, self: self.dels == OLD.dels + 1)
                 def some_prop(self) -> None:

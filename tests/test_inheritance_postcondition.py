@@ -11,7 +11,7 @@ import tests.error
 
 
 class TestOK(unittest.TestCase):
-    def test_ensure_then(self):
+    def test_ensure_then(self) -> None:
         class A(icontract.DBC):
             @icontract.ensure(lambda result: result % 2 == 0)
             def func(self) -> int:
@@ -25,7 +25,7 @@ class TestOK(unittest.TestCase):
         b = B()
         b.func()
 
-    def test_count_checks(self):
+    def test_count_checks(self) -> None:
         class Increment:
             count = 0
 
@@ -49,7 +49,7 @@ class TestOK(unittest.TestCase):
         inst.some_func()
         self.assertEqual(3, Increment.count)  # Invariant needs to be checked before and after some_func.
 
-    def test_count_checks_in_slot_wrappers(self):
+    def test_count_checks_in_slot_wrappers(self) -> None:
         class Increment:
             count = 0
 
@@ -71,7 +71,7 @@ class TestOK(unittest.TestCase):
 
 
 class TestViolation(unittest.TestCase):
-    def test_inherited_without_implementation(self):
+    def test_inherited_without_implementation(self) -> None:
         class A(icontract.DBC):
             @icontract.ensure(lambda result: result < 100)
             def func(self) -> int:
@@ -90,7 +90,7 @@ class TestViolation(unittest.TestCase):
         self.assertIsNotNone(violation_error)
         self.assertEqual("result < 100: result was 1000", tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_inherited_with_modified_implementation(self):
+    def test_inherited_with_modified_implementation(self) -> None:
         class A(icontract.DBC):
             @icontract.ensure(lambda result: result < 100)
             def func(self) -> int:
@@ -110,7 +110,7 @@ class TestViolation(unittest.TestCase):
         self.assertIsNotNone(violation_error)
         self.assertEqual("result < 100: result was 10000", tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_ensure_then_violated_in_base(self):
+    def test_ensure_then_violated_in_base(self) -> None:
         class A(icontract.DBC):
             @icontract.ensure(lambda result: result % 2 == 0)
             def func(self) -> int:
@@ -132,7 +132,7 @@ class TestViolation(unittest.TestCase):
         self.assertIsNotNone(violation_error)
         self.assertEqual("result % 2 == 0: result was 3", tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_ensure_then_violated_in_child(self):
+    def test_ensure_then_violated_in_child(self) -> None:
         class A(icontract.DBC):
             @icontract.ensure(lambda result: result % 2 == 0)
             def func(self) -> int:
@@ -154,7 +154,7 @@ class TestViolation(unittest.TestCase):
         self.assertIsNotNone(violation_error)
         self.assertEqual("result % 3 == 0: result was 2", tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_abstract_method(self):
+    def test_abstract_method(self) -> None:
         class A(icontract.DBC):
             @icontract.ensure(lambda result: result < 100)
             @abc.abstractmethod
@@ -175,7 +175,7 @@ class TestViolation(unittest.TestCase):
         self.assertIsNotNone(violation_error)
         self.assertEqual("result < 100: result was 1000", tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_that_base_postconditions_apply_to_init_if_not_defined(self):
+    def test_that_base_postconditions_apply_to_init_if_not_defined(self) -> None:
         class A(icontract.DBC):
             @icontract.ensure(lambda self: self.x >= 0)
             def __init__(self, x: int) -> None:
@@ -198,7 +198,7 @@ class TestViolation(unittest.TestCase):
                          'self was B\n'
                          'self.x was -1', tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_that_base_postconditions_dont_apply_to_init_if_overridden(self):
+    def test_that_base_postconditions_dont_apply_to_init_if_overridden(self) -> None:
         class A(icontract.DBC):
             @icontract.ensure(lambda self: self.x >= 0)
             def __init__(self, x: int) -> None:
@@ -229,23 +229,23 @@ class TestViolation(unittest.TestCase):
 
 
 class TestPropertyOK(unittest.TestCase):
-    def test_getter_setter_deleter_ok(self):
+    def test_getter_setter_deleter_ok(self) -> None:
         class SomeBase(icontract.DBC):
             def __init__(self) -> None:
                 self.deleted = False
                 self._some_prop = 1
 
-            @property
+            @property  # type: ignore
             @icontract.ensure(lambda self, result: self._some_prop == result)
             def some_prop(self) -> int:
                 return self._some_prop
 
-            @some_prop.setter
+            @some_prop.setter  # type: ignore
             @icontract.ensure(lambda self, value: self.some_prop == value)
             def some_prop(self, value: int) -> None:
                 self._some_prop = value
 
-            @some_prop.deleter
+            @some_prop.deleter  # type: ignore
             @icontract.ensure(lambda self: self.deleted)
             def some_prop(self) -> None:
                 self.deleted = True
@@ -254,7 +254,7 @@ class TestPropertyOK(unittest.TestCase):
             pass
 
         some_inst = SomeClass()
-        some_inst.some_prop = 3
+        some_inst.some_prop = 3  # type: ignore
         self.assertEqual(3, some_inst.some_prop)
 
         del some_inst.some_prop
@@ -262,12 +262,12 @@ class TestPropertyOK(unittest.TestCase):
 
 
 class TestPropertyViolation(unittest.TestCase):
-    def test_getter(self):
+    def test_getter(self) -> None:
         class SomeBase(icontract.DBC):
             def __init__(self) -> None:
                 self.toggled = True
 
-            @property
+            @property  # type: ignore
             @icontract.ensure(lambda self: not self.toggled)
             def some_prop(self) -> int:
                 return 0
@@ -277,7 +277,7 @@ class TestPropertyViolation(unittest.TestCase):
             def some_prop(self) -> int:
                 return 0
 
-            def __repr__(self):
+            def __repr__(self) -> str:
                 return self.__class__.__name__
 
         some_inst = SomeClass()
@@ -293,7 +293,7 @@ class TestPropertyViolation(unittest.TestCase):
                          'self was SomeClass\n'
                          'self.toggled was True', tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_setter(self):
+    def test_setter(self) -> None:
         class SomeBase(icontract.DBC):
             def __init__(self) -> None:
                 self.toggled = True
@@ -302,17 +302,18 @@ class TestPropertyViolation(unittest.TestCase):
             def some_prop(self) -> int:
                 return 0
 
-            @some_prop.setter
+            @some_prop.setter  # type: ignore
             @icontract.ensure(lambda self: not self.toggled)
             def some_prop(self, value: int) -> None:
                 pass
 
         class SomeClass(SomeBase):
-            @SomeBase.some_prop.setter  # pylint: disable=no-member
+            # pylint: disable=no-member
+            @SomeBase.some_prop.setter  # type: ignore
             def some_prop(self, value: int) -> None:
                 pass
 
-            def __repr__(self):
+            def __repr__(self) -> str:
                 return self.__class__.__name__
 
         some_inst = SomeClass()
@@ -328,25 +329,26 @@ class TestPropertyViolation(unittest.TestCase):
                          'self was SomeClass\n'
                          'self.toggled was True', tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_deleter(self):
+    def test_deleter(self) -> None:
         class SomeBase(icontract.DBC):
-            def __init__(self):
+            def __init__(self) -> None:
                 self.toggled = True
 
             @property
             def some_prop(self) -> int:
                 return 0
 
-            @some_prop.deleter
+            @some_prop.deleter  # type: ignore
             @icontract.ensure(lambda self: not self.toggled)
             def some_prop(self) -> None:
                 pass
 
         class SomeClass(SomeBase):
-            def __repr__(self):
+            def __repr__(self) -> str:
                 return self.__class__.__name__
 
-            @SomeBase.some_prop.deleter  # pylint: disable=no-member
+            # pylint: disable=no-member
+            @SomeBase.some_prop.deleter  # type: ignore
             def some_prop(self) -> None:
                 pass
 
@@ -363,7 +365,7 @@ class TestPropertyViolation(unittest.TestCase):
                          'self was SomeClass\n'
                          'self.toggled was True', tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_setter_strengthened(self):
+    def test_setter_strengthened(self) -> None:
         class SomeBase(icontract.DBC):
             def __init__(self) -> None:
                 self.toggled = True
@@ -377,12 +379,13 @@ class TestPropertyViolation(unittest.TestCase):
                 pass
 
         class SomeClass(SomeBase):
-            @SomeBase.some_prop.setter  # pylint: disable=no-member
+            # pylint: disable=no-member
+            @SomeBase.some_prop.setter  # type: ignore
             @icontract.ensure(lambda self: not self.toggled)
             def some_prop(self, value: int) -> None:
                 pass
 
-            def __repr__(self):
+            def __repr__(self) -> str:
                 return self.__class__.__name__
 
         some_inst = SomeClass()
@@ -400,7 +403,7 @@ class TestPropertyViolation(unittest.TestCase):
 
 
 class TestInvalid(unittest.TestCase):
-    def test_abstract_method_not_implemented(self):
+    def test_abstract_method_not_implemented(self) -> None:
         # pylint: disable=abstract-method
         class A(icontract.DBC):
             @icontract.ensure(lambda result: result < 100)
@@ -413,7 +416,7 @@ class TestInvalid(unittest.TestCase):
 
         type_err = None  # type: Optional[TypeError]
         try:
-            _ = B()
+            _ = B()  # type: ignore
         except TypeError as err:
             type_err = err
 

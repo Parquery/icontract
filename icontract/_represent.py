@@ -372,6 +372,7 @@ def generate_message(contract: Contract, condition_kwargs: Mapping[str, Any]) ->
         # Find the line corresponding to the condition lambda
         lines, condition_lineno = inspect.findsource(contract.condition)
         filename = inspect.getsourcefile(contract.condition)
+        assert filename is not None
 
         decorator_inspection = inspect_decorator(lines=lines, lineno=condition_lineno, filename=filename)
         lambda_inspection = find_lambda_condition(decorator_inspection=decorator_inspection)

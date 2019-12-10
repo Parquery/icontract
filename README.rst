@@ -528,7 +528,7 @@ Here is some example code:
     import unittest
 
     class TestSomething(unittest.TestCase):
-        def test_some_func(self):
+        def test_some_func(self) -> None:
             self.assertEqual(123, some_func(15))
 
     if __name__ == '__main__':

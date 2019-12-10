@@ -38,7 +38,7 @@ def main() -> int:
             cwd=repo_root.as_posix())
 
     print("Mypy'ing...")
-    subprocess.check_call(["mypy", "icontract", "tests"], cwd=repo_root.as_posix())
+    subprocess.check_call(["mypy", "--strict", "icontract", "tests"], cwd=repo_root.as_posix())
 
     print("Pylint'ing...")
     subprocess.check_call(["pylint", "--rcfile=pylint.rc", "tests", "icontract"], cwd=repo_root.as_posix())

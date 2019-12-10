@@ -13,7 +13,7 @@ import tests.mock
 
 
 class TestReprValues(unittest.TestCase):
-    def test_num(self):
+    def test_num(self) -> None:
         @icontract.require(lambda x: x < 5)
         def func(x: int) -> int:
             return x
@@ -27,7 +27,7 @@ class TestReprValues(unittest.TestCase):
         self.assertIsNotNone(violation_error)
         self.assertEqual("x < 5: x was 100", tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_str(self):
+    def test_str(self) -> None:
         @icontract.require(lambda x: x != "oi")
         def func(x: str) -> str:
             return x
@@ -41,7 +41,7 @@ class TestReprValues(unittest.TestCase):
         self.assertIsNotNone(violation_error)
         self.assertEqual("""x != "oi": x was 'oi'""", tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_bytes(self):
+    def test_bytes(self) -> None:
         @icontract.require(lambda x: x != b"oi")
         def func(x: bytes) -> bytes:
             return x
@@ -55,7 +55,7 @@ class TestReprValues(unittest.TestCase):
         self.assertIsNotNone(violation_error)
         self.assertEqual("""x != b"oi": x was b'oi'""", tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_bool(self):
+    def test_bool(self) -> None:
         @icontract.require(lambda x: x is not False)
         def func(x: bool) -> bool:
             return x
@@ -69,7 +69,7 @@ class TestReprValues(unittest.TestCase):
         self.assertIsNotNone(violation_error)
         self.assertEqual('x is not False: x was False', tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_list(self):
+    def test_list(self) -> None:
         y = 1
 
         @icontract.require(lambda x: sum([1, y, x]) == 1)
@@ -88,7 +88,7 @@ class TestReprValues(unittest.TestCase):
                          'x was 3\n'
                          'y was 1', tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_tuple(self):
+    def test_tuple(self) -> None:
         y = 1
 
         @icontract.require(lambda x: sum((1, y, x)) == 1)
@@ -107,7 +107,7 @@ class TestReprValues(unittest.TestCase):
                          'x was 3\n'
                          'y was 1', tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_set(self):
+    def test_set(self) -> None:
         y = 2
 
         @icontract.require(lambda x: sum({1, y, x}) == 1)
@@ -126,7 +126,7 @@ class TestReprValues(unittest.TestCase):
                          'x was 3\n'
                          'y was 2', tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_dict(self):
+    def test_dict(self) -> None:
         y = "someKey"
 
         @icontract.require(lambda x: len({y: 3, x: 8}) == 6)
@@ -145,7 +145,7 @@ class TestReprValues(unittest.TestCase):
                          "x was 'oi'\n"
                          "y was 'someKey'", tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_unary_op(self):
+    def test_unary_op(self) -> None:
         @icontract.require(lambda x: not -x + 10 > 3)
         def func(x: int) -> int:
             return x
@@ -159,7 +159,7 @@ class TestReprValues(unittest.TestCase):
         self.assertIsNotNone(violation_error)
         self.assertEqual('not -x + 10 > 3: x was 1', tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_binary_op(self):
+    def test_binary_op(self) -> None:
         @icontract.require(lambda x: -x + x - x * x / x // x**x % x > 3)
         def func(x: int) -> int:
             return x
@@ -174,7 +174,7 @@ class TestReprValues(unittest.TestCase):
         self.assertEqual('-x + x - x * x / x // x**x % x > 3: x was 1',
                          tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_binary_op_bit(self):
+    def test_binary_op_bit(self) -> None:
         @icontract.require(lambda x: ~(x << x | x & x ^ x) >> x > x)
         def func(x: int) -> int:
             return x
@@ -189,7 +189,7 @@ class TestReprValues(unittest.TestCase):
         self.assertEqual('~(x << x | x & x ^ x) >> x > x: x was 1',
                          tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_bool_op_single(self):
+    def test_bool_op_single(self) -> None:
         # pylint: disable=chained-comparison
         @icontract.require(lambda x: x > 3 and x < 10)
         def func(x: int) -> int:
@@ -204,7 +204,7 @@ class TestReprValues(unittest.TestCase):
         self.assertIsNotNone(violation_error)
         self.assertEqual('x > 3 and x < 10: x was 1', tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_bool_op_multiple(self):
+    def test_bool_op_multiple(self) -> None:
         # pylint: disable=chained-comparison
         @icontract.require(lambda x: x > 3 and x < 10 and x % 2 == 0)
         def func(x: int) -> int:
@@ -220,7 +220,7 @@ class TestReprValues(unittest.TestCase):
         self.assertEqual('x > 3 and x < 10 and x % 2 == 0: x was 1',
                          tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_compare(self):
+    def test_compare(self) -> None:
         # pylint: disable=chained-comparison
 
         # Chain the compare operators in a meaningless order and semantics
@@ -241,7 +241,7 @@ class TestReprValues(unittest.TestCase):
                          '              x in [1, 2, 3] and x not in [1, 2, 3]: x was 1',
                          tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_call(self):
+    def test_call(self) -> None:
         def y() -> int:
             return 1
 
@@ -258,7 +258,7 @@ class TestReprValues(unittest.TestCase):
         self.assertIsNotNone(violation_error)
         self.assertEqual('x < y():\n' 'x was 1\n' 'y() was 1', tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_if_exp_body(self):
+    def test_if_exp_body(self) -> None:
         y = 5
 
         @icontract.require(lambda x: x < (x**2 if y == 5 else x**3))
@@ -276,7 +276,7 @@ class TestReprValues(unittest.TestCase):
                          'x was 1\n'
                          'y was 5', tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_if_exp_orelse(self):
+    def test_if_exp_orelse(self) -> None:
         y = 5
 
         @icontract.require(lambda x: x < (x**2 if y != 5 else x**3))
@@ -293,7 +293,7 @@ class TestReprValues(unittest.TestCase):
         self.assertEqual('x < (x**2 if y != 5 else x**3):\nx was 1\ny was 5',
                          tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_attr(self):
+    def test_attr(self) -> None:
         class A:
             def __init__(self) -> None:
                 self.y = 3
@@ -319,7 +319,7 @@ class TestReprValues(unittest.TestCase):
                          'a.y was 3\n'
                          'x was 1', tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_index(self):
+    def test_index(self) -> None:
         lst = [1, 2, 3]
 
         @icontract.require(lambda x: x > lst[1])
@@ -337,7 +337,7 @@ class TestReprValues(unittest.TestCase):
                          'lst was [1, 2, 3]\n'
                          'x was 1', tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_slice(self):
+    def test_slice(self) -> None:
         lst = [1, 2, 3]
 
         @icontract.require(lambda x: x > sum(lst[1:2:1]))
@@ -356,8 +356,8 @@ class TestReprValues(unittest.TestCase):
                          'sum(lst[1:2:1]) was 2\n'
                          'x was 1', tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_lambda(self):
-        @icontract.require(lambda x: x > (lambda y: y + 4).__call__(y=7))
+    def test_lambda(self) -> None:
+        @icontract.require(lambda x: x > (lambda y: y + 4).__call__(y=7))  # type: ignore
         def func(x: int) -> int:
             return x
 
@@ -369,7 +369,7 @@ class TestReprValues(unittest.TestCase):
 
         self.assertIsNotNone(not_implemented_err)
 
-    def test_generator_expression_with_attr_on_element(self):
+    def test_generator_expression_with_attr_on_element(self) -> None:
         @icontract.ensure(lambda result: all(single_res[1].is_absolute() for single_res in result))
         def some_func() -> List[Tuple[pathlib.Path, pathlib.Path]]:
             return [(pathlib.Path("/home/file1"), pathlib.Path("home/file2"))]
@@ -386,7 +386,7 @@ class TestReprValues(unittest.TestCase):
                          "result was [(PosixPath('/home/file1'), PosixPath('home/file2'))]",
                          tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_generator_expression_multiple_for(self):
+    def test_generator_expression_multiple_for(self) -> None:
         lst = [[1, 2], [3]]
 
         # yapf: disable
@@ -409,7 +409,7 @@ class TestReprValues(unittest.TestCase):
                          'all(item == x for sublst in lst for item in sublst) was False\n'
                          'lst was [[1, 2], [3]]', tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_list_comprehension(self):
+    def test_list_comprehension(self) -> None:
         lst = [1, 2, 3]
 
         @icontract.require(lambda x: [item < x for item in lst if item % x == 0] == [])
@@ -427,7 +427,7 @@ class TestReprValues(unittest.TestCase):
                          '[item < x for item in lst if item % x == 0] was [False]\n'
                          'lst was [1, 2, 3]', tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_set_comprehension(self):
+    def test_set_comprehension(self) -> None:
         lst = [1, 2, 3]
 
         @icontract.require(lambda x: len({item < x for item in lst if item % x == 0}) == 0)
@@ -447,7 +447,7 @@ class TestReprValues(unittest.TestCase):
                          '{item < x for item in lst if item % x == 0} was {False}',
                          tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_dict_comprehension(self):
+    def test_dict_comprehension(self) -> None:
         @icontract.require(lambda x: len({i: i**2 for i in range(x)}) == 0)
         def func(x: int) -> int:
             return x
@@ -470,7 +470,7 @@ class TestReprValues(unittest.TestCase):
 class TestConditionAsText(unittest.TestCase):
     """Test decompilation of the condition."""
 
-    def test_single_line(self):
+    def test_single_line(self) -> None:
         # yapf: disable
         @icontract.require(lambda x: x > 3)
         def func(x: int) -> int:
@@ -487,7 +487,7 @@ class TestConditionAsText(unittest.TestCase):
         self.assertIsNotNone(violation_err)
         self.assertEqual("x > 3: x was 0", tests.error.wo_mandatory_location(str(violation_err)))
 
-    def test_condition_on_next_line(self):
+    def test_condition_on_next_line(self) -> None:
         # yapf: disable
         @icontract.require(
             lambda x: x > 3)
@@ -505,7 +505,7 @@ class TestConditionAsText(unittest.TestCase):
         self.assertIsNotNone(violation_err)
         self.assertEqual("x > 3: x was 0", tests.error.wo_mandatory_location(str(violation_err)))
 
-    def test_condition_on_multiple_lines(self):
+    def test_condition_on_multiple_lines(self) -> None:
         # yapf: disable
         @icontract.require(
             lambda x:
@@ -526,7 +526,7 @@ class TestConditionAsText(unittest.TestCase):
         self.assertIsNotNone(violation_err)
         self.assertEqual('x\n    >\n    3: x was 0', tests.error.wo_mandatory_location(str(violation_err)))
 
-    def test_with_multiple_lambdas_on_a_line(self):
+    def test_with_multiple_lambdas_on_a_line(self) -> None:
         # pylint: disable=unnecessary-lambda
         # yapf: disable
         @icontract.require(
@@ -547,7 +547,7 @@ class TestConditionAsText(unittest.TestCase):
         self.assertIsNotNone(value_error)
         self.assertEqual("x < 100, but got: 101", str(value_error))
 
-        value_error = None  # type: Optional[ValueError]
+        value_error = None
         try:
             func(x=-1)
         except ValueError as err:
@@ -561,7 +561,7 @@ SOME_GLOBAL_CONSTANT = 10
 
 
 class TestRepr(unittest.TestCase):
-    def test_repr(self):
+    def test_repr(self) -> None:
         a_repr = reprlib.Repr()
         a_repr.maxlist = 3
 
@@ -582,7 +582,7 @@ class TestRepr(unittest.TestCase):
 
 
 class TestClass(unittest.TestCase):
-    def test_nested_attribute(self):
+    def test_nested_attribute(self) -> None:
         class B:
             def __init__(self) -> None:
                 self.x = 0
@@ -618,7 +618,7 @@ class TestClass(unittest.TestCase):
                          "self.b was B(x=0)\n"
                          "self.b.x was 0", tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_nested_method(self):
+    def test_nested_method(self) -> None:
         z = 10
 
         class C:
@@ -673,7 +673,7 @@ class TestClass(unittest.TestCase):
 
 
 class TestClosures(unittest.TestCase):
-    def test_closure(self):
+    def test_closure(self) -> None:
         y = 4
         z = 5
 
@@ -693,7 +693,7 @@ class TestClosures(unittest.TestCase):
                          "y was 4\n"
                          "z was 5", tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_global(self):
+    def test_global(self) -> None:
         @icontract.require(lambda x: x < SOME_GLOBAL_CONSTANT)
         def some_func(x: int) -> None:
             pass
@@ -709,7 +709,7 @@ class TestClosures(unittest.TestCase):
                          "SOME_GLOBAL_CONSTANT was 10\n"
                          "x was 100", tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_closure_and_global(self):
+    def test_closure_and_global(self) -> None:
         y = 4
 
         @icontract.require(lambda x: x < y + SOME_GLOBAL_CONSTANT)

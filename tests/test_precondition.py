@@ -8,15 +8,16 @@ import functools
 import pathlib
 import time
 import unittest
-from typing import Optional  # pylint: disable=unused-import
+from typing import Optional, Callable, Any  # pylint: disable=unused-import
 
 import icontract
+from icontract._globals import CallableT
 import tests.error
 import tests.mock
 
 
 class TestOK(unittest.TestCase):
-    def test_that_it_works(self):
+    def test_that_it_works(self) -> None:
         @icontract.require(lambda x: x > 3)
         def some_func(x: int, y: int = 5) -> None:
             pass
@@ -26,7 +27,7 @@ class TestOK(unittest.TestCase):
 
 
 class TestViolation(unittest.TestCase):
-    def test_only_with_condition_arg(self):
+    def test_only_with_condition_arg(self) -> None:
         @icontract.require(lambda x: x > 3)
         def some_func(x: int, y: int = 5) -> None:
             pass
@@ -40,7 +41,7 @@ class TestViolation(unittest.TestCase):
         self.assertIsNotNone(violation_error)
         self.assertEqual("x > 3: x was 1", tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_with_description(self):
+    def test_with_description(self) -> None:
         @icontract.require(lambda x: x > 3, "x must not be small")
         def some_func(x: int, y: int = 5) -> None:
             pass
@@ -54,7 +55,7 @@ class TestViolation(unittest.TestCase):
         self.assertIsNotNone(violation_error)
         self.assertEqual("x must not be small: x > 3: x was 1", tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_condition_as_function(self):
+    def test_condition_as_function(self) -> None:
         def some_condition(x: int) -> bool:
             return x > 3
 
@@ -71,7 +72,7 @@ class TestViolation(unittest.TestCase):
         self.assertIsNotNone(violation_error)
         self.assertEqual("some_condition: x was 1", tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_condition_as_function_with_default_argument_value(self):
+    def test_condition_as_function_with_default_argument_value(self) -> None:
         def some_condition(x: int, y: int = 0) -> bool:
             return x > y
 
@@ -92,7 +93,7 @@ class TestViolation(unittest.TestCase):
         self.assertIsNotNone(violation_error)
         self.assertEqual("some_condition: x was -1", tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_condition_as_function_with_default_argument_value_set(self):
+    def test_condition_as_function_with_default_argument_value_set(self) -> None:
         def some_condition(x: int, y: int = 0) -> bool:
             return x > y
 
@@ -115,7 +116,7 @@ class TestViolation(unittest.TestCase):
                          'x was -1\n'
                          'y was 1', tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_with_pathlib(self):
+    def test_with_pathlib(self) -> None:
         @icontract.require(lambda path: path.exists())
         def some_func(path: pathlib.Path) -> None:
             pass
@@ -131,7 +132,7 @@ class TestViolation(unittest.TestCase):
                          "path was PosixPath('/doesnt/exist/test_contract')\n"
                          "path.exists() was False", tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_with_multiple_comparators(self):
+    def test_with_multiple_comparators(self) -> None:
         @icontract.require(lambda x: 0 < x < 3)
         def some_func(x: int) -> str:
             return str(x)
@@ -145,14 +146,14 @@ class TestViolation(unittest.TestCase):
         self.assertIsNotNone(violation_error)
         self.assertEqual("0 < x < 3: x was 10", tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_with_stacked_decorators(self):
-        def mydecorator(f):
+    def test_with_stacked_decorators(self) -> None:
+        def mydecorator(f: CallableT) -> CallableT:
             @functools.wraps(f)
-            def wrapped(*args, **kwargs):
+            def wrapped(*args, **kwargs):  # type: ignore
                 result = f(*args, **kwargs)
                 return result
 
-            return wrapped
+            return wrapped  # type: ignore
 
         some_var = 100
         another_var = 0
@@ -175,7 +176,7 @@ class TestViolation(unittest.TestCase):
                          "another_var was 0\n"
                          "x was 0", tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_with_default_values(self):
+    def test_with_default_values(self) -> None:
         @icontract.require(lambda a: a < 10)
         @icontract.require(lambda b: b < 10)
         @icontract.require(lambda c: c < 10)
@@ -191,7 +192,7 @@ class TestViolation(unittest.TestCase):
         self.assertIsNotNone(violation_error)
         self.assertEqual("c < 10: c was 22", tests.error.wo_mandatory_location(str(violation_error)))
 
-        violation_error = None  # type: Optional[icontract.ViolationError]
+        violation_error = None
         try:
             some_func(a=2, c=8)
         except icontract.ViolationError as err:
@@ -203,16 +204,20 @@ class TestViolation(unittest.TestCase):
 
 class TestBenchmark(unittest.TestCase):
     @unittest.skip("Skipped the benchmark, execute manually on a prepared benchmark machine.")
-    def test_enabled(self):
+    def test_enabled(self) -> None:
         @icontract.require(lambda x: x > 3)
         def pow_with_pre(x: int, y: int) -> int:
-            return x**y
+            result = x**y
+            assert isinstance(result, int)
+            return result
 
         def pow_wo_pre(x: int, y: int) -> int:
             if x <= 3:
                 raise ValueError("precondition")
 
-            return x**y
+            result = x**y
+            assert isinstance(result, int)
+            return result
 
         start = time.time()
         for i in range(5, 10 * 1000):
@@ -227,13 +232,17 @@ class TestBenchmark(unittest.TestCase):
         self.assertLess(duration_with_pre / duration_wo_pre, 6)
 
     @unittest.skip("Skipped the benchmark, execute manually on a prepared benchmark machine.")
-    def test_disabled(self):
+    def test_disabled(self) -> None:
         @icontract.require(lambda x: x > 3, enabled=False)
         def pow_with_pre(x: int, y: int) -> int:
-            return x**y
+            result = x**y
+            assert isinstance(result, int)
+            return result
 
         def pow_wo_pre(x: int, y: int) -> int:
-            return x**y
+            result = x**y
+            assert isinstance(result, int)
+            return result
 
         start = time.time()
         for i in range(5, 10 * 1000):
@@ -249,7 +258,7 @@ class TestBenchmark(unittest.TestCase):
 
 
 class TestError(unittest.TestCase):
-    def test_as_type(self):
+    def test_as_type(self) -> None:
         @icontract.require(lambda x: x > 0, error=ValueError)
         def some_func(x: int) -> int:
             return 0
@@ -264,7 +273,7 @@ class TestError(unittest.TestCase):
         self.assertIsInstance(value_error, ValueError)
         self.assertEqual('x > 0: x was 0', tests.error.wo_mandatory_location(str(value_error)))
 
-    def test_as_function(self):
+    def test_as_function(self) -> None:
         @icontract.require(lambda x: x > 0, error=lambda x: ValueError("x non-negative"))
         def some_func(x: int) -> int:
             return 0
@@ -279,7 +288,7 @@ class TestError(unittest.TestCase):
         self.assertIsInstance(value_error, ValueError)
         self.assertEqual('x non-negative', str(value_error))
 
-    def test_as_function_with_outer_scope(self):
+    def test_as_function_with_outer_scope(self) -> None:
         z = 42
 
         @icontract.require(lambda x: x > 0, error=lambda x: ValueError("x non-negative, z: {}".format(z)))
@@ -296,7 +305,7 @@ class TestError(unittest.TestCase):
         self.assertIsInstance(value_error, ValueError)
         self.assertEqual('x non-negative, z: 42', str(value_error))
 
-    def test_with_empty_args(self):
+    def test_with_empty_args(self) -> None:
         @icontract.require(lambda x: x > 0, error=lambda: ValueError("x must be positive"))
         def some_func(x: int) -> int:
             return 0
@@ -311,7 +320,7 @@ class TestError(unittest.TestCase):
         self.assertIsInstance(value_error, ValueError)
         self.assertEqual('x must be positive', str(value_error))
 
-    def test_with_different_args_from_condition(self):
+    def test_with_different_args_from_condition(self) -> None:
         @icontract.require(lambda x: x > 0, error=lambda x, y: ValueError("x is {}, y is {}".format(x, y)))
         def some_func(x: int, y: int) -> int:
             return 0
@@ -328,7 +337,7 @@ class TestError(unittest.TestCase):
 
 
 class TestToggling(unittest.TestCase):
-    def test_enabled(self):
+    def test_enabled(self) -> None:
         @icontract.require(lambda x: x > 10, enabled=False)
         def some_func(x: int) -> int:
             return 123
@@ -344,7 +353,7 @@ class TestToggling(unittest.TestCase):
 
 
 class TestInClass(unittest.TestCase):
-    def test_instance_method(self):
+    def test_instance_method(self) -> None:
         class A:
             def __init__(self) -> None:
                 self.y = 5
@@ -373,7 +382,7 @@ class TestInClass(unittest.TestCase):
         self.assertEqual("x > 3: x was 1", tests.error.wo_mandatory_location(str(violation_error)))
 
         # Test method with self
-        violation_error = None  # type: Optional[icontract.ViolationError]
+        violation_error = None
         try:
             a.some_method_with_self()
         except icontract.ViolationError as err:
@@ -384,17 +393,17 @@ class TestInClass(unittest.TestCase):
                          'self was A\n'
                          'self.y was 5', tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_getter(self):
+    def test_getter(self) -> None:
         class SomeClass:
             def __init__(self) -> None:
                 self._some_prop = -1
 
-            @property
+            @property  # type: ignore
             @icontract.require(lambda self: self._some_prop > 0)
             def some_prop(self) -> int:
                 return self._some_prop
 
-            def __repr__(self):
+            def __repr__(self) -> str:
                 return self.__class__.__name__
 
         some_inst = SomeClass()
@@ -410,13 +419,13 @@ class TestInClass(unittest.TestCase):
                          'self was SomeClass\n'
                          'self._some_prop was -1', tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_setter(self):
+    def test_setter(self) -> None:
         class SomeClass:
             @property
             def some_prop(self) -> int:
                 return 0
 
-            @some_prop.setter
+            @some_prop.setter  # type: ignore
             @icontract.require(lambda value: value > 0)
             def some_prop(self, value: int) -> None:
                 pass
@@ -425,14 +434,14 @@ class TestInClass(unittest.TestCase):
 
         violation_error = None  # type: Optional[icontract.ViolationError]
         try:
-            some_inst.some_prop = -1
+            some_inst.some_prop = -1  # type: ignore
         except icontract.ViolationError as err:
             violation_error = err
 
         self.assertIsNotNone(violation_error)
         self.assertEqual('value > 0: value was -1', tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_deleter(self):
+    def test_deleter(self) -> None:
         class SomeClass:
             def __init__(self) -> None:
                 self._some_prop = -1
@@ -441,12 +450,12 @@ class TestInClass(unittest.TestCase):
             def some_prop(self) -> int:
                 return self._some_prop
 
-            @some_prop.deleter
+            @some_prop.deleter  # type: ignore
             @icontract.require(lambda self: self.some_prop > 0)
             def some_prop(self) -> None:
                 pass
 
-            def __repr__(self):
+            def __repr__(self) -> str:
                 return self.__class__.__name__
 
         some_inst = SomeClass()
@@ -463,7 +472,7 @@ class TestInClass(unittest.TestCase):
 
 
 class TestInvalid(unittest.TestCase):
-    def test_unexpected_precondition_arguments(self):
+    def test_unexpected_precondition_arguments(self) -> None:
         @icontract.require(lambda b: b > 3)
         def some_function(a: int) -> None:  # pylint: disable=unused-variable
             pass
@@ -479,7 +488,7 @@ class TestInvalid(unittest.TestCase):
                          "Does the original function define them? Did you supply them in the call?",
                          tests.error.wo_mandatory_location(str(type_err)))
 
-    def test_error_with_invalid_arguments(self):
+    def test_error_with_invalid_arguments(self) -> None:
         @icontract.require(lambda x: x > 0, error=lambda x, z: ValueError("x is {}, y is {}".format(x, z)))
         def some_func(x: int, y: int) -> int:
             return 0
@@ -495,7 +504,7 @@ class TestInvalid(unittest.TestCase):
                          "Does the original function define them? Did you supply them in the call?",
                          tests.error.wo_mandatory_location(str(type_error)))
 
-    def test_no_boolyness(self):
+    def test_no_boolyness(self) -> None:
         @icontract.require(lambda: tests.mock.NumpyArray([True, False]))
         def some_func() -> None:
             pass
@@ -510,28 +519,30 @@ class TestInvalid(unittest.TestCase):
         self.assertEqual('Failed to negate the evaluation of the condition.',
                          tests.error.wo_mandatory_location(str(value_error)))
 
-    def test_unexpected_positional_argument(self):
+    def test_unexpected_positional_argument(self) -> None:
         @icontract.require(lambda: True)
         def some_func() -> None:
             pass
 
         type_error = None  # type: Optional[TypeError]
         try:
-            some_func(0)  # pylint: disable=too-many-function-args
+            # pylint: disable=too-many-function-args
+            some_func(0)  # type: ignore
         except TypeError as err:
             type_error = err
 
         self.assertIsNotNone(type_error)
         self.assertEqual('some_func() takes 0 positional arguments but 1 was given', str(type_error))
 
-    def test_unexpected_keyword_argument(self):
+    def test_unexpected_keyword_argument(self) -> None:
         @icontract.require(lambda: True)
         def some_func() -> None:
             pass
 
         type_error = None  # type: Optional[TypeError]
         try:
-            some_func(x=0)  # pylint: disable=unexpected-keyword-arg
+            # pylint: disable=unexpected-keyword-arg
+            some_func(x=0)  # type: ignore
         except TypeError as err:
             type_error = err
 
