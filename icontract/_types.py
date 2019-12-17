@@ -80,22 +80,19 @@ class Snapshot:
 
         args = list(inspect.signature(capture).parameters.keys())  # type: List[str]
 
-        if len(args) > 1:
-            raise TypeError("The capture function of a snapshot expects only a single argument.")
-
-        if len(args) == 0 and name is None:
-            raise ValueError("You must name a snapshot if no argument was given in the capture function.")
-
         if name is None:
-            name = args[0]
+            if len(args) == 0:
+                raise ValueError("You must name a snapshot if no argument was given in the capture function.")
+            elif len(args) > 1:
+                raise ValueError("You must name a snapshot if multiple arguments were given in the capture function.")
+            else:
+                assert len(args) == 1
+                name = args[0]
 
         assert name is not None, "Expected ``name`` to be set in the preceding execution paths."
         self.name = name
 
-        self.arg = None  # type: Optional[str]
-        if len(args) == 1:
-            self.arg = args[0]
-        else:
-            assert len(args) == 0, "There can be at most one argument to a snapshot capture, but got: {}".format(args)
+        self.args = args
+        self.arg_set = set(args)
 
         self.location = location

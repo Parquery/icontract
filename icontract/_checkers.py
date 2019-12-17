@@ -192,23 +192,26 @@ def _capture_snapshot(a_snapshot: Snapshot, resolved_kwargs: Mapping[str, Any]) 
     :param resolved_kwargs: resolved keyword arguments (including the default values)
     :return: captured value
     """
-    if a_snapshot.arg is not None:
-        if a_snapshot.arg not in resolved_kwargs:
-            msg_parts = []  # type: List[str]
-            if a_snapshot.location is not None:
-                msg_parts.append("{}:\n".format(a_snapshot.location))
+    missing_args = [arg_name for arg_name in a_snapshot.args if arg_name not in resolved_kwargs]
+    if missing_args:
+        msg_parts = []  # type: List[str]
+        if a_snapshot.location is not None:
+            msg_parts.append("{}:\n".format(a_snapshot.location))
 
-            msg_parts.append(("The argument of the snapshot has not been set: {}. "
-                              "Does the original function define it? Did you supply it in the call?").format(
-                                  a_snapshot.arg))
+        msg_parts.append(
+            ("The argument(s) of the snapshot have not been set: {}. "
+             "Does the original function define them? Did you supply them in the call?").format(missing_args))
 
-            raise TypeError(''.join(msg_parts))
+        raise TypeError(''.join(msg_parts))
 
-        value = a_snapshot.capture(**{a_snapshot.arg: resolved_kwargs[a_snapshot.arg]})
-    else:
-        value = a_snapshot.capture()
+    capture_kwargs = {
+        arg_name: arg_value
+        for arg_name, arg_value in resolved_kwargs.items() if arg_name in a_snapshot.arg_set
+    }
 
-    return value
+    captured_value = a_snapshot.capture(**capture_kwargs)
+
+    return captured_value
 
 
 def _assert_postcondition(contract: Contract, resolved_kwargs: Mapping[str, Any]) -> None:

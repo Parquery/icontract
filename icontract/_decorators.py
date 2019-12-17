@@ -106,10 +106,11 @@ class require:  # pylint: disable=invalid-name
 
 class snapshot:  # pylint: disable=invalid-name
     """
-    Decorate a function with a snapshot of an argument value captured *prior* to the function invocation.
+    Decorate a function with a snapshot of argument values captured *prior* to the function invocation.
 
-    A snapshot is defined by a capture function (usually a lambda) that accepts a single argument of the function.
-    If the name of the snapshot is not given, the name is equal to the name of the argument.
+    A snapshot is defined by a capture function (usually a lambda) that accepts one or more arguments of the function.
+    If the name of the snapshot is not given, the capture function must have a single argument and the name is equal to
+    the name of that single argument.
 
     The captured values are supplied to postconditions with the OLD argument of the condition and error function.
     Snapshots are inherited from the base classes and must not have conflicting names in the class hierarchy.
@@ -120,8 +121,8 @@ class snapshot:  # pylint: disable=invalid-name
         Initialize.
 
         :param capture:
-            function to capture the snapshot accepting a single argument (from a set of arguments
-            of the original function)
+            function to capture the snapshot accepting a one or more arguments of the original function *prior*
+            to the execution
         :param name: name of the snapshot; if omitted, the name corresponds to the name of the input argument
         :param enabled:
             The decorator is applied only if ``enabled`` is set.
