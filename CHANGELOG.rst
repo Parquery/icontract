@@ -1,3 +1,8 @@
+2.0.7
+=====
+* Fixed mypy complaints in clients due to import aliases
+* Made compliant to mypy 0.750 --strict
+
 2.0.6
 =====
 * Added location to errors on calls with missing arguments
