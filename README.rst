@@ -271,14 +271,15 @@ Usual postconditions can not verify the state transitions of the function's argu
 impossible to verify in a postcondition that the list supplied as an argument was appended an element since the
 postcondition only sees the argument value as-is after the function invocation.
 
-In order to verify the state transitions, the postcondition needs the "old" argument value (before the invocation)
-as well as the current argument value (after the invocation). ``icontract.snapshot`` decorator instructs the checker
-to take snapshots of the argument values before the function call which are then supplied as ``OLD`` argument to the
-postcondition function.
+In order to verify the state transitions, the postcondition needs the "old" state of the argument values
+(*i.e.* prior to the invocation of the function) as well as the current values (after the invocation).
+``icontract.snapshot`` decorator instructs the checker to take snapshots of the argument values before the function call
+which are then supplied as ``OLD`` argument to the postcondition function.
 
-``icontract.snapshot`` takes a capture function which accepts a single argument of the function (or none). The name of
-the argument corresponds to the property of ``OLD`` object passed to the postcondition. You can also rename the
-property in ``OLD`` by supplying a ``name`` argument to ``icontract.snapshot``.
+``icontract.snapshot`` takes a capture function which accepts none, one or more arguments of the function.
+You set the name of the property in ``OLD`` as ``name`` argument to ``icontract.snapshot``. If there is a single
+argument passed to the the capture function, the name of the ``OLD`` property can be omitted and equals the name
+of the argument.
 
 Here is an example that uses snapshots to check that a value was appended to the list:
 
@@ -325,6 +326,32 @@ The following example shows how you can name the snapshot:
     OLD.len_lst was 2
     len(lst) was 4
     lst was [1, 2, 3, 1984]
+
+The next code snippet shows how you can combine multiple arguments of a function to be captured in a single snapshot:
+
+.. code-block:: python
+
+    >>> import icontract
+    >>> from typing import List
+
+    >>> @icontract.snapshot(
+    ...     lambda lst_a, lst_b: set(lst_a).union(lst_b), name="union")
+    ... @icontract.ensure(
+    ...     lambda OLD, lst_a, lst_b: set(lst_a).union(lst_b) == OLD.union)
+    ... def some_func(lst_a: List[int], lst_b: List[int]) -> None:
+    ...     lst_a.append(1984)  # bug
+
+    >>> some_func(lst_a=[1, 2], lst_b=[3, 4])
+    Traceback (most recent call last):
+        ...
+    icontract.errors.ViolationError: File <doctest README.rst[36]>, line 4 in <module>:
+    set(lst_a).union(lst_b) == OLD.union:
+    OLD was a bunch of OLD values
+    OLD.union was {1, 2, 3, 4}
+    lst_a was [1, 2, 1984]
+    lst_b was [3, 4]
+    set(lst_a) was {1, 2, 1984}
+    set(lst_a).union(lst_b) was {1, 2, 3, 4, 1984}
 
 Inheritance
 -----------
@@ -398,7 +425,7 @@ The following example shows an abstract parent class and a child class that inhe
         >>> some_b.func(y=0)
         Traceback (most recent call last):
             ...
-        icontract.errors.ViolationError: File <doctest README.rst[36]>, line 7 in A:
+        icontract.errors.ViolationError: File <doctest README.rst[40]>, line 7 in A:
         result < y:
         result was 1
         y was 0
@@ -408,7 +435,7 @@ The following example shows an abstract parent class and a child class that inhe
         >>> another_b.break_parent_invariant()
         Traceback (most recent call last):
             ...
-        icontract.errors.ViolationError: File <doctest README.rst[36]>, line 1 in <module>:
+        icontract.errors.ViolationError: File <doctest README.rst[40]>, line 1 in <module>:
         self.x > 0:
         self was instance of B
         self.x was -1
@@ -418,7 +445,7 @@ The following example shows an abstract parent class and a child class that inhe
         >>> yet_another_b.break_my_invariant()
         Traceback (most recent call last):
             ...
-        icontract.errors.ViolationError: File <doctest README.rst[37]>, line 1 in <module>:
+        icontract.errors.ViolationError: File <doctest README.rst[41]>, line 1 in <module>:
         self.x < 100:
         self was instance of B
         self.x was 101
@@ -452,7 +479,7 @@ The following example shows how preconditions are weakened:
         >>> b.func(x=5)
         Traceback (most recent call last):
             ...
-        icontract.errors.ViolationError: File <doctest README.rst[45]>, line 2 in B:
+        icontract.errors.ViolationError: File <doctest README.rst[49]>, line 2 in B:
         x % 3 == 0: x was 5
 
 The example below illustrates how snaphots are inherited:
@@ -477,7 +504,7 @@ The example below illustrates how snaphots are inherited:
         >>> b.func(lst=[1, 2], value=3)
         Traceback (most recent call last):
             ...
-        icontract.errors.ViolationError: File <doctest README.rst[50]>, line 4 in A:
+        icontract.errors.ViolationError: File <doctest README.rst[54]>, line 4 in A:
         len(lst) == len(OLD.lst) + 1:
         OLD was a bunch of OLD values
         OLD.lst was [1, 2]
@@ -576,7 +603,7 @@ Here is an example of the error given as an exception class:
     >>> some_func(x=0)
     Traceback (most recent call last):
         ...
-    ValueError: File <doctest README.rst[56]>, line 1 in <module>:
+    ValueError: File <doctest README.rst[60]>, line 1 in <module>:
     x > 0: x was 0
 
 Here is an example of the error given as a callable:
@@ -686,7 +713,7 @@ Here is a short code snippet to demonstrate where the current implementation fai
     >>> some_func(x=0)
     Traceback (most recent call last):
         ...
-    SyntaxError: Decorator corresponding to the line 1 could not be found in file <doctest README.rst[60]>: 'require_x_positive = icontract.require(lambda x: x > 0)\n'
+    SyntaxError: Decorator corresponding to the line 1 could not be found in file <doctest README.rst[64]>: 'require_x_positive = icontract.require(lambda x: x > 0)\n'
 
 However, we haven't faced a situation in the code base where we would do something like the above, so we are unsure
 whether this is a big issue. As long as decorators are directly applied to functions and classes, everything

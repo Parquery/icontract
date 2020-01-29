@@ -3,7 +3,7 @@
 # pylint: disable=unnecessary-lambda
 # pylint: disable=unused-argument
 # pylint: disable=no-self-use
-
+import textwrap
 import unittest
 from typing import List, Optional  # pylint: disable=unused-import
 
@@ -22,7 +22,7 @@ class TestOK(unittest.TestCase):
 
         some_func(2)
 
-    def test_with_name_same_as_argument(self) -> None:
+    def test_with_name_same_for_single_argument(self) -> None:
         @icontract.snapshot(lambda lst: lst[:])
         @icontract.ensure(lambda OLD, val, lst: OLD.lst + [val] == lst)
         def some_func(lst: List[int], val: int) -> None:
@@ -31,7 +31,7 @@ class TestOK(unittest.TestCase):
         # Expected to pass
         some_func([1], 2)
 
-    def test_with_custom_name(self) -> None:
+    def test_with_custom_name_for_single_argument(self) -> None:
         @icontract.snapshot(lambda lst: len(lst), name="len_lst")
         @icontract.ensure(lambda OLD, val, lst: OLD.len_lst + 1 == len(lst))
         def some_func(lst: List[int], val: int) -> None:
@@ -39,6 +39,15 @@ class TestOK(unittest.TestCase):
 
         # Expected to pass
         some_func([1], 2)
+
+    def test_with_multiple_arguments(self) -> None:
+        @icontract.snapshot(lambda lst_a, lst_b: set(lst_a).union(lst_b), name="union")
+        @icontract.ensure(lambda OLD, lst_a, lst_b: set(lst_a).union(lst_b) == OLD.union)
+        def some_func(lst_a: List[int], lst_b: List[int]) -> None:
+            pass
+
+        # Expected to pass
+        some_func(lst_a=[1, 2], lst_b=[3, 4])
 
 
 class TestViolation(unittest.TestCase):
@@ -81,6 +90,29 @@ class TestViolation(unittest.TestCase):
                          'OLD.len_lst was 1\n'
                          'len(lst) was 3\n'
                          'lst was [1, 2, 1984]', tests.error.wo_mandatory_location(str(violation_error)))
+
+    def test_with_multiple_arguments(self) -> None:
+        @icontract.snapshot(lambda lst_a, lst_b: set(lst_a).union(lst_b), name="union")
+        @icontract.ensure(lambda OLD, lst_a, lst_b: set(lst_a).union(lst_b) == OLD.union)
+        def some_func(lst_a: List[int], lst_b: List[int]) -> None:
+            lst_a.append(1984)  # bug
+
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            some_func(lst_a=[1, 2], lst_b=[3, 4])
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual(
+            textwrap.dedent('''\
+            set(lst_a).union(lst_b) == OLD.union:
+            OLD was a bunch of OLD values
+            OLD.union was {1, 2, 3, 4}
+            lst_a was [1, 2, 1984]
+            lst_b was [3, 4]
+            set(lst_a) was {1, 2, 1984}
+            set(lst_a).union(lst_b) was {1, 2, 3, 4, 1984}'''), tests.error.wo_mandatory_location(str(violation_error)))
 
 
 class TestInvalid(unittest.TestCase):
@@ -149,26 +181,9 @@ class TestInvalid(unittest.TestCase):
             type_error = err
 
         self.assertIsNotNone(type_error)
-        self.assertEqual("The argument of the snapshot has not been set: lst. "
-                         "Does the original function define it? Did you supply it in the call?",
+        self.assertEqual("The argument(s) of the snapshot have not been set: ['lst']. "
+                         "Does the original function define them? Did you supply them in the call?",
                          tests.error.wo_mandatory_location(str(type_error)))
-
-    def test_with_invalid_arguments(self) -> None:
-        # lst versus a_list
-        type_error = None  # type: Optional[TypeError]
-        try:
-            # pylint: disable=unused-variable
-
-            @icontract.snapshot(lambda lst, val: len(lst) + val, name='dummy_snap')
-            @icontract.ensure(lambda OLD: OLD.dummy_snap)
-            def some_func(a_list: List[int], val: int) -> None:
-                a_list.append(val)
-
-        except TypeError as err:
-            type_error = err
-
-        self.assertIsNotNone(type_error)
-        self.assertEqual('The capture function of a snapshot expects only a single argument.', str(type_error))
 
     def test_with_no_arguments_and_no_name(self) -> None:
         z = [1]
@@ -187,6 +202,23 @@ class TestInvalid(unittest.TestCase):
 
         self.assertIsNotNone(value_error)
         self.assertEqual("You must name a snapshot if no argument was given in the capture function.", str(value_error))
+
+    def test_with_multiple_arguments_and_no_name(self) -> None:
+        value_error = None  # type: Optional[ValueError]
+        try:
+            # pylint: disable=unused-variable
+
+            @icontract.snapshot(lambda lst_a, lst_b: set(lst_a).union(lst_b))
+            @icontract.ensure(lambda OLD, lst_a, lst_b: set(lst_a).union(lst_b) == OLD.union)
+            def some_func(lst_a: List[int], lst_b: List[int]) -> None:
+                pass
+
+        except ValueError as err:
+            value_error = err
+
+        self.assertIsNotNone(value_error)
+        self.assertEqual("You must name a snapshot if multiple arguments were given in the capture function.",
+                         str(value_error))
 
     def test_with_no_postcondition(self) -> None:
         value_error = None  # type: Optional[ValueError]
