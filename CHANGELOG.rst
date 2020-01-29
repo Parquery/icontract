@@ -1,3 +1,7 @@
+2.1.0
+=====
+* Made snapshot accept multiple arguments
+
 2.0.7
 =====
 * Fixed mypy complaints in clients due to import aliases
