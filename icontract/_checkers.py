@@ -1,4 +1,5 @@
 """Provide functions to add/find contract checkers."""
+import contextlib
 import functools
 import inspect
 from typing import Callable, Any, Iterable, Optional, Tuple, List, Mapping, MutableMapping, Dict
@@ -300,6 +301,7 @@ class _Old:
 
 def decorate_with_checker(func: CallableT) -> CallableT:
     """Decorate the function with a checker that verifies the preconditions and postconditions."""
+    # pylint: disable=too-many-statements
     assert not hasattr(func, "__preconditions__"), \
         "Expected func to have no list of preconditions (there should be only a single contract checker per function)."
 
@@ -321,61 +323,84 @@ def decorate_with_checker(func: CallableT) -> CallableT:
         if param.default != inspect.Parameter.empty:
             kwdefaults[param.name] = param.default
 
+    # This flag is used to avoid recursively checking contracts for the same function while contract checking is already
+    # in progress.
+    in_progress = False
+
+    def unset_checking_in_progress() -> None:
+        """Mark that the checking of the contract is finished."""
+        nonlocal in_progress
+        in_progress = False
+
     def wrapper(*args, **kwargs):  # type: ignore
         """Wrap func by checking the preconditions and postconditions."""
-        preconditions = getattr(wrapper, "__preconditions__")  # type: List[List[Contract]]
-        snapshots = getattr(wrapper, "__postcondition_snapshots__")  # type: List[Snapshot]
-        postconditions = getattr(wrapper, "__postconditions__")  # type: List[Contract]
+        # pylint: disable=too-many-branches
 
-        resolved_kwargs = _kwargs_from_call(param_names=param_names, kwdefaults=kwdefaults, args=args, kwargs=kwargs)
+        with contextlib.ExitStack() as exit_stack:
+            exit_stack.callback(unset_checking_in_progress)  # pylint: disable=no-member
 
-        if postconditions:
-            if 'result' in resolved_kwargs:
-                raise TypeError("Unexpected argument 'result' in a function decorated with postconditions.")
+            # If the wrapper is already checking the contracts for the wrapped function, avoid a recursive loop
+            # by skipping any subsequent contract checks for the same function.
+            nonlocal in_progress
+            if in_progress:  # pylint: disable=used-before-assignment
+                return func(*args, **kwargs)
 
-            if 'OLD' in resolved_kwargs:
-                raise TypeError("Unexpected argument 'OLD' in a function decorated with postconditions.")
+            in_progress = True
 
-        # Assert the preconditions in groups. This is necessary to implement "require else" logic when a class
-        # weakens the preconditions of its base class.
-        violation_err = None  # type: Optional[ViolationError]
-        for group in preconditions:
-            violation_err = None
-            try:
-                for contract in group:
-                    _assert_precondition(contract=contract, resolved_kwargs=resolved_kwargs)
-                break
-            except ViolationError as err:
-                violation_err = err
+            preconditions = getattr(wrapper, "__preconditions__")  # type: List[List[Contract]]
+            snapshots = getattr(wrapper, "__postcondition_snapshots__")  # type: List[Snapshot]
+            postconditions = getattr(wrapper, "__postconditions__")  # type: List[Contract]
 
-        if violation_err is not None:
-            raise violation_err  # pylint: disable=raising-bad-type
+            resolved_kwargs = _kwargs_from_call(
+                param_names=param_names, kwdefaults=kwdefaults, args=args, kwargs=kwargs)
 
-        # Capture the snapshots
-        if postconditions:
-            old_as_mapping = dict()  # type: MutableMapping[str, Any]
-            for snap in snapshots:
-                # This assert is just a last defense.
-                # Conflicting snapshot names should have been caught before, either during the decoration or
-                # in the meta-class.
-                assert snap.name not in old_as_mapping, "Snapshots with the conflicting name: {}"
-                old_as_mapping[snap.name] = _capture_snapshot(a_snapshot=snap, resolved_kwargs=resolved_kwargs)
+            if postconditions:
+                if 'result' in resolved_kwargs:
+                    raise TypeError("Unexpected argument 'result' in a function decorated with postconditions.")
 
-            resolved_kwargs['OLD'] = _Old(mapping=old_as_mapping)
+                if 'OLD' in resolved_kwargs:
+                    raise TypeError("Unexpected argument 'OLD' in a function decorated with postconditions.")
 
-        # Ideally, we would catch any exception here and strip the checkers from the traceback.
-        # Unfortunately, this can not be done in Python 3, see
-        # https://stackoverflow.com/questions/44813333/how-can-i-elide-a-function-wrapper-from-the-traceback-in-python-3
-        result = func(*args, **kwargs)
+            # Assert the preconditions in groups. This is necessary to implement "require else" logic when a class
+            # weakens the preconditions of its base class.
+            violation_err = None  # type: Optional[ViolationError]
+            for group in preconditions:
+                violation_err = None
+                try:
+                    for contract in group:
+                        _assert_precondition(contract=contract, resolved_kwargs=resolved_kwargs)
+                    break
+                except ViolationError as err:
+                    violation_err = err
 
-        if postconditions:
-            resolved_kwargs['result'] = result
+            if violation_err is not None:
+                raise violation_err  # pylint: disable=raising-bad-type
 
-            # Assert the postconditions as a conjunction
-            for contract in postconditions:
-                _assert_postcondition(contract=contract, resolved_kwargs=resolved_kwargs)
+            # Capture the snapshots
+            if postconditions:
+                old_as_mapping = dict()  # type: MutableMapping[str, Any]
+                for snap in snapshots:
+                    # This assert is just a last defense.
+                    # Conflicting snapshot names should have been caught before, either during the decoration or
+                    # in the meta-class.
+                    assert snap.name not in old_as_mapping, "Snapshots with the conflicting name: {}"
+                    old_as_mapping[snap.name] = _capture_snapshot(a_snapshot=snap, resolved_kwargs=resolved_kwargs)
 
-        return result
+                resolved_kwargs['OLD'] = _Old(mapping=old_as_mapping)
+
+            # Ideally, we would catch any exception here and strip the checkers from the traceback.
+            # Unfortunately, this can not be done in Python 3, see
+            # https://stackoverflow.com/questions/44813333/how-can-i-elide-a-function-wrapper-from-the-traceback-in-python-3
+            result = func(*args, **kwargs)
+
+            if postconditions:
+                resolved_kwargs['result'] = result
+
+                # Assert the postconditions as a conjunction
+                for contract in postconditions:
+                    _assert_postcondition(contract=contract, resolved_kwargs=resolved_kwargs)
+
+            return result
 
     # Copy __doc__ and other properties so that doctests can run
     functools.update_wrapper(wrapper=wrapper, wrapped=func)
@@ -430,26 +455,56 @@ def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
             """Wrap __init__ method of a class by checking the invariants *after* the invocation."""
             result = func(*args, **kwargs)
             instance = _find_self(param_names=param_names, args=args, kwargs=kwargs)
+            assert instance is not None, "Expected to find `self` in the parameters, but found none."
 
-            for contract in instance.__class__.__invariants__:
-                _assert_invariant(contract=contract, instance=instance)
+            setattr(instance, '__dbc_invariant_check_is_in_progress__', True)
 
-            return result
+            def remove_in_progress_dunder() -> None:
+                """Remove the dunder which signals that an invariant is already being checked down the call stack."""
+                delattr(instance, '__dbc_invariant_check_is_in_progress__')
+
+            with contextlib.ExitStack() as exit_stack:
+                exit_stack.callback(remove_in_progress_dunder)  # pylint: disable=no-member
+
+                for contract in instance.__class__.__invariants__:
+                    _assert_invariant(contract=contract, instance=instance)
+
+                return result
+
     else:
 
         def wrapper(*args, **kwargs):  # type: ignore
             """Wrap a function of a class by checking the invariants *before* and *after* the invocation."""
+            #
+            # The following dunder indicates whether another invariant is currently being checked. If so,
+            # we need to suspend any further invariant check to avoid endless recursion.
             instance = _find_self(param_names=param_names, args=args, kwargs=kwargs)
+            assert instance is not None, "Expected to find `self` in the parameters, but found none."
 
-            for contract in instance.__class__.__invariants__:
-                _assert_invariant(contract=contract, instance=instance)
+            if not hasattr(instance, '__dbc_invariant_check_is_in_progress__'):
+                setattr(instance, '__dbc_invariant_check_is_in_progress__', True)
+            else:
+                # Do not check any invariants to avoid endless recursion.
+                return func(*args, **kwargs)
 
-            result = func(*args, **kwargs)
+            def remove_in_progress_dunder() -> None:
+                """Remove the dunder which signals that an invariant is already being checked down the call stack."""
+                delattr(instance, '__dbc_invariant_check_is_in_progress__')
 
-            for contract in instance.__class__.__invariants__:
-                _assert_invariant(contract=contract, instance=instance)
+            with contextlib.ExitStack() as exit_stack:
+                exit_stack.callback(remove_in_progress_dunder)  # pylint: disable=no-member
 
-            return result
+                instance = _find_self(param_names=param_names, args=args, kwargs=kwargs)
+
+                for contract in instance.__class__.__invariants__:
+                    _assert_invariant(contract=contract, instance=instance)
+
+                result = func(*args, **kwargs)
+
+                for contract in instance.__class__.__invariants__:
+                    _assert_invariant(contract=contract, instance=instance)
+
+                return result
 
     functools.update_wrapper(wrapper=wrapper, wrapped=func)
 

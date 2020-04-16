@@ -16,7 +16,7 @@ icontract
 icontract provides `design-by-contract <https://en.wikipedia.org/wiki/Design_by_contract>`_ to Python3 with informative
 violation messages and inheritance.
 
-Reladed Projects
+Related Projects
 ----------------
 There exist a couple of contract libraries. However, at the time of this writing (September 2018), they all required the
 programmer either to learn a new syntax (`PyContracts <https://pypi.org/project/PyContracts/>`_) or to write
@@ -672,6 +672,44 @@ invariants.
 
 Mind that we still expect each class decorator that decorates the class functions to use ``functools.update_wrapper()``
 in order to be able to iterate through decorator stacks of the individual functions.
+
+**Recursion in contracts**. In certain cases functions depend on each other through contracts. Consider the following
+snippet:
+
+.. code-block:: python
+
+    @icontract.require(lambda: another_func())
+    def some_func() -> bool:
+        ...
+
+    @icontract.require(lambda: some_func())
+    def another_func() -> bool:
+        ...
+
+    some_func()
+
+Naïvely evaluating such preconditions and postconditions would result in endless recursions. Therefore, icontract
+suspends any further contract checking for a function when re-entering it for the second time while checking its
+contracts.
+
+Invariants depending on the instance methods would analogously result in endless recursions. The following snippet
+gives an example of such an invariant:
+
+.. code-block:: python
+
+    @icontract.invariant(lambda self: self.some_func())
+    class SomeClass(icontract.DBC):
+        def __init__(self) -> None:
+            ...
+
+        def some_func(self) -> bool:
+            ...
+
+To avoid endless recursion icontract suspends further invariant checks while checking an invariant. The dunder
+``__dbc_invariant_check_is_in_progress__`` is set on the instance for a diode effect as soon as invariant check is
+in progress and removed once the invariants checking finished. As long as the dunder
+``__dbc_invariant_check_is_in_progress__`` is present, the wrappers that check invariants simply return the result of
+the function.
 
 Linter
 ------
