@@ -301,10 +301,10 @@ class DBCMeta(abc.ABCMeta):
     # instead of ``mcs``.
     # pylint: disable=bad-mcs-classmethod-argument
 
-    if int(platform.python_version_tuple()[0]) < 3:
+    if platform.python_version_tuple() < ('3', ):
         raise NotImplementedError("Python versions below not supported, got: {}".format(platform.python_version()))
 
-    if int(platform.python_version_tuple()[1]) <= 5:
+    if platform.python_version_tuple() <= ('3', '5'):
         # pylint: disable=arguments-differ
         def __new__(mlcs, name, bases, namespace):  # type: ignore
             """Create a class with inherited preconditions, postconditions and invariants."""

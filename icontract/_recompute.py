@@ -3,6 +3,7 @@
 import ast
 import builtins
 import functools
+import platform
 from typing import Any, Mapping, Dict, List, Optional, Union, Tuple, Set, Callable  # pylint: disable=unused-import
 
 
@@ -348,13 +349,25 @@ class Visitor(ast.NodeVisitor):
         """Compile the generator or comprehension from the node and execute the compiled code."""
         args = [ast.arg(arg=name) for name in sorted(self._name_to_value.keys())]
 
-        func_def_node = ast.FunctionDef(
-            name="generator_expr",
-            args=ast.arguments(args=args, kwonlyargs=[], kw_defaults=[], defaults=[]),
-            decorator_list=[],
-            body=[ast.Return(node)])
+        if platform.python_version_tuple() < ('3', ):
+            raise NotImplementedError("Python versions below not supported, got: {}".format(platform.python_version()))
 
-        module_node = ast.Module(body=[func_def_node])
+        if platform.python_version_tuple() < ('3', '8'):
+            func_def_node = ast.FunctionDef(
+                name="generator_expr",
+                args=ast.arguments(args=args, kwonlyargs=[], kw_defaults=[], defaults=[]),
+                decorator_list=[],
+                body=[ast.Return(node)])
+
+            module_node = ast.Module(body=[func_def_node])
+        else:
+            func_def_node = ast.FunctionDef(
+                name="generator_expr",
+                args=ast.arguments(args=args, posonlyargs=[], kwonlyargs=[], kw_defaults=[], defaults=[]),
+                decorator_list=[],
+                body=[ast.Return(node)])
+
+            module_node = ast.Module(body=[func_def_node], type_ignores=[])
 
         ast.fix_missing_locations(module_node)
 

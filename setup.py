@@ -30,12 +30,14 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6'
+        'Programming Language :: Python :: 3.7'
+        'Programming Language :: Python :: 3.8'
         # yapf: enable
     ],
     license='License :: OSI Approved :: MIT License',
     keywords='design-by-contract precondition postcondition validation',
     packages=find_packages(exclude=['tests']),
-    install_requires=['asttokens>=1,<2'],
+    install_requires=['asttokens>=1,<3'],
     extras_require={
         'dev': [
             # yapf: disable
