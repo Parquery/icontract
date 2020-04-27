@@ -1,3 +1,7 @@
+2.2.0
+=====
+* Made compatible with Python 3.8
+
 2.1.0
 =====
 * Made snapshot accept multiple arguments
