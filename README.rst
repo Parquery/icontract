@@ -16,7 +16,7 @@ icontract
 icontract provides `design-by-contract <https://en.wikipedia.org/wiki/Design_by_contract>`_ to Python3 with informative
 violation messages and inheritance.
 
-Reladed Projects
+Related Projects
 ----------------
 There exist a couple of contract libraries. However, at the time of this writing (September 2018), they all required the
 programmer either to learn a new syntax (`PyContracts <https://pypi.org/project/PyContracts/>`_) or to write
