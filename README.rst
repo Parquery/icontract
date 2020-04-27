@@ -341,10 +341,10 @@ The next code snippet shows how you can combine multiple arguments of a function
     ... def some_func(lst_a: List[int], lst_b: List[int]) -> None:
     ...     lst_a.append(1984)  # bug
 
-    >>> some_func(lst_a=[1, 2], lst_b=[3, 4])
+    >>> some_func(lst_a=[1, 2], lst_b=[3, 4])  # doctest: +ELLIPSIS
     Traceback (most recent call last):
         ...
-    icontract.errors.ViolationError: File <doctest README.rst[36]>, line 4 in <module>:
+    icontract.errors.ViolationError: File <doctest README.rst[36]>, line ... in <module>:
     set(lst_a).union(lst_b) == OLD.union:
     OLD was a bunch of OLD values
     OLD.union was {1, 2, 3, 4}
