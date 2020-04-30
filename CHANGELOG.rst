@@ -1,3 +1,8 @@
+2.3.0
+=====
+* Disabled recursion in the contracts
+* Upgraded min version of asttokens to 2
+
 2.2.0
 =====
 * Made compatible with Python 3.8
