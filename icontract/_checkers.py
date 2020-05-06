@@ -2,7 +2,8 @@
 import contextlib
 import functools
 import inspect
-from typing import Callable, Any, Iterable, Optional, Tuple, List, Mapping, MutableMapping, Dict
+import threading
+from typing import cast, Callable, Any, Iterable, Optional, Tuple, List, Mapping, MutableMapping, Dict, Set
 
 import icontract._represent
 from icontract._globals import CallableT
@@ -299,6 +300,15 @@ class _Old:
         return "a bunch of OLD values"
 
 
+_THREAD_LOCAL = threading.local()
+
+# This flag is used to avoid recursively checking contracts for the same function or instance while
+# contract checking is already in progress.
+#
+# The value refers to the id() of the function (preconditions and postconditions) or instance (invariants).
+_THREAD_LOCAL.in_progress = cast(Set[int], set())
+
+
 def decorate_with_checker(func: CallableT) -> CallableT:
     """Decorate the function with a checker that verifies the preconditions and postconditions."""
     # pylint: disable=too-many-statements
@@ -323,14 +333,9 @@ def decorate_with_checker(func: CallableT) -> CallableT:
         if param.default != inspect.Parameter.empty:
             kwdefaults[param.name] = param.default
 
-    # This flag is used to avoid recursively checking contracts for the same function while contract checking is already
-    # in progress.
-    in_progress = False
-
     def unset_checking_in_progress() -> None:
         """Mark that the checking of the contract is finished."""
-        nonlocal in_progress
-        in_progress = False
+        _THREAD_LOCAL.in_progress.discard(id(func))
 
     def wrapper(*args, **kwargs):  # type: ignore
         """Wrap func by checking the preconditions and postconditions."""
@@ -341,11 +346,10 @@ def decorate_with_checker(func: CallableT) -> CallableT:
 
             # If the wrapper is already checking the contracts for the wrapped function, avoid a recursive loop
             # by skipping any subsequent contract checks for the same function.
-            nonlocal in_progress
-            if in_progress:  # pylint: disable=used-before-assignment
+            if id(func) in _THREAD_LOCAL.in_progress:
                 return func(*args, **kwargs)
 
-            in_progress = True
+            _THREAD_LOCAL.in_progress.add(id(func))
 
             preconditions = getattr(wrapper, "__preconditions__")  # type: List[List[Contract]]
             snapshots = getattr(wrapper, "__postcondition_snapshots__")  # type: List[Snapshot]
@@ -457,14 +461,14 @@ def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
             instance = _find_self(param_names=param_names, args=args, kwargs=kwargs)
             assert instance is not None, "Expected to find `self` in the parameters, but found none."
 
-            setattr(instance, '__dbc_invariant_check_is_in_progress__', True)
+            _THREAD_LOCAL.in_progress.add(id(instance))
 
-            def remove_in_progress_dunder() -> None:
-                """Remove the dunder which signals that an invariant is already being checked down the call stack."""
-                delattr(instance, '__dbc_invariant_check_is_in_progress__')
+            def remove_from_in_progress() -> None:
+                """Remove the flag which signals that an invariant is already being checked down the call stack."""
+                _THREAD_LOCAL.in_progress.discard(id(instance))
 
             with contextlib.ExitStack() as exit_stack:
-                exit_stack.callback(remove_in_progress_dunder)  # pylint: disable=no-member
+                exit_stack.callback(remove_from_in_progress)  # pylint: disable=no-member
 
                 for contract in instance.__class__.__invariants__:
                     _assert_invariant(contract=contract, instance=instance)
@@ -481,18 +485,18 @@ def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
             instance = _find_self(param_names=param_names, args=args, kwargs=kwargs)
             assert instance is not None, "Expected to find `self` in the parameters, but found none."
 
-            if not hasattr(instance, '__dbc_invariant_check_is_in_progress__'):
-                setattr(instance, '__dbc_invariant_check_is_in_progress__', True)
+            if id(instance) not in _THREAD_LOCAL.in_progress:
+                _THREAD_LOCAL.in_progress.add(id(instance))
             else:
                 # Do not check any invariants to avoid endless recursion.
                 return func(*args, **kwargs)
 
-            def remove_in_progress_dunder() -> None:
-                """Remove the dunder which signals that an invariant is already being checked down the call stack."""
-                delattr(instance, '__dbc_invariant_check_is_in_progress__')
+            def remove_from_in_progress() -> None:
+                """Remove the flag which signals that an invariant is already being checked down the call stack."""
+                _THREAD_LOCAL.in_progress.discard(id(instance))
 
             with contextlib.ExitStack() as exit_stack:
-                exit_stack.callback(remove_in_progress_dunder)  # pylint: disable=no-member
+                exit_stack.callback(remove_from_in_progress)  # pylint: disable=no-member
 
                 instance = _find_self(param_names=param_names, args=args, kwargs=kwargs)
 

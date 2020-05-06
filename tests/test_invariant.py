@@ -146,6 +146,17 @@ class TestOK(unittest.TestCase):
 
         _ = A()
 
+    def test_no_dict_pollution(self) -> None:
+        testSelf = self
+
+        @icontract.invariant(lambda self: self.mustHold())
+        class A:
+            def mustHold(self) -> bool:
+                testSelf.assertDictEqual({}, self.__dict__)
+                return True
+
+        _ = A()
+
 
 class TestViolation(unittest.TestCase):
     def test_init(self) -> None:
@@ -664,3 +675,7 @@ class TestInvalid(unittest.TestCase):
         self.assertIsNotNone(value_error)
         self.assertEqual('Failed to negate the evaluation of the condition.',
                          tests.error.wo_mandatory_location(str(value_error)))
+
+
+if __name__ == '__main__':
+    unittest.main()
