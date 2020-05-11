@@ -1,3 +1,7 @@
+2.3.1
+=====
+* Fixed race conditions in endless recursion blockers
+
 2.3.0
 =====
 * Disabled recursion in the contracts
