@@ -3,7 +3,7 @@ import contextlib
 import functools
 import inspect
 import threading
-from typing import cast, Callable, Any, Iterable, Optional, Tuple, List, Mapping, MutableMapping, Dict, Set
+from typing import Callable, Any, Iterable, Optional, Tuple, List, Mapping, MutableMapping, Dict, Set
 
 import icontract._represent
 from icontract._globals import CallableT
@@ -300,13 +300,11 @@ class _Old:
         return "a bunch of OLD values"
 
 
-_THREAD_LOCAL = threading.local()
-
 # This flag is used to avoid recursively checking contracts for the same function or instance while
 # contract checking is already in progress.
 #
-# The value refers to the id() of the function (preconditions and postconditions) or instance (invariants).
-_THREAD_LOCAL.in_progress = cast(Set[int], set())
+# The key refers to the id() of the function (preconditions and postconditions) or instance (invariants).
+_IN_PROGRESS = threading.local()
 
 
 def decorate_with_checker(func: CallableT) -> CallableT:
@@ -333,9 +331,12 @@ def decorate_with_checker(func: CallableT) -> CallableT:
         if param.default != inspect.Parameter.empty:
             kwdefaults[param.name] = param.default
 
+    id_func = str(id(func))
+
     def unset_checking_in_progress() -> None:
         """Mark that the checking of the contract is finished."""
-        _THREAD_LOCAL.in_progress.discard(id(func))
+        if hasattr(_IN_PROGRESS, id_func):
+            delattr(_IN_PROGRESS, id_func)
 
     def wrapper(*args, **kwargs):  # type: ignore
         """Wrap func by checking the preconditions and postconditions."""
@@ -346,10 +347,10 @@ def decorate_with_checker(func: CallableT) -> CallableT:
 
             # If the wrapper is already checking the contracts for the wrapped function, avoid a recursive loop
             # by skipping any subsequent contract checks for the same function.
-            if id(func) in _THREAD_LOCAL.in_progress:
+            if hasattr(_IN_PROGRESS, id_func):
                 return func(*args, **kwargs)
 
-            _THREAD_LOCAL.in_progress.add(id(func))
+            setattr(_IN_PROGRESS, id_func, True)
 
             preconditions = getattr(wrapper, "__preconditions__")  # type: List[List[Contract]]
             snapshots = getattr(wrapper, "__postcondition_snapshots__")  # type: List[Snapshot]
@@ -461,11 +462,13 @@ def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
             instance = _find_self(param_names=param_names, args=args, kwargs=kwargs)
             assert instance is not None, "Expected to find `self` in the parameters, but found none."
 
-            _THREAD_LOCAL.in_progress.add(id(instance))
+            id_instance = str(id(instance))
+            setattr(_IN_PROGRESS, id_instance, True)
 
             def remove_from_in_progress() -> None:
                 """Remove the flag which signals that an invariant is already being checked down the call stack."""
-                _THREAD_LOCAL.in_progress.discard(id(instance))
+                if hasattr(_IN_PROGRESS, id_instance):
+                    delattr(_IN_PROGRESS, id_instance)
 
             with contextlib.ExitStack() as exit_stack:
                 exit_stack.callback(remove_from_in_progress)  # pylint: disable=no-member
@@ -485,15 +488,17 @@ def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
             instance = _find_self(param_names=param_names, args=args, kwargs=kwargs)
             assert instance is not None, "Expected to find `self` in the parameters, but found none."
 
-            if id(instance) not in _THREAD_LOCAL.in_progress:
-                _THREAD_LOCAL.in_progress.add(id(instance))
+            id_instance = str(id(instance))
+            if not hasattr(_IN_PROGRESS, id_instance):
+                setattr(_IN_PROGRESS, id_instance, True)
             else:
                 # Do not check any invariants to avoid endless recursion.
                 return func(*args, **kwargs)
 
             def remove_from_in_progress() -> None:
                 """Remove the flag which signals that an invariant is already being checked down the call stack."""
-                _THREAD_LOCAL.in_progress.discard(id(instance))
+                if hasattr(_IN_PROGRESS, id_instance):
+                    delattr(_IN_PROGRESS, id_instance)
 
             with contextlib.ExitStack() as exit_stack:
                 exit_stack.callback(remove_from_in_progress)  # pylint: disable=no-member
