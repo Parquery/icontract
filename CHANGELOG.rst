@@ -1,3 +1,7 @@
+2.3.2
+=====
+* Fixed bug related to threading.local and mutables
+
 2.3.1
 =====
 * Fixed race conditions in endless recursion blockers
