@@ -1,4 +1,11 @@
 """Decorate functions with contracts."""
+import icontract_meta
+
+__version__ = icontract_meta.__version__
+__author__ = icontract_meta.__author__
+__copyright__ = icontract_meta.__copyright__
+__license__ = icontract_meta.__license__
+__status__ = icontract_meta.__status__
 
 # pylint: disable=invalid-name
 # pylint: disable=protected-access

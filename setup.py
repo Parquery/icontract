@@ -8,6 +8,8 @@ import os
 
 from setuptools import setup, find_packages
 
+import icontract_meta
+
 # pylint: disable=redefined-builtin
 
 here = os.path.abspath(os.path.dirname(__file__))  # pylint: disable=invalid-name
@@ -16,13 +18,13 @@ with open(os.path.join(here, 'README.rst'), encoding='utf-8') as fid:
     long_description = fid.read()  # pylint: disable=invalid-name
 
 setup(
-    name='icontract',
-    version='2.3.2',
-    description='Provide design-by-contract with informative violation messages',
+    name=icontract_meta.__title__,
+    version=icontract_meta.__version__,
+    description=icontract_meta.__description__,
     long_description=long_description,
-    url='https://github.com/Parquery/icontract',
-    author='Marko Ristin',
-    author_email='marko@parquery.com',
+    url=icontract_meta.__url__,
+    author=icontract_meta.__author__,
+    author_email=icontract_meta.__author_email__,
     classifiers=[
         # yapf: disable
         'Development Status :: 5 - Production/Stable',
@@ -48,7 +50,10 @@ setup(
             'pydocstyle>=2.1.1,<3',
             'coverage>=4.5.1,<5',
             'docutils>=0.14,<1',
-            'pygments>=2.2.0,<3'
+            'pygments>=2.2.0,<3',
+            'dpcontracts==0.6.0',
+            'tabulate>=0.8.7,<1',
+            'py-cpuinfo>=5.0.0,<6'
             # yapf: enable
         ],
     },
