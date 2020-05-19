@@ -31,16 +31,11 @@ def function_with_inline_contract(someArg: int) -> float:
     return result
 
 
-def function_without_contracts(someArg: int) -> float:
-    return math.sqrt(someArg)
-
-
 def measure_functions() -> None:
     funcs = [
         'function_with_icontract',
         'function_with_dpcontracts',
-        'function_with_inline_contract',
-        'function_without_contracts'
+        'function_with_inline_contract'
     ]
 
     durations = [0.0] * len(funcs)
