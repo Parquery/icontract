@@ -787,9 +787,9 @@ Benchmarking invariant at __init__:
 =========================  ============  ==============  =======================
 Case                         Total time    Time per run    Relative time per run
 =========================  ============  ==============  =======================
-`ClassWithIcontract`             2.13 s         2.13 μs                     304%
-`ClassWithDpcontracts`           0.70 s         0.70 μs                     100%
-`ClassWithInlineContract`        0.45 s         0.45 μs                      64%
+`ClassWithIcontract`             2.14 s         2.14 μs                     314%
+`ClassWithDpcontracts`           0.68 s         0.68 μs                     100%
+`ClassWithInlineContract`        0.42 s         0.42 μs                      62%
 =========================  ============  ==============  =======================
 
 Benchmarking invariant at a function:
@@ -797,9 +797,9 @@ Benchmarking invariant at a function:
 =========================  ============  ==============  =======================
 Case                         Total time    Time per run    Relative time per run
 =========================  ============  ==============  =======================
-`ClassWithIcontract`             2.87 s         2.87 μs                     417%
-`ClassWithDpcontracts`           0.69 s         0.69 μs                     100%
-`ClassWithInlineContract`        0.36 s         0.36 μs                      52%
+`ClassWithIcontract`             2.91 s         2.91 μs                     445%
+`ClassWithDpcontracts`           0.65 s         0.65 μs                     100%
+`ClassWithInlineContract`        0.33 s         0.33 μs                      51%
 =========================  ============  ==============  =======================
 
 Benchmarking precondition:
@@ -807,9 +807,9 @@ Benchmarking precondition:
 ===============================  ============  ==============  =======================
 Case                               Total time    Time per run    Relative time per run
 ===============================  ============  ==============  =======================
-`function_with_icontract`              0.03 s         3.23 μs                       1%
-`function_with_dpcontracts`            2.77 s       277.30 μs                     100%
-`function_with_inline_contract`        0.00 s         0.15 μs                       0%
+`function_with_icontract`              0.03 s         3.46 μs                       1%
+`function_with_dpcontracts`            2.85 s       285.11 μs                     100%
+`function_with_inline_contract`        0.00 s         0.14 μs                       0%
 ===============================  ============  ==============  =======================
 
 Benchmarking postcondition:
@@ -817,9 +817,9 @@ Benchmarking postcondition:
 ===============================  ============  ==============  =======================
 Case                               Total time    Time per run    Relative time per run
 ===============================  ============  ==============  =======================
-`function_with_icontract`              0.04 s         4.16 μs                       1%
-`function_with_dpcontracts`            2.79 s       278.62 μs                     100%
-`function_with_inline_contract`        0.00 s         0.15 μs                       0%
+`function_with_icontract`              0.03 s         3.38 μs                       1%
+`function_with_dpcontracts`            2.84 s       283.59 μs                     100%
+`function_with_inline_contract`        0.00 s         0.14 μs                       0%
 ===============================  ============  ==============  =======================
 
 

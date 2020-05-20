@@ -52,16 +52,16 @@ def _kwargs_from_call(param_names: List[str], kwdefaults: Dict[str, Any], args: 
     :return: resolved arguments as they would be passed to the function
     """
     # pylint: disable=too-many-arguments
-    mapping = dict()  # type: MutableMapping[str, Any]
+    resolved_kwargs = dict()  # type: MutableMapping[str, Any]
 
     # Set the default argument values as condition parameters.
     for param_name, param_value in kwdefaults.items():
-        mapping[param_name] = param_value
+        resolved_kwargs[param_name] = param_value
 
-    # Override the defaults with the values actually suplied to the function.
+    # Override the defaults with the values actually supplied to the function.
     for i, func_arg in enumerate(args):
         if i < len(param_names):
-            mapping[param_names[i]] = func_arg
+            resolved_kwargs[param_names[i]] = func_arg
         else:
             # Silently ignore call arguments that were not specified in the function.
             # This way we let the underlying decorated function raise the exception
@@ -69,9 +69,9 @@ def _kwargs_from_call(param_names: List[str], kwdefaults: Dict[str, Any], args: 
             pass
 
     for key, val in kwargs.items():
-        mapping[key] = val
+        resolved_kwargs[key] = val
 
-    return mapping
+    return resolved_kwargs
 
 
 def _not_check(check: Any, contract: Contract) -> bool:
@@ -241,6 +241,9 @@ def _assert_postcondition(contract: Contract, resolved_kwargs: Mapping[str, Any]
             ("The argument(s) of the postcondition have not been set: {}. "
              "Does the original function define them? Did you supply them in the call?").format(missing_args))
 
+        if 'OLD' in missing_args:
+            msg_parts.append(' Did you decorate the function with a snapshot to capture OLD values?')
+
         raise TypeError(''.join(msg_parts))
 
     condition_kwargs = {
@@ -376,7 +379,7 @@ def decorate_with_checker(func: CallableT) -> CallableT:
                 raise violation_err  # pylint: disable=raising-bad-type
 
             # Capture the snapshots
-            if postconditions:
+            if postconditions and snapshots:
                 old_as_mapping = dict()  # type: MutableMapping[str, Any]
                 for snap in snapshots:
                     # This assert is just a last defense.
