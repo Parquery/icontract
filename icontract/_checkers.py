@@ -1,9 +1,9 @@
 """Provide functions to add/find contract checkers."""
-import contextlib
 import functools
 import inspect
 import threading
-from typing import Callable, Any, Iterable, Optional, Tuple, List, Mapping, MutableMapping, Dict, Set
+from typing import Callable, Any, Iterable, Optional, Tuple, List, Mapping, \
+    MutableMapping, Dict
 
 import icontract._represent
 from icontract._globals import CallableT
@@ -52,16 +52,16 @@ def _kwargs_from_call(param_names: List[str], kwdefaults: Dict[str, Any], args: 
     :return: resolved arguments as they would be passed to the function
     """
     # pylint: disable=too-many-arguments
-    mapping = dict()  # type: MutableMapping[str, Any]
+    resolved_kwargs = dict()  # type: MutableMapping[str, Any]
 
     # Set the default argument values as condition parameters.
     for param_name, param_value in kwdefaults.items():
-        mapping[param_name] = param_value
+        resolved_kwargs[param_name] = param_value
 
-    # Override the defaults with the values actually suplied to the function.
+    # Override the defaults with the values actually supplied to the function.
     for i, func_arg in enumerate(args):
         if i < len(param_names):
-            mapping[param_names[i]] = func_arg
+            resolved_kwargs[param_names[i]] = func_arg
         else:
             # Silently ignore call arguments that were not specified in the function.
             # This way we let the underlying decorated function raise the exception
@@ -69,9 +69,9 @@ def _kwargs_from_call(param_names: List[str], kwdefaults: Dict[str, Any], args: 
             pass
 
     for key, val in kwargs.items():
-        mapping[key] = val
+        resolved_kwargs[key] = val
 
-    return mapping
+    return resolved_kwargs
 
 
 def _not_check(check: Any, contract: Contract) -> bool:
@@ -241,6 +241,9 @@ def _assert_postcondition(contract: Contract, resolved_kwargs: Mapping[str, Any]
             ("The argument(s) of the postcondition have not been set: {}. "
              "Does the original function define them? Did you supply them in the call?").format(missing_args))
 
+        if 'OLD' in missing_args:
+            msg_parts.append(' Did you decorate the function with a snapshot to capture OLD values?')
+
         raise TypeError(''.join(msg_parts))
 
     condition_kwargs = {
@@ -333,18 +336,12 @@ def decorate_with_checker(func: CallableT) -> CallableT:
 
     id_func = str(id(func))
 
-    def unset_checking_in_progress() -> None:
-        """Mark that the checking of the contract is finished."""
-        if hasattr(_IN_PROGRESS, id_func):
-            delattr(_IN_PROGRESS, id_func)
-
     def wrapper(*args, **kwargs):  # type: ignore
         """Wrap func by checking the preconditions and postconditions."""
         # pylint: disable=too-many-branches
 
-        with contextlib.ExitStack() as exit_stack:
-            exit_stack.callback(unset_checking_in_progress)  # pylint: disable=no-member
-
+        # Use try-finally instead of ExitStack for performance.
+        try:
             # If the wrapper is already checking the contracts for the wrapped function, avoid a recursive loop
             # by skipping any subsequent contract checks for the same function.
             if hasattr(_IN_PROGRESS, id_func):
@@ -382,7 +379,7 @@ def decorate_with_checker(func: CallableT) -> CallableT:
                 raise violation_err  # pylint: disable=raising-bad-type
 
             # Capture the snapshots
-            if postconditions:
+            if postconditions and snapshots:
                 old_as_mapping = dict()  # type: MutableMapping[str, Any]
                 for snap in snapshots:
                     # This assert is just a last defense.
@@ -406,6 +403,9 @@ def decorate_with_checker(func: CallableT) -> CallableT:
                     _assert_postcondition(contract=contract, resolved_kwargs=resolved_kwargs)
 
             return result
+        finally:
+            if hasattr(_IN_PROGRESS, id_func):
+                delattr(_IN_PROGRESS, id_func)
 
     # Copy __doc__ and other properties so that doctests can run
     functools.update_wrapper(wrapper=wrapper, wrapped=func)
@@ -465,18 +465,15 @@ def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
             id_instance = str(id(instance))
             setattr(_IN_PROGRESS, id_instance, True)
 
-            def remove_from_in_progress() -> None:
-                """Remove the flag which signals that an invariant is already being checked down the call stack."""
-                if hasattr(_IN_PROGRESS, id_instance):
-                    delattr(_IN_PROGRESS, id_instance)
-
-            with contextlib.ExitStack() as exit_stack:
-                exit_stack.callback(remove_from_in_progress)  # pylint: disable=no-member
-
+            # ExitStack is not used here due to performance.
+            try:
                 for contract in instance.__class__.__invariants__:
                     _assert_invariant(contract=contract, instance=instance)
 
                 return result
+            finally:
+                if hasattr(_IN_PROGRESS, id_instance):
+                    delattr(_IN_PROGRESS, id_instance)
 
     else:
 
@@ -495,16 +492,8 @@ def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
                 # Do not check any invariants to avoid endless recursion.
                 return func(*args, **kwargs)
 
-            def remove_from_in_progress() -> None:
-                """Remove the flag which signals that an invariant is already being checked down the call stack."""
-                if hasattr(_IN_PROGRESS, id_instance):
-                    delattr(_IN_PROGRESS, id_instance)
-
-            with contextlib.ExitStack() as exit_stack:
-                exit_stack.callback(remove_from_in_progress)  # pylint: disable=no-member
-
-                instance = _find_self(param_names=param_names, args=args, kwargs=kwargs)
-
+            # ExitStack is not used here due to performance.
+            try:
                 for contract in instance.__class__.__invariants__:
                     _assert_invariant(contract=contract, instance=instance)
 
@@ -514,6 +503,9 @@ def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
                     _assert_invariant(contract=contract, instance=instance)
 
                 return result
+            finally:
+                if hasattr(_IN_PROGRESS, id_instance):
+                    delattr(_IN_PROGRESS, id_instance)
 
     functools.update_wrapper(wrapper=wrapper, wrapped=func)
 

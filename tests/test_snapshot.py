@@ -116,21 +116,22 @@ class TestViolation(unittest.TestCase):
 
 
 class TestInvalid(unittest.TestCase):
-    def test_missing_old_snapshot(self) -> None:
+    def test_missing_snapshot_but_old_in_postcondition(self) -> None:
         @icontract.ensure(lambda OLD, val, lst: OLD.len_lst + 1 == len(lst))
         def some_func(lst: List[int], val: int) -> None:
             lst.append(val)
 
-        attribute_error = None  # type: Optional[AttributeError]
+        type_error = None  # type: Optional[TypeError]
         try:
             some_func([1], 2)
-        except AttributeError as err:
-            attribute_error = err
+        except TypeError as err:
+            type_error = err
 
-        self.assertIsNotNone(attribute_error)
-        self.assertEqual("The snapshot with the name 'len_lst' is not available in the OLD of a postcondition. "
-                         "Have you decorated the function with a corresponding snapshot decorator?",
-                         str(attribute_error))
+        self.assertIsNotNone(type_error)
+        self.assertEqual("The argument(s) of the postcondition have not been set: ['OLD']. "
+                         "Does the original function define them? Did you supply them in the call? "
+                         "Did you decorate the function with a snapshot to capture OLD values?",
+                         tests.error.wo_mandatory_location(str(type_error)))
 
     def test_conflicting_snapshots_with_argument_name(self) -> None:
         value_error = None  # type: Optional[ValueError]
