@@ -1,3 +1,7 @@
+2.3.3
+=====
+* Fixed performance regression due to state
+
 2.3.2
 =====
 * Fixed bug related to threading.local and mutables
