@@ -778,7 +778,7 @@ The following scripts were run:
 * `benchmarks/against_dpcontracts/compare_postcondition.py <https://github.com/Parquery/icontract/tree/master/benchmarks/against_dpcontracts/compare_postcondition.py>`_
 
 The benchmarks were executed on Intel(R) Core(TM) i7-4700MQ CPU @ 2.40GHz.
-We used icontract 2.3.2.post1 and dpcontracts 0.6.0.
+We used icontract 2.3.4 and dpcontracts 0.6.0.
 
 The following tables summarize the results.
 
@@ -787,7 +787,7 @@ Benchmarking invariant at __init__:
 =========================  ============  ==============  =======================
 Case                         Total time    Time per run    Relative time per run
 =========================  ============  ==============  =======================
-`ClassWithIcontract`             2.14 s         2.14 μs                     314%
+`ClassWithIcontract`             2.18 s         2.18 μs                     320%
 `ClassWithDpcontracts`           0.68 s         0.68 μs                     100%
 `ClassWithInlineContract`        0.42 s         0.42 μs                      62%
 =========================  ============  ==============  =======================
@@ -797,7 +797,7 @@ Benchmarking invariant at a function:
 =========================  ============  ==============  =======================
 Case                         Total time    Time per run    Relative time per run
 =========================  ============  ==============  =======================
-`ClassWithIcontract`             2.91 s         2.91 μs                     445%
+`ClassWithIcontract`             2.81 s         2.81 μs                     433%
 `ClassWithDpcontracts`           0.65 s         0.65 μs                     100%
 `ClassWithInlineContract`        0.33 s         0.33 μs                      51%
 =========================  ============  ==============  =======================
@@ -807,8 +807,8 @@ Benchmarking precondition:
 ===============================  ============  ==============  =======================
 Case                               Total time    Time per run    Relative time per run
 ===============================  ============  ==============  =======================
-`function_with_icontract`              0.03 s         3.46 μs                       1%
-`function_with_dpcontracts`            2.85 s       285.11 μs                     100%
+`function_with_icontract`              0.03 s         3.33 μs                       1%
+`function_with_dpcontracts`            2.79 s       278.95 μs                     100%
 `function_with_inline_contract`        0.00 s         0.14 μs                       0%
 ===============================  ============  ==============  =======================
 
@@ -817,8 +817,8 @@ Benchmarking postcondition:
 ===============================  ============  ==============  =======================
 Case                               Total time    Time per run    Relative time per run
 ===============================  ============  ==============  =======================
-`function_with_icontract`              0.03 s         3.38 μs                       1%
-`function_with_dpcontracts`            2.84 s       283.59 μs                     100%
+`function_with_icontract`              0.04 s         3.50 μs                       1%
+`function_with_dpcontracts`            2.79 s       279.46 μs                     100%
 `function_with_inline_contract`        0.00 s         0.14 μs                       0%
 ===============================  ============  ==============  =======================
 

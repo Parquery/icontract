@@ -57,5 +57,5 @@ setup(
             # yapf: enable
         ],
     },
-    py_modules=['icontract'],
+    py_modules=['icontract', 'icontract_meta'],
     package_data={"icontract": ["py.typed"]})

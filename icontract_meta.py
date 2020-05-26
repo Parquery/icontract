@@ -4,7 +4,7 @@ __title__ = 'icontract'
 __description__ = (
     'Provide design-by-contract with informative violation messages.')
 __url__ = 'https://github.com/Parquery/icontract'
-__version__ = '2.3.3.post1'
+__version__ = '2.3.4'
 __author__ = 'Marko Ristin'
 __author_email__ = 'marko.ristin@gmail.com'
 __license__ = 'MIT'
