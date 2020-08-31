@@ -757,6 +757,16 @@ However, we haven't faced a situation in the code base where we would do somethi
 whether this is a big issue. As long as decorators are directly applied to functions and classes, everything
 worked fine on our code base.
 
+**`*args` and `**kwargs`**. Since handling variable number of positional and/or keyword arguments requires complex
+logic and entails many edge cases (in particular in relation to how the arguments from the actual call are resolved and
+passed to the contract), we did not implement it. These special cases also impose changes that need to propagate to
+rendering the violation messages and related tools such as pyicontract-lint and sphinx-icontract. This is a substantial
+effort and needs to be prioritized accordingly.
+
+Before we spend a large amount of time on this feature, please give us a signal through
+`the issue 147 <https://github.com/Parquery/icontract/issues/147>`_ and describe your concrete use case and its
+relevance. If there is enough feedback from the users, we will of course consider implementing it.
+
 Benchmarks
 ==========
 We run benchmarks against dpcontracts as part of our continuous integration.
