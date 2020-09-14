@@ -6,6 +6,8 @@ Benchmark icontract against dpcontracts and no contracts.
 The benchmark was supplied by: https://github.com/Parquery/icontract/issues/142
 """
 import math
+import os
+import sys
 import timeit
 from typing import List
 
@@ -29,6 +31,16 @@ def function_with_inline_contract(someArg: int) -> float:
     result = math.sqrt(someArg)
     assert result > 0
     return result
+
+def writeln_utf8(text: str)->None:
+    """
+    write the text to STDOUT using UTF-8 encoding followed by a new-line character.
+
+    We can not use ``print()`` as we can not rely on the correct encoding in Windows.
+    See: https://stackoverflow.com/questions/31469707/changing-the-locale-preferred-encoding-in-python-3-in-windows
+    """
+    sys.stdout.buffer.write(text.encode('utf-8'))
+    sys.stdout.buffer.write(os.linesep.encode('utf-8'))
 
 
 def measure_functions() -> None:
@@ -69,10 +81,10 @@ def measure_functions() -> None:
         tablefmt='rst')
     # yapf: enable
 
-    print(table_str)
+    writeln_utf8(table_str)
 
 
 if __name__ == "__main__":
-    print("Benchmarking postcondition:")
-    print()
+    writeln_utf8("Benchmarking postcondition:")
+    writeln_utf8('')
     measure_functions()

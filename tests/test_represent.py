@@ -4,6 +4,7 @@
 
 import pathlib
 import reprlib
+import textwrap
 import unittest
 from typing import Optional, List, Tuple  # pylint: disable=unused-import
 
@@ -380,11 +381,16 @@ class TestReprValues(unittest.TestCase):
         except icontract.ViolationError as err:
             violation_error = err
 
+        # This dummy path is necessary to obtain the class name.
+        dummy_path = pathlib.Path('/also/doesnt/exist')
+
         self.assertIsNotNone(violation_error)
-        self.assertEqual("all(single_res[1].is_absolute() for single_res in result):\n"
-                         "all(single_res[1].is_absolute() for single_res in result) was False\n"
-                         "result was [(PosixPath('/home/file1'), PosixPath('home/file2'))]",
-                         tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent('''\
+                 all(single_res[1].is_absolute() for single_res in result):
+                 all(single_res[1].is_absolute() for single_res in result) was False
+                 result was [({0}('/home/file1'), {0}('home/file2'))]''').format(dummy_path.__class__.__name__),
+            tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_generator_expression_multiple_for(self) -> None:
         lst = [[1, 2], [3]]
@@ -660,16 +666,22 @@ class TestClass(unittest.TestCase):
         except icontract.ViolationError as err:
             violation_error = err
 
+        # This dummy path is necessary to obtain the class name.
+        dummy_path = pathlib.Path('/just/a/dummy/path')
+
         self.assertIsNotNone(violation_error)
-        self.assertEqual("pathlib.Path(str(gt_zero(self.b.c(x=0).x() + 12.2 * z))) is None:\n"
-                         "gt_zero(self.b.c(x=0).x() + 12.2 * z) was True\n"
-                         "pathlib.Path(str(gt_zero(self.b.c(x=0).x() + 12.2 * z))) was PosixPath('True')\n"
-                         "self was A()\n"
-                         "self.b was B()\n"
-                         "self.b.c(x=0) was C(x=0)\n"
-                         "self.b.c(x=0).x() was 0\n"
-                         "str(gt_zero(self.b.c(x=0).x() + 12.2 * z)) was 'True'\n"
-                         "z was 10", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent('''\
+                pathlib.Path(str(gt_zero(self.b.c(x=0).x() + 12.2 * z))) is None:
+                gt_zero(self.b.c(x=0).x() + 12.2 * z) was True
+                pathlib.Path(str(gt_zero(self.b.c(x=0).x() + 12.2 * z))) was {}('True')
+                self was A()
+                self.b was B()
+                self.b.c(x=0) was C(x=0)
+                self.b.c(x=0).x() was 0
+                str(gt_zero(self.b.c(x=0).x() + 12.2 * z)) was 'True'
+                z was 10''').format(dummy_path.__class__.__name__),
+            tests.error.wo_mandatory_location(str(violation_error)))
 
 
 class TestClosures(unittest.TestCase):

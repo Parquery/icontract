@@ -5,6 +5,8 @@ Benchmark icontract against dpcontracts and no contracts.
 
 The benchmark was supplied by: https://github.com/Parquery/icontract/issues/142
 """
+import os
+import sys
 import timeit
 from typing import List
 
@@ -12,7 +14,6 @@ import dpcontracts
 import tabulate
 
 import icontract
-
 
 @icontract.invariant(lambda self: len(self.parts) > 0)
 class ClassWithIcontract:
@@ -52,6 +53,15 @@ clses = [
     'ClassWithInlineContract',
 ]
 
+def writeln_utf8(text: str)->None:
+    """
+    write the text to STDOUT using UTF-8 encoding followed by a new-line character.
+
+    We can not use ``print()`` as we can not rely on the correct encoding in Windows.
+    See: https://stackoverflow.com/questions/31469707/changing-the-locale-preferred-encoding-in-python-3-in-windows
+    """
+    sys.stdout.buffer.write(text.encode('utf-8'))
+    sys.stdout.buffer.write(os.linesep.encode('utf-8'))
 
 def measure_invariant_at_init() -> None:
     durations = [0.0] * len(clses)
@@ -65,7 +75,7 @@ def measure_invariant_at_init() -> None:
             number=number)
         durations[i] = duration
 
-    print("Benchmarking invariant at __init__:\n")
+    writeln_utf8("Benchmarking invariant at __init__:\n")
     table = []  # type: List[List[str]]
 
     for cls, duration in zip(clses, durations):
@@ -86,7 +96,7 @@ def measure_invariant_at_init() -> None:
         tablefmt='rst')
     # yapf: enable
 
-    print(table_str)
+    writeln_utf8(table_str)
 
 
 def measure_invariant_at_function() -> None:
@@ -101,7 +111,7 @@ def measure_invariant_at_function() -> None:
             number=number)
         durations[i] = duration
 
-    print("Benchmarking invariant at a function:\n")
+    writeln_utf8("Benchmarking invariant at a function:\n")
     table = []  # type: List[List[str]]
 
     for cls, duration in zip(clses, durations):
@@ -122,10 +132,10 @@ def measure_invariant_at_function() -> None:
         tablefmt='rst')
     # yapf: enable
 
-    print(table_str)
+    writeln_utf8(table_str)
 
 
 if __name__ == "__main__":
     measure_invariant_at_init()
-    print()
+    writeln_utf8('')
     measure_invariant_at_function()
