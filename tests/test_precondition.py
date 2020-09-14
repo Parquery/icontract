@@ -6,6 +6,7 @@
 
 import functools
 import pathlib
+import textwrap
 import time
 import unittest
 from typing import Optional, Callable, Any  # pylint: disable=unused-import
@@ -127,10 +128,16 @@ class TestViolation(unittest.TestCase):
         except icontract.ViolationError as err:
             violation_error = err
 
+        # This dummy path is necessary to obtain the class name.
+        dummy_path = pathlib.Path('/also/doesnt/exist')
+
         self.assertIsNotNone(violation_error)
-        self.assertEqual("path.exists():\n"
-                         "path was PosixPath('/doesnt/exist/test_contract')\n"
-                         "path.exists() was False", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent('''\
+                path.exists():
+                path was {}('/doesnt/exist/test_contract')
+                path.exists() was False''').format(dummy_path.__class__.__name__),
+            tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_with_multiple_comparators(self) -> None:
         @icontract.require(lambda x: 0 < x < 3)

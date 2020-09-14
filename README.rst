@@ -688,7 +688,7 @@ snippet:
 
     some_func()
 
-Naïvely evaluating such preconditions and postconditions would result in endless recursions. Therefore, icontract
+NaÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯vely evaluating such preconditions and postconditions would result in endless recursions. Therefore, icontract
 suspends any further contract checking for a function when re-entering it for the second time while checking its
 contracts.
 
@@ -787,8 +787,8 @@ The following scripts were run:
 * `benchmarks/against_dpcontracts/compare_precondition.py <https://github.com/Parquery/icontract/tree/master/benchmarks/against_dpcontracts/compare_precondition.py>`_
 * `benchmarks/against_dpcontracts/compare_postcondition.py <https://github.com/Parquery/icontract/tree/master/benchmarks/against_dpcontracts/compare_postcondition.py>`_
 
-The benchmarks were executed on Intel(R) Core(TM) i7-4700MQ CPU @ 2.40GHz.
-We used icontract 2.3.4 and dpcontracts 0.6.0.
+The benchmarks were executed on Intel(R) Xeon(R) E-2276M  CPU @ 2.80GHz.
+We used Python 3.8.5, icontract 2.3.4 and dpcontracts 0.6.0.
 
 The following tables summarize the results.
 
@@ -797,9 +797,9 @@ Benchmarking invariant at __init__:
 =========================  ============  ==============  =======================
 Case                         Total time    Time per run    Relative time per run
 =========================  ============  ==============  =======================
-`ClassWithIcontract`             2.18 s         2.18 μs                     320%
-`ClassWithDpcontracts`           0.68 s         0.68 μs                     100%
-`ClassWithInlineContract`        0.42 s         0.42 μs                      62%
+`ClassWithIcontract`             1.51 s         1.51 μs                     313%
+`ClassWithDpcontracts`           0.48 s         0.48 μs                     100%
+`ClassWithInlineContract`        0.29 s         0.29 μs                      60%
 =========================  ============  ==============  =======================
 
 Benchmarking invariant at a function:
@@ -807,9 +807,9 @@ Benchmarking invariant at a function:
 =========================  ============  ==============  =======================
 Case                         Total time    Time per run    Relative time per run
 =========================  ============  ==============  =======================
-`ClassWithIcontract`             2.81 s         2.81 μs                     433%
-`ClassWithDpcontracts`           0.65 s         0.65 μs                     100%
-`ClassWithInlineContract`        0.33 s         0.33 μs                      51%
+`ClassWithIcontract`             2.18 s         2.18 μs                     435%
+`ClassWithDpcontracts`           0.50 s         0.50 μs                     100%
+`ClassWithInlineContract`        0.26 s         0.26 μs                      52%
 =========================  ============  ==============  =======================
 
 Benchmarking precondition:
@@ -817,9 +817,9 @@ Benchmarking precondition:
 ===============================  ============  ==============  =======================
 Case                               Total time    Time per run    Relative time per run
 ===============================  ============  ==============  =======================
-`function_with_icontract`              0.03 s         3.33 μs                       1%
-`function_with_dpcontracts`            2.79 s       278.95 μs                     100%
-`function_with_inline_contract`        0.00 s         0.14 μs                       0%
+`function_with_icontract`              0.03 s         2.96 μs                       5%
+`function_with_dpcontracts`            0.58 s        57.50 μs                     100%
+`function_with_inline_contract`        0.00 s         0.16 μs                       0%
 ===============================  ============  ==============  =======================
 
 Benchmarking postcondition:
@@ -827,9 +827,9 @@ Benchmarking postcondition:
 ===============================  ============  ==============  =======================
 Case                               Total time    Time per run    Relative time per run
 ===============================  ============  ==============  =======================
-`function_with_icontract`              0.04 s         3.50 μs                       1%
-`function_with_dpcontracts`            2.79 s       279.46 μs                     100%
-`function_with_inline_contract`        0.00 s         0.14 μs                       0%
+`function_with_icontract`              0.03 s         2.74 μs                       5%
+`function_with_dpcontracts`            0.55 s        55.33 μs                     100%
+`function_with_inline_contract`        0.00 s         0.16 μs                       0%
 ===============================  ============  ==============  =======================
 
 
