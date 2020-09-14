@@ -711,6 +711,19 @@ in progress and removed once the invariants checking finished. As long as the du
 ``__dbc_invariant_check_is_in_progress__`` is present, the wrappers that check invariants simply return the result of
 the function.
 
+Invariant checks also need to be disabled during the construction since calling member functions would trigger invariant
+checks which, on their hand, might check on yet-to-be-defined instance attributes. See the following snippet:
+
+.. code-block:: python
+
+        @icontract.invariant(lambda self: self.some_attribute > 0)
+        class SomeClass(icontract.DBC):
+            def __init__(self) -> None:
+                self.some_attribute = self.some_func()
+
+            def some_func(self) -> int:
+                return 1984
+
 Linter
 ------
 We provide a linter that statically verifies the arguments of the contracts (*i.e.* that they are
@@ -797,9 +810,9 @@ Benchmarking invariant at __init__:
 =========================  ============  ==============  =======================
 Case                         Total time    Time per run    Relative time per run
 =========================  ============  ==============  =======================
-`ClassWithIcontract`             1.37 s         1.37 μs                     296%
-`ClassWithDpcontracts`           0.46 s         0.46 μs                     100%
-`ClassWithInlineContract`        0.27 s         0.27 μs                      59%
+`ClassWithIcontract`             1.43 s         1.43 μs                     306%
+`ClassWithDpcontracts`           0.47 s         0.47 μs                     100%
+`ClassWithInlineContract`        0.27 s         0.27 μs                      57%
 =========================  ============  ==============  =======================
 
 Benchmarking invariant at a function:
@@ -807,9 +820,9 @@ Benchmarking invariant at a function:
 =========================  ============  ==============  =======================
 Case                         Total time    Time per run    Relative time per run
 =========================  ============  ==============  =======================
-`ClassWithIcontract`             2.14 s         2.14 μs                     452%
-`ClassWithDpcontracts`           0.47 s         0.47 μs                     100%
-`ClassWithInlineContract`        0.25 s         0.25 μs                      53%
+`ClassWithIcontract`             2.00 s         2.00 μs                     445%
+`ClassWithDpcontracts`           0.45 s         0.45 μs                     100%
+`ClassWithInlineContract`        0.23 s         0.23 μs                      52%
 =========================  ============  ==============  =======================
 
 Benchmarking precondition:
@@ -817,9 +830,9 @@ Benchmarking precondition:
 ===============================  ============  ==============  =======================
 Case                               Total time    Time per run    Relative time per run
 ===============================  ============  ==============  =======================
-`function_with_icontract`              0.02 s         2.41 μs                       5%
-`function_with_dpcontracts`            0.53 s        53.20 μs                     100%
-`function_with_inline_contract`        0.00 s         0.16 μs                       0%
+`function_with_icontract`              0.02 s         2.38 μs                       5%
+`function_with_dpcontracts`            0.51 s        50.89 μs                     100%
+`function_with_inline_contract`        0.00 s         0.15 μs                       0%
 ===============================  ============  ==============  =======================
 
 Benchmarking postcondition:
@@ -827,9 +840,9 @@ Benchmarking postcondition:
 ===============================  ============  ==============  =======================
 Case                               Total time    Time per run    Relative time per run
 ===============================  ============  ==============  =======================
-`function_with_icontract`              0.03 s         2.51 μs                       5%
-`function_with_dpcontracts`            0.52 s        52.42 μs                     100%
-`function_with_inline_contract`        0.00 s         0.17 μs                       0%
+`function_with_icontract`              0.02 s         2.48 μs                       5%
+`function_with_dpcontracts`            0.51 s        50.93 μs                     100%
+`function_with_inline_contract`        0.00 s         0.15 μs                       0%
 ===============================  ============  ==============  =======================
 
 

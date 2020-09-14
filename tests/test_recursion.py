@@ -227,6 +227,23 @@ class TestInvariant(unittest.TestCase):
         some_instance.another_func()
         self.assertListEqual(['some_func', 'another_func', 'some_func'], order)
 
+    def test_member_function_call_in_constructor(self) -> None:
+        order = []  # type: List[str]
+
+        @icontract.invariant(lambda self: self.some_attribute > 0)  # pylint: disable=no-member
+        class SomeClass(icontract.DBC):
+            def __init__(self) -> None:
+                order.append('__init__ enters')
+                self.some_attribute = self.some_func()
+                order.append('__init__ exits')
+
+            def some_func(self) -> int:
+                order.append('some_func')
+                return 3
+
+        _ = SomeClass()
+        self.assertListEqual(['__init__ enters', 'some_func', '__init__ exits'], order)
+
 
 if __name__ == '__main__':
     unittest.main()

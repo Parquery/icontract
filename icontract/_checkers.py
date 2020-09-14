@@ -458,15 +458,17 @@ def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
 
         def wrapper(*args, **kwargs):  # type: ignore
             """Wrap __init__ method of a class by checking the invariants *after* the invocation."""
-            result = func(*args, **kwargs)
             instance = _find_self(param_names=param_names, args=args, kwargs=kwargs)
             assert instance is not None, "Expected to find `self` in the parameters, but found none."
 
+            # We need to disable the invariants check during the constructor.
             id_instance = str(id(instance))
             setattr(_IN_PROGRESS, id_instance, True)
 
             # ExitStack is not used here due to performance.
             try:
+                result = func(*args, **kwargs)
+
                 for contract in instance.__class__.__invariants__:
                     _assert_invariant(contract=contract, instance=instance)
 
