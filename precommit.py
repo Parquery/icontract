@@ -46,7 +46,7 @@ def benchmark_against_dpcontracts(repo_root: pathlib.Path, overwrite: bool) -> N
             out.append('\n')
 
         readme_path = repo_root / 'README.rst'
-        readme = readme_path.read_text()
+        readme = readme_path.read_text(encoding='utf-8')
         marker_start = '.. Becnhmark report from precommit.py starts.'
         marker_end = '.. Benchmark report from precommit.py ends.'
         lines = readme.splitlines()
