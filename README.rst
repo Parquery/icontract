@@ -688,7 +688,7 @@ snippet:
 
     some_func()
 
-NaÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¯vely evaluating such preconditions and postconditions would result in endless recursions. Therefore, icontract
+Naïvely evaluating such preconditions and postconditions would result in endless recursions. Therefore, icontract
 suspends any further contract checking for a function when re-entering it for the second time while checking its
 contracts.
 
@@ -797,9 +797,9 @@ Benchmarking invariant at __init__:
 =========================  ============  ==============  =======================
 Case                         Total time    Time per run    Relative time per run
 =========================  ============  ==============  =======================
-`ClassWithIcontract`             1.51 s         1.51 μs                     313%
-`ClassWithDpcontracts`           0.48 s         0.48 μs                     100%
-`ClassWithInlineContract`        0.29 s         0.29 μs                      60%
+`ClassWithIcontract`             1.37 s         1.37 μs                     296%
+`ClassWithDpcontracts`           0.46 s         0.46 μs                     100%
+`ClassWithInlineContract`        0.27 s         0.27 μs                      59%
 =========================  ============  ==============  =======================
 
 Benchmarking invariant at a function:
@@ -807,9 +807,9 @@ Benchmarking invariant at a function:
 =========================  ============  ==============  =======================
 Case                         Total time    Time per run    Relative time per run
 =========================  ============  ==============  =======================
-`ClassWithIcontract`             2.18 s         2.18 μs                     435%
-`ClassWithDpcontracts`           0.50 s         0.50 μs                     100%
-`ClassWithInlineContract`        0.26 s         0.26 μs                      52%
+`ClassWithIcontract`             2.14 s         2.14 μs                     452%
+`ClassWithDpcontracts`           0.47 s         0.47 μs                     100%
+`ClassWithInlineContract`        0.25 s         0.25 μs                      53%
 =========================  ============  ==============  =======================
 
 Benchmarking precondition:
@@ -817,8 +817,8 @@ Benchmarking precondition:
 ===============================  ============  ==============  =======================
 Case                               Total time    Time per run    Relative time per run
 ===============================  ============  ==============  =======================
-`function_with_icontract`              0.03 s         2.96 μs                       5%
-`function_with_dpcontracts`            0.58 s        57.50 μs                     100%
+`function_with_icontract`              0.02 s         2.41 μs                       5%
+`function_with_dpcontracts`            0.53 s        53.20 μs                     100%
 `function_with_inline_contract`        0.00 s         0.16 μs                       0%
 ===============================  ============  ==============  =======================
 
@@ -827,9 +827,9 @@ Benchmarking postcondition:
 ===============================  ============  ==============  =======================
 Case                               Total time    Time per run    Relative time per run
 ===============================  ============  ==============  =======================
-`function_with_icontract`              0.03 s         2.74 μs                       5%
-`function_with_dpcontracts`            0.55 s        55.33 μs                     100%
-`function_with_inline_contract`        0.00 s         0.16 μs                       0%
+`function_with_icontract`              0.03 s         2.51 μs                       5%
+`function_with_dpcontracts`            0.52 s        52.42 μs                     100%
+`function_with_inline_contract`        0.00 s         0.17 μs                       0%
 ===============================  ============  ==============  =======================
 
 
