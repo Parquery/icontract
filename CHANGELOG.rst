@@ -1,3 +1,13 @@
+2.3.5
+=====
+* Disabled invariant checks during the construction to avoid attribute errors
+  on uninitialized attributes
+
+2.3.4
+=====
+* Added ``icontract_meta`` to ``setup.py``
+* Noted that contracts on ``*args`` and ``**kwargs`` are known issues
+
 2.3.3
 =====
 * Fixed performance regression due to state
