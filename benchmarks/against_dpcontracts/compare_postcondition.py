@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """
 Benchmark icontract against dpcontracts and no contracts.
 
@@ -32,7 +31,8 @@ def function_with_inline_contract(someArg: int) -> float:
     assert result > 0
     return result
 
-def writeln_utf8(text: str)->None:
+
+def writeln_utf8(text: str) -> None:
     """
     write the text to STDOUT using UTF-8 encoding followed by a new-line character.
 
@@ -44,21 +44,14 @@ def writeln_utf8(text: str)->None:
 
 
 def measure_functions() -> None:
-    funcs = [
-        'function_with_icontract',
-        'function_with_dpcontracts',
-        'function_with_inline_contract'
-    ]
+    funcs = ['function_with_icontract', 'function_with_dpcontracts', 'function_with_inline_contract']
 
     durations = [0.0] * len(funcs)
 
     number = 10 * 1000
 
     for i, func in enumerate(funcs):
-        duration = timeit.timeit(
-            "{}(198.4)".format(func),
-            setup="from __main__ import {}".format(func),
-            number=number)
+        duration = timeit.timeit("{}(198.4)".format(func), setup="from __main__ import {}".format(func), number=number)
         durations[i] = duration
 
     table = []  # type: List[List[str]]

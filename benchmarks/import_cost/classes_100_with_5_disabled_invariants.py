@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import icontract
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -12,6 +13,7 @@ class SomeClass0:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -25,6 +27,7 @@ class SomeClass1:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -36,6 +39,7 @@ class SomeClass2:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -49,6 +53,7 @@ class SomeClass3:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -60,6 +65,7 @@ class SomeClass4:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -73,6 +79,7 @@ class SomeClass5:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -84,6 +91,7 @@ class SomeClass6:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -97,6 +105,7 @@ class SomeClass7:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -108,6 +117,7 @@ class SomeClass8:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -121,6 +131,7 @@ class SomeClass9:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -132,6 +143,7 @@ class SomeClass10:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -145,6 +157,7 @@ class SomeClass11:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -156,6 +169,7 @@ class SomeClass12:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -169,6 +183,7 @@ class SomeClass13:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -180,6 +195,7 @@ class SomeClass14:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -193,6 +209,7 @@ class SomeClass15:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -204,6 +221,7 @@ class SomeClass16:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -217,6 +235,7 @@ class SomeClass17:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -228,6 +247,7 @@ class SomeClass18:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -241,6 +261,7 @@ class SomeClass19:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -252,6 +273,7 @@ class SomeClass20:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -265,6 +287,7 @@ class SomeClass21:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -276,6 +299,7 @@ class SomeClass22:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -289,6 +313,7 @@ class SomeClass23:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -300,6 +325,7 @@ class SomeClass24:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -313,6 +339,7 @@ class SomeClass25:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -324,6 +351,7 @@ class SomeClass26:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -337,6 +365,7 @@ class SomeClass27:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -348,6 +377,7 @@ class SomeClass28:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -361,6 +391,7 @@ class SomeClass29:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -372,6 +403,7 @@ class SomeClass30:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -385,6 +417,7 @@ class SomeClass31:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -396,6 +429,7 @@ class SomeClass32:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -409,6 +443,7 @@ class SomeClass33:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -420,6 +455,7 @@ class SomeClass34:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -433,6 +469,7 @@ class SomeClass35:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -444,6 +481,7 @@ class SomeClass36:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -457,6 +495,7 @@ class SomeClass37:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -468,6 +507,7 @@ class SomeClass38:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -481,6 +521,7 @@ class SomeClass39:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -492,6 +533,7 @@ class SomeClass40:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -505,6 +547,7 @@ class SomeClass41:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -516,6 +559,7 @@ class SomeClass42:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -529,6 +573,7 @@ class SomeClass43:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -540,6 +585,7 @@ class SomeClass44:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -553,6 +599,7 @@ class SomeClass45:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -564,6 +611,7 @@ class SomeClass46:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -577,6 +625,7 @@ class SomeClass47:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -588,6 +637,7 @@ class SomeClass48:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -601,6 +651,7 @@ class SomeClass49:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -612,6 +663,7 @@ class SomeClass50:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -625,6 +677,7 @@ class SomeClass51:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -636,6 +689,7 @@ class SomeClass52:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -649,6 +703,7 @@ class SomeClass53:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -660,6 +715,7 @@ class SomeClass54:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -673,6 +729,7 @@ class SomeClass55:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -684,6 +741,7 @@ class SomeClass56:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -697,6 +755,7 @@ class SomeClass57:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -708,6 +767,7 @@ class SomeClass58:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -721,6 +781,7 @@ class SomeClass59:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -732,6 +793,7 @@ class SomeClass60:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -745,6 +807,7 @@ class SomeClass61:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -756,6 +819,7 @@ class SomeClass62:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -769,6 +833,7 @@ class SomeClass63:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -780,6 +845,7 @@ class SomeClass64:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -793,6 +859,7 @@ class SomeClass65:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -804,6 +871,7 @@ class SomeClass66:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -817,6 +885,7 @@ class SomeClass67:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -828,6 +897,7 @@ class SomeClass68:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -841,6 +911,7 @@ class SomeClass69:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -852,6 +923,7 @@ class SomeClass70:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -865,6 +937,7 @@ class SomeClass71:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -876,6 +949,7 @@ class SomeClass72:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -889,6 +963,7 @@ class SomeClass73:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -900,6 +975,7 @@ class SomeClass74:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -913,6 +989,7 @@ class SomeClass75:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -924,6 +1001,7 @@ class SomeClass76:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -937,6 +1015,7 @@ class SomeClass77:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -948,6 +1027,7 @@ class SomeClass78:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -961,6 +1041,7 @@ class SomeClass79:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -972,6 +1053,7 @@ class SomeClass80:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -985,6 +1067,7 @@ class SomeClass81:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -996,6 +1079,7 @@ class SomeClass82:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -1009,6 +1093,7 @@ class SomeClass83:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -1020,6 +1105,7 @@ class SomeClass84:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -1033,6 +1119,7 @@ class SomeClass85:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -1044,6 +1131,7 @@ class SomeClass86:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -1057,6 +1145,7 @@ class SomeClass87:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -1068,6 +1157,7 @@ class SomeClass88:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -1081,6 +1171,7 @@ class SomeClass89:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -1092,6 +1183,7 @@ class SomeClass90:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -1105,6 +1197,7 @@ class SomeClass91:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -1116,6 +1209,7 @@ class SomeClass92:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -1129,6 +1223,7 @@ class SomeClass93:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -1140,6 +1235,7 @@ class SomeClass94:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -1153,6 +1249,7 @@ class SomeClass95:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -1164,6 +1261,7 @@ class SomeClass96:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
@@ -1177,6 +1275,7 @@ class SomeClass97:
     def some_func(self) -> None:
         pass
 
+
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
 @icontract.invariant(lambda self: self.x > 2, enabled=False)
@@ -1188,6 +1287,7 @@ class SomeClass98:
 
     def some_func(self) -> None:
         pass
+
 
 @icontract.invariant(lambda self: self.x > 0, enabled=False)
 @icontract.invariant(lambda self: self.x > 1, enabled=False)
