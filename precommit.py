@@ -23,7 +23,7 @@ def main() -> int:
     repo_root = pathlib.Path(__file__).parent
 
     print("YAPF'ing...")
-    yapf_targets = ["tests", "icontract", "setup.py", "precommit.py", "benchmark.py", "benchmarks"]
+    yapf_targets = ["tests", "icontract", "setup.py", "precommit.py", "benchmark.py", "benchmarks", "tests_with_others"]
     if overwrite:
         subprocess.check_call(
             ["yapf", "--in-place", "--style=style.yapf", "--recursive"] + yapf_targets, cwd=str(repo_root))

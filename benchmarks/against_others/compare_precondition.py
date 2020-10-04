@@ -4,32 +4,41 @@ Benchmark icontract against dpcontracts and no contracts.
 
 The benchmark was supplied by: https://github.com/Parquery/icontract/issues/142
 """
+
 import math
 import os
 import sys
 import timeit
 from typing import List
 
+import deal
+import dpcontracts
+import icontract
 import tabulate
 
-import icontract
-import dpcontracts
+
+@icontract.require(lambda some_arg: some_arg > 0)
+def function_with_icontract(some_arg: int) -> float:
+    return math.sqrt(some_arg)
 
 
-@icontract.ensure(lambda result: result > 0)
-def function_with_icontract(someArg: int) -> float:
-    return math.sqrt(someArg)
+@dpcontracts.require("some dummy contract", lambda args: args.some_arg > 0)
+def function_with_dpcontracts(some_arg: int) -> float:
+    return math.sqrt(some_arg)
 
 
-@dpcontracts.ensure("some dummy contract", lambda args, result: result > 0)
-def function_with_dpcontracts(someArg: int) -> float:
-    return math.sqrt(someArg)
+@deal.pre(lambda _: _.some_arg > 0)
+def function_with_deal(some_arg: int) -> float:
+    return math.sqrt(some_arg)
 
 
-def function_with_inline_contract(someArg: int) -> float:
-    result = math.sqrt(someArg)
-    assert result > 0
-    return result
+def function_with_inline_contract(some_arg: int) -> float:
+    assert (some_arg > 0)
+    return math.sqrt(some_arg)
+
+
+def function_without_contracts(some_arg: int) -> float:
+    return math.sqrt(some_arg)
 
 
 def writeln_utf8(text: str) -> None:
@@ -44,7 +53,9 @@ def writeln_utf8(text: str) -> None:
 
 
 def measure_functions() -> None:
-    funcs = ['function_with_icontract', 'function_with_dpcontracts', 'function_with_inline_contract']
+    funcs = [
+        'function_with_icontract', 'function_with_dpcontracts', 'function_with_deal', 'function_with_inline_contract'
+    ]
 
     durations = [0.0] * len(funcs)
 
@@ -62,7 +73,7 @@ def measure_functions() -> None:
             '`{}`'.format(func),
             '{:.2f} s'.format(duration),
             '{:.2f} μs'.format(duration * 1000 * 1000 / number),
-            '{:.0f}%'.format(duration * 100 / durations[1])
+            '{:.0f}%'.format(duration * 100 / durations[0])
         ])
         # yapf: enable
 
@@ -78,6 +89,6 @@ def measure_functions() -> None:
 
 
 if __name__ == "__main__":
-    writeln_utf8("Benchmarking postcondition:")
+    writeln_utf8("Benchmarking precondition:")
     writeln_utf8('')
     measure_functions()

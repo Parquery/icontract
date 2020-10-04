@@ -9,6 +9,7 @@ import sys
 import timeit
 from typing import List
 
+import deal
 import dpcontracts
 import tabulate
 
@@ -33,6 +34,15 @@ class ClassWithDpcontracts:
         return '.'.join(self.parts)
 
 
+@deal.inv(validator=lambda self: len(self.parts) > 0, message="some dummy invariant")
+class ClassWithDeal:
+    def __init__(self, identifier: str) -> None:
+        self.parts = identifier.split(".")
+
+    def some_func(self) -> str:
+        return '.'.join(self.parts)
+
+
 class ClassWithInlineContract:
     def __init__(self, identifier: str) -> None:
         self.parts = identifier.split(".")
@@ -50,6 +60,7 @@ class ClassWithInlineContract:
 clses = [
     'ClassWithIcontract',
     'ClassWithDpcontracts',
+    'ClassWithDeal',
     'ClassWithInlineContract',
 ]
 
@@ -83,7 +94,7 @@ def measure_invariant_at_init() -> None:
             '`{}`'.format(cls),
             '{:.2f} s'.format(duration),
             '{:.2f} μs'.format(duration * 1000 * 1000 / number),
-            '{:.0f}%'.format(duration * 100 / durations[1])
+            '{:.0f}%'.format(duration * 100 / durations[0])
         ])
         # yapf: enable
 
@@ -117,7 +128,7 @@ def measure_invariant_at_function() -> None:
             '`{}`'.format(cls),
             '{:.2f} s'.format(duration),
             '{:.2f} μs'.format(duration * 1000 * 1000 / number),
-            '{:.0f}%'.format(duration * 100 / durations[1])
+            '{:.0f}%'.format(duration * 100 / durations[0])
         ])
         # yapf: enable
 

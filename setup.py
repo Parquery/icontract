@@ -5,6 +5,7 @@ https://packaging.python.org/en/latest/distributing.html
 https://github.com/pypa/sampleproject
 """
 import os
+import sys
 
 from setuptools import setup, find_packages
 
@@ -55,7 +56,7 @@ setup(
             'tabulate>=0.8.7,<1',
             'py-cpuinfo>=5.0.0,<6'
             # yapf: enable
-        ],
+        ] + (['deal==4.1.0'] if sys.version_info >= (3, 8) else []),
     },
     py_modules=['icontract', 'icontract_meta'],
     package_data={"icontract": ["py.typed"]})

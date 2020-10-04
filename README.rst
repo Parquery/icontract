@@ -24,13 +24,14 @@ redundant condition descriptions (
 *e.g.*,
 `contracts <https://pypi.org/project/contracts/>`_,
 `covenant <https://github.com/kisielk/covenant>`_,
+`deal <https://github.com/life4/deal>`_,
 `dpcontracts <https://pypi.org/project/dpcontracts/>`_,
 `pyadbc <https://pypi.org/project/pyadbc/>`_ and
 `pcd <https://pypi.org/project/pcd>`_).
 
 This library was strongly inspired by them, but we go two steps further.
 
-First, our violation message on contract breach are much more informatinve. The message includes the source code of the
+First, our violation message on contract breach are much more informative. The message includes the source code of the
 contract condition as well as variable values at the time of the breach. This promotes don't-repeat-yourself principle
 (`DRY <https://en.wikipedia.org/wiki/Don%27t_repeat_yourself>`_) and spare the programmer the tedious task of repeating
 the message that was already written in code.
@@ -42,8 +43,9 @@ To the best of our knowledge, there is currently no other Python library that su
 correct way.
 
 In the long run, we hope that design-by-contract will be adopted and integrated in the language. Consider this library
-a work-around till that happens. An ongoing discussion on how to bring design-by-contract into Python language can
-be followed on `python-ideas mailing list <https://groups.google.com/forum/#!topic/python-ideas/JtMgpSyODTU>`_.
+a work-around till that happens. You might be also interested in the archived discussion on how to bring
+design-by-contract into Python language on
+`python-ideas mailing list <https://groups.google.com/forum/#!topic/python-ideas/JtMgpSyODTU>`_.
 
 Usage
 =====
@@ -782,26 +784,26 @@ relevance. If there is enough feedback from the users, we will of course conside
 
 Benchmarks
 ==========
-We run benchmarks against dpcontracts as part of our continuous integration.
+We run benchmarks against `deal` and `dpcontracts` libraries as part of our continuous integration.
 
 The bodies of the constructors and functions were intentionally left simple so that you can
 better estimate **overhead** of the contracts in absolute terms rather than relative.
 This means that the code without contracts will run extremely fast (nanoseconds) in the benchmarks
 which might make the contracts seem sluggish. However, the methods in the real world usually run
-in the order of microseconds and milliseconds, not nanoseconds. Hence, as long as the overhead
-of the contract is in the order of microseconds, it is practically acceptable.
+in the order of microseconds and milliseconds, not nanoseconds. As long as the overhead
+of the contract is in the order of microseconds, it is often practically acceptable.
 
 .. Becnhmark report from precommit.py starts.
 
 
 The following scripts were run:
 
-* `benchmarks/against_dpcontracts/compare_invariant.py <https://github.com/Parquery/icontract/tree/master/benchmarks/against_dpcontracts/compare_invariant.py>`_
-* `benchmarks/against_dpcontracts/compare_precondition.py <https://github.com/Parquery/icontract/tree/master/benchmarks/against_dpcontracts/compare_precondition.py>`_
-* `benchmarks/against_dpcontracts/compare_postcondition.py <https://github.com/Parquery/icontract/tree/master/benchmarks/against_dpcontracts/compare_postcondition.py>`_
+* `benchmarks/against_others/compare_invariant.py <https://github.com/Parquery/icontract/tree/master/benchmarks/against_others/compare_invariant.py>`_
+* `benchmarks/against_others/compare_precondition.py <https://github.com/Parquery/icontract/tree/master/benchmarks/against_others/compare_precondition.py>`_
+* `benchmarks/against_others/compare_postcondition.py <https://github.com/Parquery/icontract/tree/master/benchmarks/against_others/compare_postcondition.py>`_
 
 The benchmarks were executed on Intel(R) Xeon(R) E-2276M  CPU @ 2.80GHz.
-We used Python 3.8.5, icontract 2.3.4 and dpcontracts 0.6.0.
+We used Python 3.8.5, icontract 2.3.5, deal 4.2.0 and dpcontracts 0.6.0.
 
 The following tables summarize the results.
 
@@ -810,9 +812,10 @@ Benchmarking invariant at __init__:
 =========================  ============  ==============  =======================
 Case                         Total time    Time per run    Relative time per run
 =========================  ============  ==============  =======================
-`ClassWithIcontract`             1.43 s         1.43 μs                     306%
-`ClassWithDpcontracts`           0.47 s         0.47 μs                     100%
-`ClassWithInlineContract`        0.27 s         0.27 μs                      57%
+`ClassWithIcontract`             1.74 s         1.74 μs                     100%
+`ClassWithDpcontracts`           0.55 s         0.55 μs                      32%
+`ClassWithDeal`                  3.26 s         3.26 μs                     187%
+`ClassWithInlineContract`        0.33 s         0.33 μs                      19%
 =========================  ============  ==============  =======================
 
 Benchmarking invariant at a function:
@@ -820,9 +823,10 @@ Benchmarking invariant at a function:
 =========================  ============  ==============  =======================
 Case                         Total time    Time per run    Relative time per run
 =========================  ============  ==============  =======================
-`ClassWithIcontract`             2.00 s         2.00 μs                     445%
-`ClassWithDpcontracts`           0.45 s         0.45 μs                     100%
-`ClassWithInlineContract`        0.23 s         0.23 μs                      52%
+`ClassWithIcontract`             2.48 s         2.48 μs                     100%
+`ClassWithDpcontracts`           0.56 s         0.56 μs                      22%
+`ClassWithDeal`                  9.76 s         9.76 μs                     393%
+`ClassWithInlineContract`        0.28 s         0.28 μs                      11%
 =========================  ============  ==============  =======================
 
 Benchmarking precondition:
@@ -830,9 +834,10 @@ Benchmarking precondition:
 ===============================  ============  ==============  =======================
 Case                               Total time    Time per run    Relative time per run
 ===============================  ============  ==============  =======================
-`function_with_icontract`              0.02 s         2.38 μs                       5%
-`function_with_dpcontracts`            0.51 s        50.89 μs                     100%
-`function_with_inline_contract`        0.00 s         0.15 μs                       0%
+`function_with_icontract`              0.03 s         3.17 μs                     100%
+`function_with_dpcontracts`            0.65 s        64.62 μs                    2037%
+`function_with_deal`                   0.16 s        16.04 μs                     506%
+`function_with_inline_contract`        0.00 s         0.17 μs                       6%
 ===============================  ============  ==============  =======================
 
 Benchmarking postcondition:
@@ -840,14 +845,19 @@ Benchmarking postcondition:
 ===============================  ============  ==============  =======================
 Case                               Total time    Time per run    Relative time per run
 ===============================  ============  ==============  =======================
-`function_with_icontract`              0.02 s         2.48 μs                       5%
-`function_with_dpcontracts`            0.51 s        50.93 μs                     100%
-`function_with_inline_contract`        0.00 s         0.15 μs                       0%
+`function_with_icontract`              0.03 s         3.01 μs                     100%
+`function_with_dpcontracts`            0.66 s        65.78 μs                    2187%
+`function_with_deal_post`              0.01 s         1.12 μs                      37%
+`function_with_deal_ensure`            0.02 s         1.62 μs                      54%
+`function_with_inline_contract`        0.00 s         0.18 μs                       6%
 ===============================  ============  ==============  =======================
 
 
 
 .. Benchmark report from precommit.py ends.
+
+Note that neither the `dpcontracts` nor the `deal` library support recursion and inheritance of the contracts.
+This allows them to use faster enforcement mechanisms and thus gain a speed-up.
 
 We also ran a much more extensive battery of benchmarks on icontract 2.0.7. Unfortunately,
 it would cost us too much effort to integrate the results in the continous integration.
