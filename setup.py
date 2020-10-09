@@ -9,8 +9,6 @@ import sys
 
 from setuptools import setup, find_packages
 
-import icontract_meta
-
 # pylint: disable=redefined-builtin
 
 here = os.path.abspath(os.path.dirname(__file__))  # pylint: disable=invalid-name
@@ -18,14 +16,20 @@ here = os.path.abspath(os.path.dirname(__file__))  # pylint: disable=invalid-nam
 with open(os.path.join(here, 'README.rst'), encoding='utf-8') as fid:
     long_description = fid.read()  # pylint: disable=invalid-name
 
+# Please keep the meta information in sync with icontract/__init__.py.
+#
+# (mristin, 2020-10-09) We had to denormalize icontract_meta module (which
+# used to be referenced from setup.py and this file) since readthedocs had
+# problems with installing icontract through pip on their servers with
+# imports in setup.py.
 setup(
-    name=icontract_meta.__title__,
-    version=icontract_meta.__version__,
-    description=icontract_meta.__description__,
+    name='icontract',
+    version='2.3.5',
+    description=('Provide design-by-contract with informative violation messages.'),
     long_description=long_description,
-    url=icontract_meta.__url__,
-    author=icontract_meta.__author__,
-    author_email=icontract_meta.__author_email__,
+    url='https://github.com/Parquery/icontract',
+    author='Marko Ristin',
+    author_email='marko.ristin@gmail.com',
     classifiers=[
         # yapf: disable
         'Development Status :: 5 - Production/Stable',
@@ -58,5 +62,5 @@ setup(
             # yapf: enable
         ] + (['deal==4.1.0'] if sys.version_info >= (3, 8) else []),
     },
-    py_modules=['icontract', 'icontract_meta'],
+    py_modules=['icontract'],
     package_data={"icontract": ["py.typed"]})
