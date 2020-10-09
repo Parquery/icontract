@@ -1,11 +1,16 @@
 """Decorate functions with contracts."""
-import icontract_meta
 
-__version__ = icontract_meta.__version__
-__author__ = icontract_meta.__author__
-__copyright__ = icontract_meta.__copyright__
-__license__ = icontract_meta.__license__
-__status__ = icontract_meta.__status__
+# Please keep the meta information in sync with setup.py.
+#
+# (mristin, 2020-10-09) We had to denormalize icontract_meta module (which
+# used to be referenced from setup.py and this file) since readthedocs had
+# problems with installing icontract through pip on their servers with
+# imports in setup.py.
+__version__ = '2.3.5'
+__author__ = 'Marko Ristin'
+__copyright__ = 'Copyright 2019 Parquery AG'
+__license__ = 'MIT'
+__status__ = 'Production'
 
 # pylint: disable=invalid-name
 # pylint: disable=protected-access
