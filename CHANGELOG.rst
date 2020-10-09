@@ -1,3 +1,8 @@
+2.3.6
+=====
+* Denormalized icontract_meta so that icontract can be installed on
+  readthedocs.
+
 2.3.5
 =====
 * Disabled invariant checks during the construction to avoid attribute errors
