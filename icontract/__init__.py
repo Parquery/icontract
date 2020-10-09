@@ -6,7 +6,7 @@
 # used to be referenced from setup.py and this file) since readthedocs had
 # problems with installing icontract through pip on their servers with
 # imports in setup.py.
-__version__ = '2.3.5'
+__version__ = '2.3.6'  # Don't forget to update the version in setup.py!
 __author__ = 'Marko Ristin'
 __copyright__ = 'Copyright 2019 Parquery AG'
 __license__ = 'MIT'
