@@ -24,7 +24,8 @@ with open(os.path.join(here, 'README.rst'), encoding='utf-8') as fid:
 # imports in setup.py.
 setup(
     name='icontract',
-    version='2.3.6',  # Don't forget to update the version in __init__.py!
+    # Don't forget to update the version in __init__.py and CHANGELOG.rst!
+    version='2.3.7',
     description='Provide design-by-contract with informative violation messages.',
     long_description=long_description,
     url='https://github.com/Parquery/icontract',
