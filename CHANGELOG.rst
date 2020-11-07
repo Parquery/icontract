@@ -1,3 +1,8 @@
+2.3.7
+=====
+* Acted upon deprecation warning ins ``ast`` module when generating the
+  violation error message.
+
 2.3.6
 =====
 * Denormalized icontract_meta so that icontract can be installed on
