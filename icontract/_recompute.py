@@ -4,6 +4,7 @@ import ast
 import builtins
 import functools
 import platform
+import sys
 from typing import Any, Mapping, Dict, List, Optional, Union, Tuple, Set, Callable  # pylint: disable=unused-import
 
 
@@ -46,28 +47,44 @@ class Visitor(ast.NodeVisitor):
         # value assigned to each visited node
         self.recomputed_values = dict()  # type: Dict[ast.AST, Any]
 
-    def visit_Num(self, node: ast.Num) -> Union[int, float]:
-        """Recompute the value as the number at the node."""
-        result = node.n
+    # pylint: disable=no-member
+    if sys.version_info < (3, 8):
 
-        self.recomputed_values[node] = result
+        def visit_Num(self, node: ast.Num) -> Union[int, float]:
+            """Recompute the value as the number at the node."""
+            result = node.n
 
-        assert isinstance(result, (int, float))
-        return result
+            self.recomputed_values[node] = result
 
-    def visit_Str(self, node: ast.Str) -> str:
-        """Recompute the value as the string at the node."""
-        result = node.s
+            assert isinstance(result, (int, float))
+            return result
 
-        self.recomputed_values[node] = result
-        return result
+        def visit_Str(self, node: ast.Str) -> str:
+            """Recompute the value as the string at the node."""
+            result = node.s
 
-    def visit_Bytes(self, node: ast.Bytes) -> bytes:
-        """Recompute the value as the bytes at the node."""
-        result = node.s
+            self.recomputed_values[node] = result
+            return result
 
-        self.recomputed_values[node] = result
-        return node.s
+        def visit_Bytes(self, node: ast.Bytes) -> bytes:
+            """Recompute the value as the bytes at the node."""
+            result = node.s
+
+            self.recomputed_values[node] = result
+            return node.s
+
+        def visit_NameConstant(self, node: ast.NameConstant) -> Any:
+            """Forward the node value as a result."""
+            self.recomputed_values[node] = node.value
+            return node.value
+    else:
+
+        def visit_Constant(self, node: ast.Constant) -> Any:
+            """Forward the node value as a result."""
+            self.recomputed_values[node] = node.value
+            return node.value
+
+    # pylint: enable=no-member
 
     def visit_List(self, node: ast.List) -> List[Any]:
         """Visit the elements and assemble the results into a list."""
@@ -107,11 +124,6 @@ class Visitor(ast.NodeVisitor):
 
         self.recomputed_values[node] = recomputed_dict
         return recomputed_dict
-
-    def visit_NameConstant(self, node: ast.NameConstant) -> Any:
-        """Forward the node value as a result."""
-        self.recomputed_values[node] = node.value
-        return node.value
 
     def visit_Name(self, node: ast.Name) -> Any:
         """Load the variable by looking it up in the variable look-up and in the built-ins."""
