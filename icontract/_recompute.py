@@ -5,7 +5,8 @@ import builtins
 import functools
 import platform
 import sys
-from typing import Any, Mapping, Dict, List, Optional, Union, Tuple, Set, Callable  # pylint: disable=unused-import
+from typing import Any, Mapping, Dict, List, Optional, Union, Tuple, Set, Callable, \
+    cast  # pylint: disable=unused-import
 
 
 class Placeholder:
@@ -37,8 +38,11 @@ class Visitor(ast.NodeVisitor):
 
         :param variable_lookup: list of lookup tables to look-up the values of the variables, sorted by precedence
         """
-        # Resolve precedence of variable lookup
+        # _name_to_value maps the variable names to variable values.
+        # This is important for Load contexts as well as Store contexts in, e.g., named expressions.
         self._name_to_value = dict()  # type: Dict[str, Any]
+
+        # Resolve precedence of variable lookups
         for lookup in variable_lookup:
             for name, value in lookup.items():
                 if name not in self._name_to_value:
@@ -313,6 +317,24 @@ class Visitor(ast.NodeVisitor):
 
         self.recomputed_values[node] = result
         return result
+
+    if sys.version_info >= (3, 8):
+        # pylint: disable=no-member
+        def visit_NamedExpr(self, node: ast.NamedExpr) -> Any:
+            """Visit the node's ``value`` and assign it to both this node and the target."""
+            value = self.visit(node=node.value)
+            self.recomputed_values[node] = value
+
+            # This assignment is needed to make mypy happy.
+            target = cast(ast.Name, node.target)
+
+            if not isinstance(target.ctx, ast.Store):
+                raise NotImplementedError(
+                    "Expected Store context in the target of a named expression, but got: {}".format(target.ctx))
+
+            self._name_to_value[target.id] = value
+
+            return value
 
     def visit_Index(self, node: ast.Index) -> Any:
         """Visit the node's ``value``."""

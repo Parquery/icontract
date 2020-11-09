@@ -24,6 +24,10 @@ def main() -> int:
 
     print("YAPF'ing...")
     yapf_targets = ["tests", "icontract", "setup.py", "precommit.py", "benchmark.py", "benchmarks", "tests_with_others"]
+
+    if sys.version_info >= (3, 8, 5):
+        yapf_targets.append('tests_3_8')
+
     if overwrite:
         subprocess.check_call(
             ["yapf", "--in-place", "--style=style.yapf", "--recursive"] + yapf_targets, cwd=str(repo_root))
@@ -32,10 +36,18 @@ def main() -> int:
             ["yapf", "--diff", "--style=style.yapf", "--recursive"] + yapf_targets, cwd=str(repo_root))
 
     print("Mypy'ing...")
-    subprocess.check_call(["mypy", "--strict", "icontract", "tests"], cwd=str(repo_root))
+    mypy_targets = ["icontract", "tests"]
+    if sys.version_info >= (3, 8):
+        mypy_targets.append('tests_3_8')
+
+    subprocess.check_call(["mypy", "--strict"] + mypy_targets, cwd=str(repo_root))
 
     print("Pylint'ing...")
-    subprocess.check_call(["pylint", "--rcfile=pylint.rc", "tests", "icontract"], cwd=str(repo_root))
+    pylint_targets = ['icontract', 'tests']
+
+    if sys.version_info >= (3, 8):
+        pylint_targets.append('tests_3_8')
+    subprocess.check_call(["pylint", "--rcfile=pylint.rc"] + pylint_targets, cwd=str(repo_root))
 
     print("Pydocstyle'ing...")
     subprocess.check_call(["pydocstyle", "icontract"], cwd=str(repo_root))
@@ -45,10 +57,14 @@ def main() -> int:
     env['ICONTRACT_SLOW'] = 'true'
 
     # yapf: disable
+    unittest_targets = ['tests']
+    if sys.version_info > (3, 8):
+        unittest_targets.append('tests_3_8')
+
     subprocess.check_call(
         ["coverage", "run",
          "--source", "icontract",
-         "-m", "unittest", "discover", "tests"],
+         "-m", "unittest", "discover"] + unittest_targets,
         cwd=str(repo_root),
         env=env)
     # yapf: enable
