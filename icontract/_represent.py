@@ -3,9 +3,10 @@ import ast
 import inspect
 import re
 import reprlib
+import sys
 import textwrap
 import uuid
-from typing import Any, Mapping, MutableMapping, Callable, List, Dict, Iterable  # pylint: disable=unused-import
+from typing import Any, Mapping, MutableMapping, Callable, List, Dict, Iterable, cast  # pylint: disable=unused-import
 from typing import Optional, Tuple  # pylint: disable=unused-import
 
 import asttokens
@@ -87,6 +88,21 @@ class Visitor(ast.NodeVisitor):
                 self.reprs[text] = value
 
         self.generic_visit(node=node)
+
+    if sys.version_info >= (3, 8):
+        # pylint: disable=no-member
+        def visit_NamedExpr(self, node: ast.NamedExpr) -> Any:
+            """Represent the target with the value of the node."""
+            if node in self._recomputed_values:
+                value = self._recomputed_values[node]
+
+                # This is necessary in order to make mypy happy.
+                target = cast(ast.Name, node.target)
+
+                if _representable(value=value):
+                    self.reprs[target.id] = value
+
+            self.generic_visit(node=node)
 
     def visit_Call(self, node: ast.Call) -> None:
         """Represent the call by dumping its source code."""

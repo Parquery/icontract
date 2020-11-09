@@ -3,7 +3,7 @@ python:
   - "3.5"
   - "3.6"
   - "3.7"
-  - "3.8"
+  - "3.8.5"
 install:
   - pip3 install -e .[dev]
   - pip3 install coveralls
