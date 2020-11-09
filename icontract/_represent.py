@@ -108,7 +108,7 @@ class Visitor(ast.NodeVisitor):
 
         self.generic_visit(node=node)
 
-    def visit_SetComp(self, node: ast.ListComp) -> None:
+    def visit_SetComp(self, node: ast.SetComp) -> None:
         """Represent the set comprehension by dumping its source code."""
         if node in self._recomputed_values:
             value = self._recomputed_values[node]
