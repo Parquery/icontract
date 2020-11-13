@@ -13,6 +13,10 @@ icontract
 .. image:: https://img.shields.io/pypi/pyversions/icontract.svg
     :alt: PyPI - Python Version
 
+.. image:: https://badges.gitter.im/gitterHQ/gitter.png
+    :target: https://gitter.im/Parquery-icontract/community
+    :alt: Gitter chat
+
 icontract provides `design-by-contract <https://en.wikipedia.org/wiki/Design_by_contract>`_ to Python3 with informative
 violation messages and inheritance.
 
