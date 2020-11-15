@@ -5,7 +5,7 @@
 
 import time
 import unittest
-from typing import Optional  # pylint: disable=unused-import
+from typing import Dict, Iterator, Mapping, Optional, Any  # pylint: disable=unused-import
 
 import icontract
 import tests.error
@@ -156,6 +156,63 @@ class TestOK(unittest.TestCase):
                 return True
 
         _ = A()
+
+    def test_new_exempted(self) -> None:
+        # This test is related to the issue #167.
+        new_call_counter = 0
+        init_call_counter = 0
+
+        @icontract.invariant(lambda self: True)
+        class Foo:
+            def __new__(cls, *args, **kwargs) -> 'Foo':  # type: ignore
+                nonlocal new_call_counter
+                new_call_counter += 1
+                return super(Foo, cls).__new__(cls)  # type: ignore
+
+            def __init__(self) -> None:
+                nonlocal init_call_counter
+                init_call_counter += 1
+
+        _ = Foo()
+        self.assertEqual(1, new_call_counter)
+        self.assertEqual(1, init_call_counter)
+
+    def test_subclass_of_generic_mapping(self) -> None:
+        # This test is related to the issue #167.
+        counter = 0
+
+        def increase_counter(self: Any) -> bool:
+            nonlocal counter
+            counter += 1
+            return True
+
+        @icontract.invariant(increase_counter)
+        class Foo(Mapping[str, int]):
+            def __init__(self, table: Dict[str, int]) -> None:
+                self._table = table
+
+            def __getitem__(self, key: str) -> int:
+                return self._table[key]
+
+            def __iter__(self) -> Iterator[str]:
+                return iter(self._table)
+
+            def __len__(self) -> int:
+                return len(self._table)
+
+            def __str__(self) -> str:
+                return '{}({})'.format(self.__class__.__name__, self._table)
+
+        f = Foo({'a': 1})  # test the constructor
+        _ = f['a']  # test __getitem__
+        _ = iter(f)  # test __iter__
+        _ = len(f)  # test __len__
+        _ = str(f)  # test __str__
+
+        # 1 invariant check after the constructor +
+        # 4 checks before the methods +
+        # 4 checks after the methods.
+        self.assertEqual(9, counter)
 
 
 class TestViolation(unittest.TestCase):
