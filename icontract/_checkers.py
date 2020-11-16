@@ -429,13 +429,16 @@ def decorate_with_checker(func: CallableT) -> CallableT:
 
 def _find_self(param_names: List[str], args: Tuple[Any, ...], kwargs: Dict[str, Any]) -> Any:
     """Find the instance of ``self`` in the arguments."""
-    instance_i = param_names.index("self")
-    if instance_i < len(args):
-        instance = args[instance_i]
-    else:
-        instance = kwargs["self"]
+    instance_i = None
+    try:
+        instance_i = param_names.index("self")
+    except ValueError:
+        pass
 
-    return instance
+    if instance_i is not None:
+        return args[instance_i]
+
+    return kwargs["self"]
 
 
 def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
@@ -458,8 +461,12 @@ def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
 
         def wrapper(*args, **kwargs):  # type: ignore
             """Wrap __init__ method of a class by checking the invariants *after* the invocation."""
-            instance = _find_self(param_names=param_names, args=args, kwargs=kwargs)
-            assert instance is not None, "Expected to find `self` in the parameters, but found none."
+            try:
+                instance = _find_self(param_names=param_names, args=args, kwargs=kwargs)
+            except KeyError as err:
+                raise KeyError(("The parameter 'self' could not be found in the call to function {!r}: "
+                                "the param names were {!r}, the args were {!r} and kwargs were {!r}").format(
+                                    func, param_names, args, kwargs)) from err
 
             # We need to disable the invariants check during the constructor.
             id_instance = str(id(instance))
@@ -481,12 +488,15 @@ def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
 
         def wrapper(*args, **kwargs):  # type: ignore
             """Wrap a function of a class by checking the invariants *before* and *after* the invocation."""
-            #
+            try:
+                instance = _find_self(param_names=param_names, args=args, kwargs=kwargs)
+            except KeyError as err:
+                raise KeyError(("The parameter 'self' could not be found in the call to function {!r}: "
+                                "the param names were {!r}, the args were {!r} and kwargs were {!r}").format(
+                                    func, param_names, args, kwargs)) from err
+
             # The following dunder indicates whether another invariant is currently being checked. If so,
             # we need to suspend any further invariant check to avoid endless recursion.
-            instance = _find_self(param_names=param_names, args=args, kwargs=kwargs)
-            assert instance is not None, "Expected to find `self` in the parameters, but found none."
-
             id_instance = str(id(instance))
             if not hasattr(_IN_PROGRESS, id_instance):
                 setattr(_IN_PROGRESS, id_instance, True)
@@ -543,10 +553,11 @@ def add_invariant_checks(cls: type) -> None:
 
     # Filter out entries in the directory which are certainly not candidates for decoration.
     for name, value in [(name, getattr(cls, name)) for name in dir(cls)]:
+        # __new__ is a special class method (though not marked properly with @classmethod!).
         # We need to ignore __repr__ to prevent endless loops when generating error messages.
         # __getattribute__, __setattr__ and __delattr__ are too invasive and alter the state of the instance.
         # Hence we don't consider them "public".
-        if name in ["__repr__", "__getattribute__", "__setattr__", "__delattr__"]:
+        if name in ["__new__", "__repr__", "__getattribute__", "__setattr__", "__delattr__"]:
             continue
 
         if name == "__init__":

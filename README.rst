@@ -164,7 +164,8 @@ We consider the following methods to be "public":
 * All methods not prefixed with ``_``
 * All magic methods (prefix ``__`` and suffix ``__``)
 
-Class methods can not observe the invariant since they are not associated with an instance of the class.
+Class methods (marked with ``@classmethod`` or special dunders such as ``__new__``) can not observe the invariant
+since they are not associated with an instance of the class.
 
 We exempt ``__getattribute__``, ``__setattr__`` and ``__delattr__`` methods from observing the invariant since
 these functions alter the state of the instance and thus can not be considered "public".
