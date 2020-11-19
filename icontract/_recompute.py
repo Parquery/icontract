@@ -88,6 +88,44 @@ class Visitor(ast.NodeVisitor):
             self.recomputed_values[node] = node.value
             return node.value
 
+    if sys.version_info >= (3, 6):
+
+        def visit_FormattedValue(self, node: ast.FormattedValue) -> Any:
+            """Format the node value."""
+            fmt = ['{']
+            # See https://docs.python.org/3/library/ast.html#ast.FormattedValue for these
+            # constants
+            if node.conversion == -1:
+                pass
+            elif node.conversion == 115:
+                fmt.append('!s')
+            elif node.conversion == 114:
+                fmt.append('!r')
+            elif node.conversion == 97:
+                fmt.append('!a')
+            else:
+                raise NotImplementedError("Unhandled conversion of a formatted value node {!r}: {}".format(
+                    node, node.conversion))
+
+            if node.format_spec is not None:
+                fmt.append(":")
+
+                # The following assert serves only documentation purposes so that the code is easier to follow.
+                assert isinstance(node.format_spec, ast.JoinedStr)
+                fmt.append(self.visit(node.format_spec))
+
+            fmt.append('}')
+
+            recomputed_value = self.visit(node.value)
+            return ''.join(fmt).format(recomputed_value)
+
+        def visit_JoinedStr(self, node: ast.JoinedStr) -> Any:
+            """Visit the values and concatenate them."""
+            joined_str = ''.join(self.visit(value_node) for value_node in node.values)
+
+            self.recomputed_values[node] = joined_str
+            return joined_str
+
     # pylint: enable=no-member
 
     def visit_List(self, node: ast.List) -> List[Any]:
