@@ -55,6 +55,17 @@ class Visitor(ast.NodeVisitor):
         self.reprs = dict()  # type: MutableMapping[str, str]
         self._atok = atok
 
+    if sys.version_info >= (3, 6):
+        # pylint: disable=no-member
+        def visit_JoinedStr(self, node: ast.JoinedStr) -> None:
+            """Show the whole joined strings without descending into the values."""
+            if node in self._recomputed_values:
+                value = self._recomputed_values[node]
+
+                if _representable(value=value):
+                    text = self._atok.get_text(node)
+                    self.reprs[text] = value
+
     def visit_Name(self, node: ast.Name) -> None:
         """
         Resolve the name from the variable look-up and the built-ins.

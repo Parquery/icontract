@@ -57,14 +57,10 @@ def main() -> int:
     env['ICONTRACT_SLOW'] = 'true'
 
     # yapf: disable
-    unittest_targets = ['tests']
-    if sys.version_info > (3, 8):
-        unittest_targets.append('tests_3_8')
-
     subprocess.check_call(
         ["coverage", "run",
          "--source", "icontract",
-         "-m", "unittest", "discover"] + unittest_targets,
+         "-m", "unittest", "discover"],
         cwd=str(repo_root),
         env=env)
     # yapf: enable
