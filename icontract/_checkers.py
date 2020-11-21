@@ -441,6 +441,32 @@ def _find_self(param_names: List[str], args: Tuple[Any, ...], kwargs: Dict[str, 
     return kwargs["self"]
 
 
+def _decorate_new_with_invariants(new_func: CallableT) -> CallableT:
+    """
+    Decorate the ``__new__`` of a class s.t. the invariants are checked on the result.
+
+    This is necessary for optimized classes such as ``namedtuple`` which use ``object.__init__``
+    as constructor and do not expect a wrapping around the constructor.
+    """
+    if _already_decorated_with_invariants(func=new_func):
+        return new_func
+
+    def wrapper(*args, **kwargs):  # type: ignore
+        """Pass the arguments to __new__ and check invariants on the result."""
+        instance = new_func(*args, **kwargs)
+
+        for contract in instance.__class__.__invariants__:
+            _assert_invariant(contract=contract, instance=instance)
+
+        return instance
+
+    functools.update_wrapper(wrapper=wrapper, wrapped=new_func)
+
+    setattr(wrapper, "__is_invariant_check__", True)
+
+    return wrapper  # type: ignore
+
+
 def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
     """
     Decorate the function ``func`` of the class ``cls`` with invariant checks.
@@ -546,6 +572,8 @@ def _already_decorated_with_invariants(func: CallableT) -> bool:
 
 def add_invariant_checks(cls: type) -> None:
     """Decorate each of the class functions with invariant checks if not already decorated."""
+    # pylint: disable=too-many-branches
+
     # Candidates for the decoration as list of (name, dir() value)
     init_name_func = None  # type: Optional[Tuple[str, Callable[..., None]]]
     names_funcs = []  # type: List[Tuple[str, Callable[..., None]]]
@@ -590,8 +618,16 @@ def add_invariant_checks(cls: type) -> None:
 
     if init_name_func:
         name, func = init_name_func
-        wrapper = _decorate_with_invariants(func=func, is_init=True)
-        setattr(cls, name, wrapper)
+
+        # We have to distinguish this special case which is used by named
+        # tuples and possibly other optimized data structures.
+        # In those cases, we have to wrap __new__ instead of __init__.
+        if func == object.__init__ and hasattr(cls, "__new__"):
+            new_func = getattr(cls, "__new__")
+            setattr(cls, "__new__", _decorate_new_with_invariants(new_func))
+        else:
+            wrapper = _decorate_with_invariants(func=func, is_init=True)
+            setattr(cls, name, wrapper)
 
     for name, func in names_funcs:
         wrapper = _decorate_with_invariants(func=func, is_init=False)

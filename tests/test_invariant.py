@@ -5,7 +5,7 @@
 
 import time
 import unittest
-from typing import Dict, Iterator, Mapping, Optional, Any  # pylint: disable=unused-import
+from typing import Dict, Iterator, Mapping, Optional, Any, NamedTuple  # pylint: disable=unused-import
 
 import icontract
 import tests.error
