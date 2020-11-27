@@ -59,7 +59,8 @@ setup(
             'pygments>=2.2.0,<3',
             'dpcontracts==0.6.0',
             'tabulate>=0.8.7,<1',
-            'py-cpuinfo>=5.0.0,<6'
+            'py-cpuinfo>=5.0.0,<6',
+            'typeguard>=2,<3'
             # yapf: enable
         ] + (['deal==4.1.0'] if sys.version_info >= (3, 8) else []),
     },
