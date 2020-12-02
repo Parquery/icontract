@@ -52,7 +52,15 @@ def _kwargs_from_call(param_names: List[str], kwdefaults: Dict[str, Any], args: 
     :return: resolved arguments as they would be passed to the function
     """
     # pylint: disable=too-many-arguments
-    resolved_kwargs = dict()  # type: MutableMapping[str, Any]
+
+    # (Marko Ristin, 2020-12-01)
+    # Insert _ARGS and _KWARGS preemptively even if they are not needed by any contract.
+    # This makes the code logic much simpler since we do not explicitly check if a contract would
+    # need them, though it might incur a subtle computational overhead
+    # (*e.g.*, when the contracts do not need them or don't use any argument at all).
+    # We need to have a concrete issue where profiling helps us determine if this is a real
+    # bottleneck or not and not optimize for no real benefit.
+    resolved_kwargs = {'_ARGS': args, '_KWARGS': kwargs}
 
     # Set the default argument values as condition parameters.
     for param_name, param_value in kwdefaults.items():
@@ -224,7 +232,9 @@ def _assert_postcondition(contract: Contract, resolved_kwargs: Mapping[str, Any]
     both argument values captured in snapshots and actual argument values and the result of a function.
 
     :param contract: contract to be verified
-    :param resolved_kwargs: resolved keyword arguments (including the default values, ``result`` and ``OLD``)
+    :param resolved_kwargs:
+        resolved keyword arguments (including the default values, ``result``,``OLD``
+        ``_ARGS`` and ``_KWARGS``)
     :return:
     """
     assert 'result' in resolved_kwargs, \
@@ -324,6 +334,16 @@ def decorate_with_checker(func: CallableT) -> CallableT:
         "per function)."
 
     sign = inspect.signature(func)
+    if '_ARGS' in sign.parameters:
+        raise ValueError(
+            'The arguments of the function to be decorated with a contract checker include "_ARGS" which is '
+            'a reserved placeholder for positional arguments in the condition.')
+
+    if '_KWARGS' in sign.parameters:
+        raise ValueError(
+            'The arguments of the function to be decorated with a contract checker include "_KWARGS" which is '
+            'a reserved placeholder for keyword arguments in the condition.')
+
     param_names = list(sign.parameters.keys())
 
     # Determine the default argument values.
@@ -339,6 +359,14 @@ def decorate_with_checker(func: CallableT) -> CallableT:
     def wrapper(*args, **kwargs):  # type: ignore
         """Wrap func by checking the preconditions and postconditions."""
         # pylint: disable=too-many-branches
+
+        if '_ARGS' in kwargs:
+            raise TypeError('The arguments of the function call include "_ARGS" which is '
+                            'a placeholder for positional arguments in a condition.')
+
+        if '_KWARGS' in kwargs:
+            raise TypeError('The arguments of the function call include "_KWARGS" which is '
+                            'a placeholder for keyword arguments in a condition.')
 
         # Use try-finally instead of ExitStack for performance.
         try:

@@ -639,6 +639,78 @@ Here is an example of the error given as a callable:
     If you left ``enabled`` argument to its default ``__debug__``, the contract will *not* be verified in
     ``-O`` mode.)
 
+Variable Positional and Keyword Arguments
+-----------------------------------------
+Certain functions do not name their arguments explicitly, but operate on variable positional and/or
+keyword arguments supplied at the function call (*e.g.*, ``def some_func(*args, **kwargs): ...``).
+Contract conditions thus need a mechanism to refer to these variable arguments.
+To that end, we introduced two special condition arguments, ``_ARGS`` and ``_KWARGS``, that
+icontract will populate before evaluating the condition to capture the positional and keyword
+arguments, respectively, of the function call.
+
+To avoid intricacies of Python's argument resolution at runtime, icontract simply captures *all*
+positional and keyword arguments in these two variables, regardless of whether the function defines
+them or not. However, we would recommend you to explicitly name arguments in your conditions and
+use ``_ARGS`` and ``_KWARGS`` only for the variable arguments for readability.
+
+We present in the following a couple of valid contracts to demonstrate how to use these special
+arguments:
+
+.. code-block:: python
+
+    # The contract refers to the positional arguments of the *call*,
+    # though the decorated function does not handle
+    # variable positional arguments.
+    >>> @icontract.require(lambda _ARGS: _ARGS[0] > 0)
+    ... def function_a(x: int) -> int:
+    ...     return 123
+    >>> function_a(1)
+    123
+
+    # The contract refers to the keyword arguments of the *call*,
+    # though the decorated function does not handle variable keyword arguments.
+    >>> @icontract.require(lambda _KWARGS: _KWARGS["x"] > 0)
+    ... def function_b(x: int) -> int:
+    ...     return 123
+    >>> function_b(x=1)
+    123
+
+    # The contract refers both to the named argument and keyword arguments.
+    # The decorated function specifies an argument and handles
+    # variable keyword arguments at the same time.
+    >>> @icontract.require(lambda x, _KWARGS: x < _KWARGS["y"])
+    ... def function_c(x: int, **kwargs) -> int:
+    ...     return 123
+    >>> function_c(1, y=3)
+    123
+
+    # The decorated functions accepts only variable keyboard arguments.
+    >>> @icontract.require(lambda _KWARGS: _KWARGS["x"] > 0)
+    ... def function_d(**kwargs) -> int:
+    ...     return 123
+    >>> function_d(x=1)
+    123
+
+    # The decorated functions accepts only variable keyboard arguments.
+    # The keyword arguments are given an uncommon name (``parameters`` instead
+    # of ``kwargs``).
+    >>> @icontract.require(lambda _KWARGS: _KWARGS["x"] > 0)
+    ... def function_e(**parameters) -> int:
+    ...     return 123
+    >>> function_e(x=1)
+    123
+
+As a side note, we agree that the names picked for the placeholders are indeed a bit ugly.
+We decided against more aesthetic or ergonomic identifiers (such as ``_`` and ``__`` or
+``A`` and ``KW``) to avoid potential naming conflicts.
+
+The underscore in front of the placeholders is meant to motivate a bit deeper understanding
+of the condition.
+For example, the reader needs to be aware that the logic for resolving the keyword arguments
+passed to the function is *different* in condition and that ``_KWARGS`` *does not* refer to
+arbitrary keyword arguments *passed to the condition*. Though this might be obvious for some
+readers, we are almost certain that ``_ARGS`` and ``_KWARGS`` will cause some confusion.
+We hope that a small hint like an underscore will eventually help the reading.
 
 Implementation Details
 ----------------------
@@ -802,7 +874,7 @@ Here is a short code snippet to demonstrate where the current implementation fai
     >>> some_func(x=0)
     Traceback (most recent call last):
         ...
-    SyntaxError: Decorator corresponding to the line 1 could not be found in file <doctest README.rst[64]>: 'require_x_positive = icontract.require(lambda x: x > 0)\n'
+    SyntaxError: Decorator corresponding to the line 1 could not be found in file <doctest README.rst[74]>: 'require_x_positive = icontract.require(lambda x: x > 0)\n'
 
 However, we haven't faced a situation in the code base where we would do something like the above, so we are unsure
 whether this is a big issue. As long as decorators are directly applied to functions and classes, everything
