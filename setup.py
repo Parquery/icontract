@@ -60,9 +60,19 @@ setup(
             'dpcontracts==0.6.0',
             'tabulate>=0.8.7,<1',
             'py-cpuinfo>=5.0.0,<6',
-            'typeguard>=2,<3'
+            'typeguard>=2,<3',
+            'hypothesis[dpcontracts]>=5,<6'
             # yapf: enable
         ] + (['deal==4.1.0'] if sys.version_info >= (3, 8) else []),
+        'hypothesis': [
+            # yapf: disable
+            'hypothesis>=5,<6'
+            # yapf: enable
+        ]
     },
     py_modules=['icontract'],
-    package_data={"icontract": ["py.typed"]})
+    package_data={"icontract": ["py.typed"]},
+    entry_points={
+        'console_scripts':
+        ['pyicontract-hypothesis = icontract.integration.with_hypothesis.icontract_hypothesis:entry_point'],
+    })

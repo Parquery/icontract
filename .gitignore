@@ -10,3 +10,4 @@ dist/
 .coverage
 htmlcov
 README.html
+.hypothesis/
