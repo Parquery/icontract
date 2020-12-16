@@ -2,7 +2,8 @@
 import abc
 import inspect
 import platform
-from typing import List, MutableMapping, Any, Callable, Optional, cast, Set  # pylint: disable=unused-import
+from typing import List, MutableMapping, Any, Callable, Optional, cast, Set, Type, \
+    TypeVar  # pylint: disable=unused-import
 
 from icontract._types import Contract, Snapshot
 import icontract._checkers
@@ -289,11 +290,35 @@ def _dbc_decorate_namespace(bases: List[type], namespace: MutableMapping[str, An
             pass
 
 
+T = TypeVar('T')  # pylint: disable=invalid-name
+
+
+def _try_to_register_with_hypothesis(cls: Type[T]) -> None:
+    """
+    Try to import the hypothesis and register the class with its global registry.
+
+    This is necessary so that the preconditions on the __init__ are propagated in hypothesis.strategies.builds.
+    """
+    try:
+        import hypothesis.strategies._internal.types
+        import icontract_hypothesis
+    except ImportError:
+        return
+
+    # We should not register abstract classes as this will mislead Hypothesis to instantiate
+    # them.
+    if inspect.isabstract(cls):
+        return
+
+    if cls not in hypothesis.strategies._internal.types._global_type_lookup:
+        hypothesis.strategies.register_type_strategy(cls, icontract_hypothesis._builds_with_preconditions(cls))
+
+
 class DBCMeta(abc.ABCMeta):
     """
     Define a meta class that allows inheritance of the contracts.
 
-    The preconditions are weakned ("require else"), while postconditions ("ensure then") and invariants are
+    The preconditions are weakened ("require else"), while postconditions ("ensure then") and invariants are
     strengthened according to the inheritance rules of the design-by-contract.
     """
 
@@ -315,6 +340,13 @@ class DBCMeta(abc.ABCMeta):
             if hasattr(cls, "__invariants__"):
                 icontract._checkers.add_invariant_checks(cls=cls)
 
+            # This is necessary to avoid circular imports.
+            # icontract-hypothesis depends on icontract and vice-versa.
+            # This usually works since icontract-hypothesis does not use DBCMeta,
+            # but blows up since icontract creates DBC with DBCMeta meta-class at the import time.
+            if cls.__module__ != __name__:
+                _try_to_register_with_hypothesis(cls)
+
             return cls
     else:
 
@@ -327,8 +359,15 @@ class DBCMeta(abc.ABCMeta):
             if hasattr(cls, "__invariants__"):
                 icontract._checkers.add_invariant_checks(cls=cls)
 
+            # This is necessary to avoid circular imports.
+            # icontract-hypothesis depends on icontract and vice-versa.
+            # This usually works since icontract-hypothesis does not use DBCMeta,
+            # but blows up since icontract creates DBC with DBCMeta meta-class at the import time.
+            if cls.__module__ != __name__:
+                _try_to_register_with_hypothesis(cls)
+
             return cls
 
 
-class DBC(metaclass=DBCMeta):
+class DBC(abc.ABC, metaclass=DBCMeta):
     """Provide a standard way to create a class which can inherit the contracts."""
