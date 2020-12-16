@@ -1,3 +1,15 @@
+2.4.0
+=====
+* Integrated with icontract-hypothesis (#179)
+* Refactored for icontract-hypothesis (#178)
+* Added special arguments `_ARGS` and `_KWARGS` (#176)
+* Tested with typeguard (#175)
+* Tested with `dataclasses.dataclass` (#173)
+* Added invariants to namedtuple (#172)
+* Added support for recomputation of f-strings (#170)
+* Exempted `__new__` from invariant checks (#168)
+* Added support for named expressions in contracts (#166)
+
 2.3.7
 =====
 * Acted upon deprecation warning ins ``ast`` module when generating the
