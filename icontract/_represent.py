@@ -156,16 +156,16 @@ class Visitor(ast.NodeVisitor):
         self.generic_visit(node=node)
 
 
-def _is_lambda(a_function: Callable[..., Any]) -> bool:
+def is_lambda(a_function: Callable[..., Any]) -> bool:
     """
     Check whether the function is a lambda function.
 
     >>> def some_func()->bool: return True
-    >>> _is_lambda(some_func)
+    >>> is_lambda(some_func)
     False
 
     >>> lmbd = lambda x: x > 0
-    >>> _is_lambda(lmbd)
+    >>> is_lambda(lmbd)
     True
 
     :param condition: condition function of a contract
@@ -186,7 +186,10 @@ class ConditionLambdaInspection:
         """
         self.atok = atok
         self.node = node
-        self.text = atok.get_text(node.body)
+
+        text = atok.get_text(node.body)
+        assert isinstance(text, str)
+        self.text = text
 
 
 _DECORATOR_RE = re.compile(r'^\s*@[a-zA-Z_]')
@@ -307,6 +310,55 @@ def find_lambda_condition(decorator_inspection: DecoratorInspection) -> Optional
     return ConditionLambdaInspection(atok=decorator_inspection.atok, node=lambda_node)
 
 
+# yapf: disable
+def collect_variable_lookup(
+        condition: Callable[..., bool],
+        condition_kwargs: Optional[Mapping[str, Any]] = None
+) ->List[Mapping[str, Any]]:
+    """
+    Collect the variable lookups in order of precedence.
+
+    If ``condition_kwargs`` is None, no condition-specific kwargs will be added.
+    """
+    # yapf: enable
+    variable_lookup = []  # type: List[Mapping[str, Any]]
+
+    ##
+    # Condition-specific kwargs
+    ##
+
+    if condition_kwargs is not None:
+        variable_lookup.append(condition_kwargs)
+
+    ##
+    # Add closure to the lookup
+    ##
+
+    closure_dict = dict()  # type: Dict[str, Any]
+
+    if condition.__closure__ is not None:  # type: ignore
+        closure_cells = condition.__closure__  # type: ignore
+        freevars = condition.__code__.co_freevars
+
+        assert len(closure_cells) == len(freevars), \
+            "Number of closure cells of a condition function ({}) == number of free vars ({})".format(
+                len(closure_cells), len(freevars))
+
+        for cell, freevar in zip(closure_cells, freevars):
+            closure_dict[freevar] = cell.cell_contents
+
+    variable_lookup.append(closure_dict)
+
+    ##
+    # Add globals to the lookup
+    ##
+
+    if condition.__globals__ is not None:  # type: ignore
+        variable_lookup.append(condition.__globals__)  # type: ignore
+
+    return variable_lookup
+
+
 def repr_values(condition: Callable[..., bool], lambda_inspection: Optional[ConditionLambdaInspection],
                 condition_kwargs: Mapping[str, Any], a_repr: reprlib.Repr) -> List[str]:
     # pylint: disable=too-many-locals
@@ -321,7 +373,7 @@ def repr_values(condition: Callable[..., bool], lambda_inspection: Optional[Cond
     :param a_repr: representation instance that defines how the values are represented.
     :return: list of value representations
     """
-    if _is_lambda(a_function=condition):
+    if is_lambda(a_function=condition):
         assert lambda_inspection is not None, "Expected a lambda inspection when given a condition as a lambda function"
     else:
         assert lambda_inspection is None, "Expected no lambda inspection in a condition given as a non-lambda function"
@@ -329,31 +381,7 @@ def repr_values(condition: Callable[..., bool], lambda_inspection: Optional[Cond
     reprs = dict()  # type: MutableMapping[str, Any]
 
     if lambda_inspection is not None:
-        # Collect the variable lookup of the condition function:
-        variable_lookup = []  # type: List[Mapping[str, Any]]
-
-        # Add condition arguments to the lookup
-        variable_lookup.append(condition_kwargs)
-
-        # Add closure to the lookup
-        closure_dict = dict()  # type: Dict[str, Any]
-
-        if condition.__closure__ is not None:  # type: ignore
-            closure_cells = condition.__closure__  # type: ignore
-            freevars = condition.__code__.co_freevars
-
-            assert len(closure_cells) == len(freevars), \
-                "Number of closure cells of a condition function ({}) == number of free vars ({})".format(
-                    len(closure_cells), len(freevars))
-
-            for cell, freevar in zip(closure_cells, freevars):
-                closure_dict[freevar] = cell.cell_contents
-
-        variable_lookup.append(closure_dict)
-
-        # Add globals to the lookup
-        if condition.__globals__ is not None:  # type: ignore
-            variable_lookup.append(condition.__globals__)  # type: ignore
+        variable_lookup = collect_variable_lookup(condition=condition, condition_kwargs=condition_kwargs)
 
         # pylint: disable=protected-access
         recompute_visitor = icontract._recompute.Visitor(variable_lookup=variable_lookup)
@@ -390,7 +418,7 @@ def generate_message(contract: Contract, condition_kwargs: Mapping[str, Any]) ->
         parts.append("{}: ".format(contract.description))
 
     lambda_inspection = None  # type: Optional[ConditionLambdaInspection]
-    if not _is_lambda(a_function=contract.condition):
+    if not is_lambda(a_function=contract.condition):
         condition_text = contract.condition.__name__
     else:
         # We need to extract the source code corresponding to the decorator since inspect.getsource() is broken with
@@ -405,7 +433,7 @@ def generate_message(contract: Contract, condition_kwargs: Mapping[str, Any]) ->
         lambda_inspection = find_lambda_condition(decorator_inspection=decorator_inspection)
 
         assert lambda_inspection is not None, \
-            "Expected lambda_inspection to be non-None if _is_lambda is True on: {}".format(contract.condition)
+            "Expected lambda_inspection to be non-None if is_lambda is True on: {}".format(contract.condition)
 
         condition_text = lambda_inspection.text
 

@@ -40,8 +40,8 @@ def find_checker(func: CallableT) -> Optional[CallableT]:
     return contract_checker
 
 
-def _kwargs_from_call(param_names: List[str], kwdefaults: Dict[str, Any], args: Tuple[Any, ...],
-                      kwargs: Dict[str, Any]) -> MutableMapping[str, Any]:
+def kwargs_from_call(param_names: List[str], kwdefaults: Dict[str, Any], args: Tuple[Any, ...],
+                     kwargs: Dict[str, Any]) -> MutableMapping[str, Any]:
     """
     Inspect the input values received at the wrapper for the actual function call.
 
@@ -82,7 +82,7 @@ def _kwargs_from_call(param_names: List[str], kwdefaults: Dict[str, Any], args: 
     return resolved_kwargs
 
 
-def _not_check(check: Any, contract: Contract) -> bool:
+def not_check(check: Any, contract: Contract) -> bool:
     """
     Negate the check value of a condition and capture missing boolyness (*e.g.*, when check is a numpy array).
 
@@ -103,14 +103,14 @@ def _not_check(check: Any, contract: Contract) -> bool:
         raise ValueError(''.join(msg_parts)) from err
 
 
-def _assert_precondition(contract: Contract, resolved_kwargs: Mapping[str, Any]) -> None:
+def select_condition_kwargs(contract: Contract, resolved_kwargs: Mapping[str, Any]) -> Mapping[str, Any]:
     """
-    Assert that the contract holds as a precondition.
+    Select the keyword arguments that are used by the contract.
 
     :param contract: contract to be verified
     :param resolved_kwargs:
         resolved keyword arguments of the call (including the default argument values of the decorated function)
-    :return:
+    :return: a subset of resolved_kwargs
     """
     # Check that all arguments to the condition function have been set.
     missing_args = [arg_name for arg_name in contract.mandatory_args if arg_name not in resolved_kwargs]
@@ -130,9 +130,23 @@ def _assert_precondition(contract: Contract, resolved_kwargs: Mapping[str, Any])
         for arg_name, value in resolved_kwargs.items() if arg_name in contract.condition_arg_set
     }
 
+    return condition_kwargs
+
+
+def _assert_precondition(contract: Contract, resolved_kwargs: Mapping[str, Any]) -> None:
+    """
+    Assert that the contract holds as a precondition.
+
+    :param contract: contract to be verified
+    :param resolved_kwargs:
+        resolved keyword arguments of the call (including the default argument values of the decorated function)
+    :return:
+    """
+    condition_kwargs = select_condition_kwargs(contract=contract, resolved_kwargs=resolved_kwargs)
+
     check = contract.condition(**condition_kwargs)
 
-    if _not_check(check=check, contract=contract):
+    if not_check(check=check, contract=contract):
         if contract.error is not None and (inspect.ismethod(contract.error) or inspect.isfunction(contract.error)):
             assert contract.error_arg_set is not None, "Expected error_arg_set non-None if contract.error a function."
             assert contract.error_args is not None, "Expected error_args non-None if contract.error a function."
@@ -171,7 +185,7 @@ def _assert_invariant(contract: Contract, instance: Any) -> None:
     else:
         check = contract.condition()
 
-    if _not_check(check=check, contract=contract):
+    if not_check(check=check, contract=contract):
         if contract.error is not None and (inspect.ismethod(contract.error) or inspect.isfunction(contract.error)):
             assert contract.error_arg_set is not None, "Expected error_arg_set non-None if contract.error a function."
             assert contract.error_args is not None, "Expected error_args non-None if contract.error a function."
@@ -263,7 +277,7 @@ def _assert_postcondition(contract: Contract, resolved_kwargs: Mapping[str, Any]
 
     check = contract.condition(**condition_kwargs)
 
-    if _not_check(check=check, contract=contract):
+    if not_check(check=check, contract=contract):
         if contract.error is not None and (inspect.ismethod(contract.error) or inspect.isfunction(contract.error)):
             assert contract.error_arg_set is not None, "Expected error_arg_set non-None if contract.error a function."
             assert contract.error_args is not None, "Expected error_args non-None if contract.error a function."
@@ -313,6 +327,18 @@ class _Old:
         return "a bunch of OLD values"
 
 
+def resolve_kwdefaults(sign: inspect.Signature) -> Dict[str, Any]:
+    """Resolve default values for the function arguments based on its signature."""
+    kwdefaults = dict()  # type: Dict[str, Any]
+
+    # Add to the defaults all the values that are needed by the contracts.
+    for param in sign.parameters.values():
+        if param.default != inspect.Parameter.empty:
+            kwdefaults[param.name] = param.default
+
+    return kwdefaults
+
+
 # This flag is used to avoid recursively checking contracts for the same function or instance while
 # contract checking is already in progress.
 #
@@ -346,13 +372,8 @@ def decorate_with_checker(func: CallableT) -> CallableT:
 
     param_names = list(sign.parameters.keys())
 
-    # Determine the default argument values.
-    kwdefaults = dict()  # type: Dict[str, Any]
-
-    # Add to the defaults all the values that are needed by the contracts.
-    for param in sign.parameters.values():
-        if param.default != inspect.Parameter.empty:
-            kwdefaults[param.name] = param.default
+    # Determine the default argument values
+    kwdefaults = resolve_kwdefaults(sign=sign)
 
     id_func = str(id(func))
 
@@ -381,8 +402,7 @@ def decorate_with_checker(func: CallableT) -> CallableT:
             snapshots = getattr(wrapper, "__postcondition_snapshots__")  # type: List[Snapshot]
             postconditions = getattr(wrapper, "__postconditions__")  # type: List[Contract]
 
-            resolved_kwargs = _kwargs_from_call(
-                param_names=param_names, kwdefaults=kwdefaults, args=args, kwargs=kwargs)
+            resolved_kwargs = kwargs_from_call(param_names=param_names, kwdefaults=kwdefaults, args=args, kwargs=kwargs)
 
             if postconditions:
                 if 'result' in resolved_kwargs:
