@@ -2,6 +2,7 @@
 import abc
 import inspect
 import platform
+import weakref
 from typing import List, MutableMapping, Any, Callable, Optional, cast, Set, Type, \
     TypeVar  # pylint: disable=unused-import
 
@@ -74,7 +75,8 @@ def _collapse_snapshots(base_snapshots: List[Snapshot], snapshots: List[Snapshot
     return collapsed
 
 
-def _collapse_postconditions(base_postconditions: List[Contract], postconditions: List[Contract]) -> List[Contract]:
+def _collapse_postconditions(base_postconditions: List[Contract], postconditions: List[Contract]) -> \
+        List[Contract]:
     """
     Collapse function postconditions with the postconditions collected from the base classes.
 
@@ -199,7 +201,8 @@ def _decorate_namespace_property(bases: List[type], namespace: MutableMapping[st
             if hasattr(base, key):
                 base_property = getattr(base, key)
                 assert isinstance(base_property, property), \
-                    "Expected base {} to have {} as property, but got: {}".format(base, key, base_property)
+                    "Expected base {} to have {} as property, but got: {}".format(base, key,
+                                                                                  base_property)
 
                 if func == value.fget:
                     base_func = getattr(base, key).fget
@@ -290,28 +293,23 @@ def _dbc_decorate_namespace(bases: List[type], namespace: MutableMapping[str, An
             pass
 
 
+_CONTRACT_CLASSES = weakref.WeakSet()  # type: ignore
+
 T = TypeVar('T')  # pylint: disable=invalid-name
 
 
-def _try_to_register_with_hypothesis(cls: Type[T]) -> None:
+def _register_for_hypothesis(cls: Type[T]) -> None:
     """
-    Try to import the hypothesis and register the class with its global registry.
+    Add ``cls`` to ``_CONTRACT_CLASSES`` to be later registered with icontract_hypothesis.
 
-    This is necessary so that the preconditions on the __init__ are propagated in hypothesis.strategies.builds.
+    icontract_hypothesis is expected to monkey-patch this function.
+    Prior to patching, all the classes in ``_CONTRACT_CLASSES`` should be registered
+    with Hypothesis.
+
+    The registration is necessary so that the preconditions on the __init__ are propagated
+    in ``hypothesis.strategies.builds``.
     """
-    try:
-        import hypothesis.strategies._internal.types
-        import icontract_hypothesis
-    except ImportError:
-        return
-
-    # We should not register abstract classes as this will mislead Hypothesis to instantiate
-    # them.
-    if inspect.isabstract(cls):
-        return
-
-    if cls not in hypothesis.strategies._internal.types._global_type_lookup:
-        hypothesis.strategies.register_type_strategy(cls, icontract_hypothesis._builds_with_preconditions(cls))
+    _CONTRACT_CLASSES.add(cls)
 
 
 class DBCMeta(abc.ABCMeta):
@@ -345,7 +343,7 @@ class DBCMeta(abc.ABCMeta):
             # This usually works since icontract-hypothesis does not use DBCMeta,
             # but blows up since icontract creates DBC with DBCMeta meta-class at the import time.
             if cls.__module__ != __name__:
-                _try_to_register_with_hypothesis(cls)
+                _register_for_hypothesis(cls)
 
             return cls
     else:
@@ -364,7 +362,7 @@ class DBCMeta(abc.ABCMeta):
             # This usually works since icontract-hypothesis does not use DBCMeta,
             # but blows up since icontract creates DBC with DBCMeta meta-class at the import time.
             if cls.__module__ != __name__:
-                _try_to_register_with_hypothesis(cls)
+                _register_for_hypothesis(cls)
 
             return cls
 
