@@ -310,9 +310,29 @@ def find_lambda_condition(decorator_inspection: DecoratorInspection) -> Optional
     return ConditionLambdaInspection(atok=decorator_inspection.atok, node=lambda_node)
 
 
+def inspect_lambda_condition(condition: Callable[..., Any]) -> Optional[ConditionLambdaInspection]:
+    """
+    Try to extract the source code of the condition as lambda.
+
+    If the condition is not a lambda, returns None.
+    """
+    if not is_lambda(condition):
+        return None
+
+    lines, condition_lineno = inspect.findsource(condition)
+    filename = inspect.getsourcefile(condition)
+    assert filename is not None
+
+    decorator_inspection = inspect_decorator(lines=lines, lineno=condition_lineno, filename=filename)
+
+    lambda_inspection = find_lambda_condition(decorator_inspection=decorator_inspection)
+
+    return lambda_inspection
+
+
 # yapf: disable
 def collect_variable_lookup(
-        condition: Callable[..., bool],
+        condition: Callable[..., Any],
         condition_kwargs: Optional[Mapping[str, Any]] = None
 ) ->List[Mapping[str, Any]]:
     """
