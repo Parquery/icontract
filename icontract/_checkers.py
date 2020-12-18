@@ -208,6 +208,17 @@ def _assert_invariant(contract: Contract, instance: Any) -> None:
                 raise NotImplementedError("Unhandled contract.error: {}".format(contract.error))
 
 
+def select_capture_kwargs(a_snapshot: Snapshot, resolved_kwargs: Mapping[str, Any]) -> Mapping[str, Any]:
+    """
+    Select the keyword arguments that are used by the snapshot capture.
+
+    :param a_snapshot: snapshot to be captured
+    :param resolved_kwargs: resolved keyword arguments (including the default values)
+    :return: a subset of resolved_kwargs
+    """
+    return {arg_name: arg_value for arg_name, arg_value in resolved_kwargs.items() if arg_name in a_snapshot.arg_set}
+
+
 def _capture_snapshot(a_snapshot: Snapshot, resolved_kwargs: Mapping[str, Any]) -> Any:
     """
     Capture the snapshot from the keyword arguments resolved before the function call (including the default values).
@@ -228,11 +239,7 @@ def _capture_snapshot(a_snapshot: Snapshot, resolved_kwargs: Mapping[str, Any]) 
 
         raise TypeError(''.join(msg_parts))
 
-    capture_kwargs = {
-        arg_name: arg_value
-        for arg_name, arg_value in resolved_kwargs.items() if arg_name in a_snapshot.arg_set
-    }
-
+    capture_kwargs = select_capture_kwargs(a_snapshot=a_snapshot, resolved_kwargs=resolved_kwargs)
     captured_value = a_snapshot.capture(**capture_kwargs)
 
     return captured_value
@@ -309,7 +316,7 @@ def _assert_postcondition(contract: Contract, resolved_kwargs: Mapping[str, Any]
                 raise contract.error(msg)
 
 
-class _Old:
+class Old:
     """
     Represent argument values before the function invocation.
 
@@ -317,13 +324,16 @@ class _Old:
     """
 
     def __init__(self, mapping: Mapping[str, Any]) -> None:
+        """Update the ``__dict__`` with the given mapping."""
         self.__dict__.update(mapping)
 
     def __getattr__(self, item: str) -> Any:
+        """Raise an error as this ``item`` should not be in the ``__dict__``."""
         raise AttributeError("The snapshot with the name {!r} is not available in the OLD of a postcondition. "
                              "Have you decorated the function with a corresponding snapshot decorator?".format(item))
 
     def __repr__(self) -> str:
+        """Represent the old values with a string literal as user is unaware of the class."""
         return "a bunch of OLD values"
 
 
@@ -436,7 +446,7 @@ def decorate_with_checker(func: CallableT) -> CallableT:
                     assert snap.name not in old_as_mapping, "Snapshots with the conflicting name: {}"
                     old_as_mapping[snap.name] = _capture_snapshot(a_snapshot=snap, resolved_kwargs=resolved_kwargs)
 
-                resolved_kwargs['OLD'] = _Old(mapping=old_as_mapping)
+                resolved_kwargs['OLD'] = Old(mapping=old_as_mapping)
 
             # Ideally, we would catch any exception here and strip the checkers from the traceback.
             # Unfortunately, this can not be done in Python 3, see
@@ -638,7 +648,8 @@ def add_invariant_checks(cls: type) -> None:
 
         if name == "__init__":
             assert inspect.isfunction(value) or isinstance(value, _SLOT_WRAPPER_TYPE), \
-                "Expected __init__ to be either a function or a slot wrapper, but got: {}".format(type(value))
+                "Expected __init__ to be either a function or a slot wrapper, but got: {}".format(
+                    type(value))
 
             init_name_func = (name, value)
             continue
