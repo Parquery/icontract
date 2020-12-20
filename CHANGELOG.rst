@@ -1,3 +1,9 @@
+2.4.1
+=====
+*  Removed automatic registration with Hypothesis and replaced it with a hook that
+   downstream libraries such as icontract-hypothesis can use (#181)
+* Refactored and added tests for integrators (#182)
+
 2.4.0
 =====
 * Integrated with icontract-hypothesis (#179)
