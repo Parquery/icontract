@@ -20,6 +20,20 @@ icontract
 icontract provides `design-by-contract <https://en.wikipedia.org/wiki/Design_by_contract>`_ to Python3 with informative
 violation messages and inheritance.
 
+It also gives a base for a flourishing of a wider ecosystem:
+
+* A linter `pyicontract-lint <https://pypi.org/project/pyicontract-lint>`__,
+* A sphinx plug-in `sphinx-icontract <https://pypi.org/project/sphinx-icontract>`_,
+* A tool `icontract-hypothesis <https://github.com/mristin/icontract-hypothesis>`_
+  for automated testing and ghostwriting test files which infers
+  `Hypothesis <https://hypothesis.readthedocs.io/en/latest/>`_ strategies based on the contracts,
+
+  * together with IDE integrations such as
+    `icontract-hypothesis-vim <https://github.com/mristin/icontract-hypothesis-vim>`_ and
+    `icontract-hypothesis-pycharm <https://github.com/mristin/icontract-hypothesis-pycharm>`_,
+* An ongoing integration with `CrossHair <https://github.com/pschanely/CrossHair>`_, and
+* An ongoing integration with `FastAPI <https://github.com/tiangolo/fastapi/issues/1996>`_.
+
 Related Projects
 ----------------
 There exist a couple of contract libraries. However, at the time of this writing (September 2018), they all required the
@@ -807,12 +821,12 @@ Linter
 ------
 We provide a linter that statically verifies the arguments of the contracts (*i.e.* that they are
 well-defined with respect to the function). The tool is available as a separate package,
-`pyicontract-lint <https://pypi.org/project/pyicontract-lint>`_.
+`pyicontract-lint <https://pypi.org/project/pyicontract-lint>`__.
 
 Sphinx
 ------
 We implemented a Sphinx extension to include contracts in the documentation. The extension is available as a package
-`sphinx-icontract <https://pypi.org/project/sphinx-icontract>`_.
+`sphinx-icontract <https://pypi.org/project/sphinx-icontract>`__.
 
 Checking Types at Runtime
 -------------------------
