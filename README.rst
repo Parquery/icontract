@@ -29,8 +29,9 @@ It also gives a base for a flourishing of a wider ecosystem:
   `Hypothesis <https://hypothesis.readthedocs.io/en/latest/>`_ strategies based on the contracts,
 
   * together with IDE integrations such as
-    `icontract-hypothesis-vim <https://github.com/mristin/icontract-hypothesis-vim>`_ and
-    `icontract-hypothesis-pycharm <https://github.com/mristin/icontract-hypothesis-pycharm>`_,
+    `icontract-hypothesis-vim <https://github.com/mristin/icontract-hypothesis-vim>`_,
+    `icontract-hypothesis-pycharm <https://github.com/mristin/icontract-hypothesis-pycharm>`_, and
+    `icontract-hypothesis-vscode <https://github.com/mristin/icontract-hypothesis-vscode>`_,
 * An ongoing integration with `CrossHair <https://github.com/pschanely/CrossHair>`_, and
 * An ongoing integration with `FastAPI <https://github.com/tiangolo/fastapi/issues/1996>`_.
 
