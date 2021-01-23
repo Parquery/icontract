@@ -638,7 +638,9 @@ def add_invariant_checks(cls: type) -> None:
     names_properties = []  # type: List[Tuple[str, property]]
 
     # Filter out entries in the directory which are certainly not candidates for decoration.
-    for name, value in [(name, getattr(cls, name)) for name in dir(cls)]:
+    for name in dir(cls):
+        value = getattr(cls, name)
+
         # __new__ is a special class method (though not marked properly with @classmethod!).
         # We need to ignore __repr__ to prevent endless loops when generating error messages.
         # __getattribute__, __setattr__ and __delattr__ are too invasive and alter the state of the instance.
@@ -658,15 +660,21 @@ def add_invariant_checks(cls: type) -> None:
                 not isinstance(value, property):
             continue
 
-        # Ignore class methods
-        if getattr(value, "__self__", None) is cls:
-            continue
-
         # Ignore "protected"/"private" methods
         if name.startswith("_") and not (name.startswith("__") and name.endswith("__")):
             continue
 
         if inspect.isfunction(value) or isinstance(value, _SLOT_WRAPPER_TYPE):
+            # Ignore class methods
+            if getattr(value, "__self__", None) is cls:
+                continue
+
+            # Ignore static methods
+            # See https://stackoverflow.com/questions/14187973/python3-check-if-method-is-static
+            bound_value = inspect.getattr_static(cls, name, None)
+            if isinstance(bound_value, staticmethod):
+                continue
+
             names_funcs.append((name, value))
 
         elif isinstance(value, property):
