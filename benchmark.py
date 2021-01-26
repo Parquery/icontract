@@ -44,10 +44,10 @@ def benchmark_against_others(repo_root: pathlib.Path, overwrite: bool) -> None:
             out.append(stdout)
             out.append('\n')
 
-        readme_path = repo_root / 'README.rst'
+        readme_path = repo_root / "docs" / "source" / "benchmarks.rst"
         readme = readme_path.read_text(encoding='utf-8')
-        marker_start = '.. Becnhmark report from precommit.py starts.'
-        marker_end = '.. Benchmark report from precommit.py ends.'
+        marker_start = '.. Becnhmark report from benchmark.py starts.'
+        marker_end = '.. Benchmark report from benchmark.py ends.'
         lines = readme.splitlines()
 
         try:
@@ -75,7 +75,7 @@ def benchmark_against_others(repo_root: pathlib.Path, overwrite: bool) -> None:
 def main() -> int:
     """"Execute main routine."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--overwrite", help="Overwrites the corresponding section in the Readme.", action='store_true')
+    parser.add_argument("--overwrite", help="Overwrites the corresponding section in the docs.", action='store_true')
 
     args = parser.parse_args()
 
