@@ -926,7 +926,7 @@ The following scripts were run:
 * `benchmarks/against_others/compare_postcondition.py <https://github.com/Parquery/icontract/tree/master/benchmarks/against_others/compare_postcondition.py>`_
 
 The benchmarks were executed on Intel(R) Xeon(R) E-2276M  CPU @ 2.80GHz.
-We used Python 3.8.5, icontract 2.3.5, deal 4.2.0 and dpcontracts 0.6.0.
+We used Python 3.8.5, icontract 2.4.1, deal 4.1.0 and dpcontracts 0.6.0.
 
 The following tables summarize the results.
 
@@ -935,10 +935,10 @@ Benchmarking invariant at __init__:
 =========================  ============  ==============  =======================
 Case                         Total time    Time per run    Relative time per run
 =========================  ============  ==============  =======================
-`ClassWithIcontract`             1.74 s         1.74 μs                     100%
-`ClassWithDpcontracts`           0.55 s         0.55 μs                      32%
-`ClassWithDeal`                  3.26 s         3.26 μs                     187%
-`ClassWithInlineContract`        0.33 s         0.33 μs                      19%
+`ClassWithIcontract`             1.36 s         1.36 μs                     100%
+`ClassWithDpcontracts`           0.46 s         0.46 μs                      34%
+`ClassWithDeal`                  2.65 s         2.65 μs                     195%
+`ClassWithInlineContract`        0.27 s         0.27 μs                      20%
 =========================  ============  ==============  =======================
 
 Benchmarking invariant at a function:
@@ -946,10 +946,10 @@ Benchmarking invariant at a function:
 =========================  ============  ==============  =======================
 Case                         Total time    Time per run    Relative time per run
 =========================  ============  ==============  =======================
-`ClassWithIcontract`             2.48 s         2.48 μs                     100%
-`ClassWithDpcontracts`           0.56 s         0.56 μs                      22%
-`ClassWithDeal`                  9.76 s         9.76 μs                     393%
-`ClassWithInlineContract`        0.28 s         0.28 μs                      11%
+`ClassWithIcontract`             1.94 s         1.94 μs                     100%
+`ClassWithDpcontracts`           0.46 s         0.46 μs                      24%
+`ClassWithDeal`                  7.14 s         7.14 μs                     368%
+`ClassWithInlineContract`        0.23 s         0.23 μs                      12%
 =========================  ============  ==============  =======================
 
 Benchmarking precondition:
@@ -957,10 +957,10 @@ Benchmarking precondition:
 ===============================  ============  ==============  =======================
 Case                               Total time    Time per run    Relative time per run
 ===============================  ============  ==============  =======================
-`function_with_icontract`              0.03 s         3.17 μs                     100%
-`function_with_dpcontracts`            0.65 s        64.62 μs                    2037%
-`function_with_deal`                   0.16 s        16.04 μs                     506%
-`function_with_inline_contract`        0.00 s         0.17 μs                       6%
+`function_with_icontract`              0.03 s         2.61 μs                     100%
+`function_with_dpcontracts`            0.51 s        50.52 μs                    1939%
+`function_with_deal`                   0.13 s        12.59 μs                     483%
+`function_with_inline_contract`        0.00 s         0.15 μs                       6%
 ===============================  ============  ==============  =======================
 
 Benchmarking postcondition:
@@ -968,11 +968,11 @@ Benchmarking postcondition:
 ===============================  ============  ==============  =======================
 Case                               Total time    Time per run    Relative time per run
 ===============================  ============  ==============  =======================
-`function_with_icontract`              0.03 s         3.01 μs                     100%
-`function_with_dpcontracts`            0.66 s        65.78 μs                    2187%
-`function_with_deal_post`              0.01 s         1.12 μs                      37%
-`function_with_deal_ensure`            0.02 s         1.62 μs                      54%
-`function_with_inline_contract`        0.00 s         0.18 μs                       6%
+`function_with_icontract`              0.03 s         2.63 μs                     100%
+`function_with_dpcontracts`            0.51 s        50.59 μs                    1921%
+`function_with_deal_post`              0.01 s         0.89 μs                      34%
+`function_with_deal_ensure`            0.01 s         1.23 μs                      47%
+`function_with_inline_contract`        0.00 s         0.14 μs                       5%
 ===============================  ============  ==============  =======================
 
 

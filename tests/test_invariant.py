@@ -62,6 +62,46 @@ class TestOK(unittest.TestCase):
         inst = SomeClass()
         self.assertEqual(100, inst.x)
 
+    def test_static_method(self) -> None:
+        # Adapted from https://github.com/Parquery/icontract/issues/186
+        @icontract.invariant(lambda self: A.some_static_method(self.x))
+        @icontract.invariant(lambda self: self.some_instance_method())
+        class A:
+            def __init__(self) -> None:
+                self.x = 10
+
+            def some_instance_method(self) -> bool:
+                # We need this instance method for easier debugging.
+                return self.x < 100
+
+            @staticmethod
+            def some_static_method(x: int) -> bool:
+                return x > 0
+
+        _ = A()
+
+    def test_inherited_static_method(self) -> None:
+        @icontract.invariant(lambda self: A.some_static_method(self.x))
+        @icontract.invariant(lambda self: self.some_instance_method())
+        class A:
+            def __init__(self) -> None:
+                self.x = 10
+
+            def some_instance_method(self) -> bool:
+                # We need this instance method for easier debugging.
+                return self.x < 100
+
+            @staticmethod
+            def some_static_method(x: int) -> bool:
+                return x > 0
+
+        # We need to test for inheritance.
+        # See https://stackoverflow.com/questions/14187973/#comment74562120_37147128
+        class B(A):
+            pass
+
+        _ = B()
+
     def test_protected_method_may_violate_inv(self) -> None:
         @icontract.invariant(lambda self: self.x > 0)
         class SomeClass:
