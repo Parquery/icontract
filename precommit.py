@@ -68,7 +68,11 @@ def main() -> int:
     subprocess.check_call(["coverage", "report"])
 
     print("Doctesting...")
-    subprocess.check_call([sys.executable, "-m", "doctest", "README.rst"])
+    doc_files = ["README.rst"]
+    for pth in (repo_root / "docs" / "source").glob("**/*.rst"):
+        doc_files.append(str(pth.relative_to(repo_root)))
+    subprocess.check_call([sys.executable, "-m", "doctest"] + doc_files)
+
     for pth in (repo_root / "icontract").glob("**/*.py"):
         subprocess.check_call([sys.executable, "-m", "doctest", str(pth)])
 

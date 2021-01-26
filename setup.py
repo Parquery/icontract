@@ -16,6 +16,9 @@ here = os.path.abspath(os.path.dirname(__file__))  # pylint: disable=invalid-nam
 with open(os.path.join(here, 'README.rst'), encoding='utf-8') as fid:
     long_description = fid.read()  # pylint: disable=invalid-name
 
+with open(os.path.join(here, "requirements.txt"), encoding="utf-8") as fid:
+    install_requires = [line for line in fid.read().splitlines() if line.strip()]
+
 # Please keep the meta information in sync with icontract/__init__.py.
 #
 # (mristin, 2020-10-09) We had to denormalize icontract_meta module (which
@@ -45,7 +48,7 @@ setup(
     license='License :: OSI Approved :: MIT License',
     keywords='design-by-contract precondition postcondition validation',
     packages=find_packages(exclude=['tests']),
-    install_requires=['asttokens>=2,<3'],
+    install_requires=install_requires,
     extras_require={
         'dev': [
             # yapf: disable
@@ -65,4 +68,5 @@ setup(
         ] + (['deal==4.1.0'] if sys.version_info >= (3, 8) else []),
     },
     py_modules=['icontract'],
-    package_data={"icontract": ["py.typed"]})
+    package_data={"icontract": ["py.typed"]},
+    data_files=[(".", ["LICENSE.txt", "README.rst", "requirements.txt"])])
