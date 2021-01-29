@@ -17,7 +17,7 @@ icontract
     :target: https://icontract.readthedocs.io/en/latest/
     :alt: Documentation
 
-.. image:: https://badges.gitter.im/gitterHQ/gitter.png
+.. image:: https://badges.gitter.im/gitterHQ/gitter.svg
     :target: https://gitter.im/Parquery-icontract/community
     :alt: Gitter chat
 
@@ -83,7 +83,7 @@ capabilities.
     >>> import icontract
 
     >>> @icontract.require(lambda x: x > 3)
-    ... def some_func(x: int, y: int = 5)->None:
+    ... def some_func(x: int, y: int = 5) -> None:
     ...     pass
     ...
 
@@ -119,7 +119,7 @@ capabilities.
     ...         return "instance of B"
     ...
     >>> class A:
-    ...     def __init__(self)->None:
+    ...     def __init__(self) -> None:
     ...         self.b = B()
     ...
     ...     def __repr__(self) -> str:
