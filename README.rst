@@ -80,97 +80,79 @@ capabilities.
 
 .. code-block:: python
 
-    >>> import icontract
-
-    >>> @icontract.require(lambda x: x > 3)
-    ... def some_func(x: int, y: int = 5) -> None:
-    ...     pass
-    ...
-
-    >>> some_func(x=5)
-
-    # Pre-condition violation
-    >>> some_func(x=1)
-    Traceback (most recent call last):
-      ...
-    icontract.errors.ViolationError: File <doctest README.rst[1]>, line 1 in <module>:
-    x > 3: x was 1
-
-    # Pre-condition violation with a description
-    >>> @icontract.require(lambda x: x > 3, "x must not be small")
-    ... def some_func(x: int, y: int = 5) -> None:
-    ...     pass
-    ...
-    >>> some_func(x=1)
-    Traceback (most recent call last):
-      ...
-    icontract.errors.ViolationError: File <doctest README.rst[4]>, line 1 in <module>:
-    x must not be small: x > 3: x was 1
-
-    # Pre-condition violation with more complex values
-    >>> class B:
-    ...     def __init__(self) -> None:
-    ...         self.x = 7
-    ...
-    ...     def y(self) -> int:
-    ...         return 2
-    ...
-    ...     def __repr__(self) -> str:
-    ...         return "instance of B"
-    ...
-    >>> class A:
-    ...     def __init__(self) -> None:
-    ...         self.b = B()
-    ...
-    ...     def __repr__(self) -> str:
-    ...         return "instance of A"
-    ...
-    >>> SOME_GLOBAL_VAR = 13
-    >>> @icontract.require(lambda a: a.b.x + a.b.y() > SOME_GLOBAL_VAR)
-    ... def some_func(a: A) -> None:
-    ...     pass
-    ...
-    >>> an_a = A()
-    >>> some_func(an_a)
-    Traceback (most recent call last):
-      ...
-    icontract.errors.ViolationError: File <doctest README.rst[9]>, line 1 in <module>:
-    a.b.x + a.b.y() > SOME_GLOBAL_VAR:
-    SOME_GLOBAL_VAR was 13
-    a was instance of A
-    a.b was instance of B
-    a.b.x was 7
-    a.b.y() was 2
-
+    import icontract
+    
+    def runner(func, *args, **kwargs):
+        try:
+            result = func(*args, **kwargs)
+            breakpoint()
+        except icontract.errors.ViolationError as exc:
+            breakpoint()
+            print(exc)
+    
+    @icontract.require(lambda x: x > 3)
+    def some_func(x: int, y: int = 5) -> None:
+        pass
+    
+    runner(some_func, x=5)
+    runner(some_func, x=1)
+    
+    @icontract.require(lambda x: x > 3, "x must not be small")
+    def some_func(x: int, y: int = 5) -> None:
+        pass
+    
+    runner(some_func, x=1)
+    
+    class B:
+        def __init__(self) -> None:
+            self.x = 7
+    
+        def y(self) -> int:
+            return 2
+    
+        def __repr__(self) -> str:
+            return "instance of B"
+    
+    class A:
+        def __init__(self) -> None:
+            self.b = B()
+    
+        def __repr__(self) -> str:
+            return "instance of A"
+    
+    SOME_GLOBAL_VAR = 13
+    @icontract.require(lambda a: a.b.x + a.b.y() > SOME_GLOBAL_VAR)
+    def some_func(a: A) -> None:
+        pass
+    
+    an_a = A()
+    runner(some_func, an_a)
+    
     # Post-condition
-    >>> @icontract.ensure(lambda result, x: result > x)
-    ... def some_func(x: int, y: int = 5) -> int:
-    ...     return x - y
-    ...
-    >>> some_func(x=10)
-    Traceback (most recent call last):
-      ...
-    icontract.errors.ViolationError: File <doctest README.rst[12]>, line 1 in <module>:
-    result > x:
-    result was 5
-    x was 10
-
+    @icontract.ensure(lambda result, x: result > x)
+    def some_func(x: int, y: int = 5) -> int:
+        return x - y
+    
+    runner(some_func, x=10)
+    
+    # Pre-conditions fail before Post-conditions
+    @icontract.ensure(lambda result, x: result > x)
+    @icontract.require(lambda x: x > 3, "x must not be small")
+    def some_func(x: int, y: int = 5) -> int:
+        return x - y
+    
+    runner(some_func, x=3)
+    
     # Invariant
-    >>> @icontract.invariant(lambda self: self.x > 0)
-    ... class SomeClass:
-    ...     def __init__(self) -> None:
-    ...         self.x = -1
-    ...
-    ...     def __repr__(self) -> str:
-    ...         return "some instance"
-    ...
-    >>> some_instance = SomeClass()
-    Traceback (most recent call last):
-     ...
-    icontract.errors.ViolationError: File <doctest README.rst[14]>, line 1 in <module>:
-    self.x > 0:
-    self was some instance
-    self.x was -1
+    @icontract.invariant(lambda self: self.x > 0)
+    class SomeClass:
+        def __init__(self) -> None:
+            self.x = -1
+    
+        def __repr__(self) -> str:
+            return "some instance"
+    
+    some_instance = SomeClass()
 
 
 Installation
