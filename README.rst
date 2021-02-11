@@ -71,12 +71,16 @@ a work-around till that happens. You might be also interested in the archived di
 design-by-contract into Python language on
 `python-ideas mailing list <https://groups.google.com/forum/#!topic/python-ideas/JtMgpSyODTU>`_.
 
-Usage
-=====
+Teasers
+=======
 We give a couple of teasers here to motivate the library.
 Please see the documentation available on `icontract.readthedocs.io
 <https://icontract.readthedocs.io/en/latest/>`_ for a full scope of its
 capabilities.
+
+The script is also available as a `repl.it post`_.
+
+.. _repl.it post: https://repl.it/talk/share/icontract-example-script/121190
 
 .. code-block:: python
 
@@ -155,6 +159,19 @@ capabilities.
     result was 5
     x was 10
 
+
+    # Pre-conditions fail before post-conditions.
+    >>> @icontract.ensure(lambda result, x: result > x)
+    ... @icontract.require(lambda x: x > 3, "x must not be small")
+    ... def some_func(x: int, y: int = 5) -> int:
+    ...    return x - y
+    ...
+    >>> some_func(x=3)
+    Traceback (most recent call last):
+      ...
+    icontract.errors.ViolationError: File <doctest README.rst[14]>, line 2 in <module>:
+    x must not be small: x > 3: x was 3
+
     # Invariant
     >>> @icontract.invariant(lambda self: self.x > 0)
     ... class SomeClass:
@@ -167,7 +184,7 @@ capabilities.
     >>> some_instance = SomeClass()
     Traceback (most recent call last):
      ...
-    icontract.errors.ViolationError: File <doctest README.rst[14]>, line 1 in <module>:
+    icontract.errors.ViolationError: File <doctest README.rst[16]>, line 1 in <module>:
     self.x > 0:
     self was some instance
     self.x was -1
