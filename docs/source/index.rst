@@ -8,6 +8,7 @@ Welcome to icontract's documentation!
    introduction
    usage
    checking_types_at_runtime
+   async
    implementation_details
    known_issues
    benchmarks

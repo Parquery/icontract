@@ -1,4 +1,5 @@
 """Define public decorators."""
+import inspect
 import reprlib
 import traceback
 from typing import Callable, Optional, Union, Any, List  # pylint: disable=unused-import
@@ -280,6 +281,10 @@ class invariant:  # pylint: disable=invalid-name
 
     The invariant is checked *before* and *after* the method invocation.
 
+    As invariants need to wrap dunder methods, including ``__init__``, their conditions *can not* be
+    async, as most dunder methods need to be synchronous methods, and wrapping them with async code would
+    break that constraint.
+
     """
 
     def __init__(self,
@@ -323,6 +328,10 @@ class invariant:  # pylint: disable=invalid-name
         if len(tb_stack) > 0:
             frame = tb_stack[0]
             location = 'File {}, line {} in {}'.format(frame.filename, frame.lineno, frame.name)
+
+        if inspect.iscoroutinefunction(condition):
+            raise ValueError(
+                "Async conditions are not possible in invariants as sync methods such as __init__ have to be wrapped.")
 
         self._contract = Contract(
             condition=condition, description=description, a_repr=a_repr, error=error, location=location)

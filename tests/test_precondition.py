@@ -491,7 +491,7 @@ class TestInvalid(unittest.TestCase):
             type_err = err
 
         self.assertIsNotNone(type_err)
-        self.assertEqual("The argument(s) of the precondition have not been set: ['b']. "
+        self.assertEqual("The argument(s) of the contract condition have not been set: ['b']. "
                          "Does the original function define them? Did you supply them in the call?",
                          tests.error.wo_mandatory_location(str(type_err)))
 
@@ -507,7 +507,7 @@ class TestInvalid(unittest.TestCase):
             type_error = err
 
         self.assertIsNotNone(type_error)
-        self.assertEqual("The argument(s) of the precondition error have not been set: ['z']. "
+        self.assertEqual("The argument(s) of the contract error have not been set: ['z']. "
                          "Does the original function define them? Did you supply them in the call?",
                          tests.error.wo_mandatory_location(str(type_error)))
 
