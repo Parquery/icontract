@@ -193,7 +193,7 @@ class ConditionLambdaInspection:
 
 
 _DECORATOR_RE = re.compile(r'^\s*@[a-zA-Z_]')
-_DEF_CLASS_RE = re.compile(r'^\s*(def |class )')
+_DEF_CLASS_RE = re.compile(r'^\s*(async\s+def|def |class )')
 
 
 class DecoratorInspection:

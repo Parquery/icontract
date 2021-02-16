@@ -120,8 +120,11 @@ def select_condition_kwargs(contract: Contract, resolved_kwargs: Mapping[str, An
             msg_parts.append("{}:\n".format(contract.location))
 
         msg_parts.append(
-            ("The argument(s) of the precondition have not been set: {}. "
+            ("The argument(s) of the contract condition have not been set: {}. "
              "Does the original function define them? Did you supply them in the call?").format(missing_args))
+
+        if 'OLD' in missing_args:
+            msg_parts.append(' Did you decorate the function with a snapshot to capture OLD values?')
 
         raise TypeError(''.join(msg_parts))
 
@@ -171,7 +174,50 @@ def select_capture_kwargs(a_snapshot: Snapshot, resolved_kwargs: Mapping[str, An
     :param resolved_kwargs: resolved keyword arguments (including the default values)
     :return: a subset of resolved_kwargs
     """
+    missing_args = [arg_name for arg_name in a_snapshot.args if arg_name not in resolved_kwargs]
+    if missing_args:
+        msg_parts = []
+        if a_snapshot.location is not None:
+            msg_parts.append("{}:\n".format(a_snapshot.location))
+
+        msg_parts.append(
+            ("The argument(s) of the snapshot have not been set: {}. "
+             "Does the original function define them? Did you supply them in the call?").format(missing_args))
+
+        raise TypeError(''.join(msg_parts))
+
     return {arg_name: arg_value for arg_name, arg_value in resolved_kwargs.items() if arg_name in a_snapshot.arg_set}
+
+
+def select_error_kwargs(contract: Contract, resolved_kwargs: Mapping[str, Any]) -> Mapping[str, Any]:
+    """
+    Select the keyword arguments that are used by the error creator of the contract.
+
+    :param contract: contract that was violated and for which we want to generate an error
+    :param resolved_kwargs: resolved keyword arguments (including the default values)
+    :return: a subset of resolved_kwargs
+    """
+    assert contract.error_arg_set is not None
+    assert contract.error_args is not None
+
+    error_kwargs = {
+        arg_name: value
+        for arg_name, value in resolved_kwargs.items() if arg_name in contract.error_arg_set
+    }
+
+    missing_args = [arg_name for arg_name in contract.error_args if arg_name not in resolved_kwargs]
+    if missing_args:
+        msg_parts = []  # type: List[str]
+        if contract.location is not None:
+            msg_parts.append("{}:\n".format(contract.location))
+
+        msg_parts.append(
+            ("The argument(s) of the contract error have not been set: {}. "
+             "Does the original function define them? Did you supply them in the call?").format(missing_args))
+
+        raise TypeError(''.join(msg_parts))
+
+    return error_kwargs
 
 
 class Old:
@@ -245,151 +291,58 @@ def decorate_with_checker(func: CallableT) -> CallableT:
 
     id_func = str(id(func))
 
-    def wrapper(*args, **kwargs):  # type: ignore
-        """Wrap func by checking the preconditions and postconditions."""
-        # pylint: disable=too-many-branches,too-many-nested-blocks,too-many-locals
+    # (mristin, 2021-02-16)
+    # Admittedly, this branching on sync/async is absolutely monstrous.
+    # However, I couldn't find out an easier way to refactor the code so that it supports async.
+    # Python expects us to explicitly colour functions as sync/async so we can not just put in an if-statement and
+    # introduce an "await".
+    #
+    # The two wrappers need to be manually maintained in parallel.
+    # Whenever you make a change, please inspect manually that both sync and async code exercises equivalent behavior.
+    # For example, copy/paste the two blocks of code in separate files and perform a diff.
 
-        if '_ARGS' in kwargs:
-            raise TypeError('The arguments of the function call include "_ARGS" which is '
-                            'a placeholder for positional arguments in a condition.')
+    if inspect.iscoroutinefunction(func):
 
-        if '_KWARGS' in kwargs:
-            raise TypeError('The arguments of the function call include "_KWARGS" which is '
-                            'a placeholder for keyword arguments in a condition.')
+        async def wrapper(*args, **kwargs):  # type: ignore
+            """Wrap func by checking the preconditions and postconditions."""
+            # pylint: disable=too-many-branches,too-many-nested-blocks,too-many-locals
 
-        # Use try-finally instead of ExitStack for performance.
-        try:
-            # If the wrapper is already checking the contracts for the wrapped function, avoid a recursive loop
-            # by skipping any subsequent contract checks for the same function.
-            if hasattr(_IN_PROGRESS, id_func):
-                return func(*args, **kwargs)
+            if '_ARGS' in kwargs:
+                raise TypeError('The arguments of the function call include "_ARGS" which is '
+                                'a placeholder for positional arguments in a condition.')
 
-            setattr(_IN_PROGRESS, id_func, True)
+            if '_KWARGS' in kwargs:
+                raise TypeError('The arguments of the function call include "_KWARGS" which is '
+                                'a placeholder for keyword arguments in a condition.')
 
-            preconditions = getattr(wrapper, "__preconditions__")  # type: List[List[Contract]]
-            snapshots = getattr(wrapper, "__postcondition_snapshots__")  # type: List[Snapshot]
-            postconditions = getattr(wrapper, "__postconditions__")  # type: List[Contract]
+            # Use try-finally instead of ExitStack for performance.
+            try:
+                # If the wrapper is already checking the contracts for the wrapped function, avoid a recursive loop
+                # by skipping any subsequent contract checks for the same function.
+                if hasattr(_IN_PROGRESS, id_func):
+                    return func(*args, **kwargs)
 
-            resolved_kwargs = kwargs_from_call(param_names=param_names, kwdefaults=kwdefaults, args=args, kwargs=kwargs)
+                setattr(_IN_PROGRESS, id_func, True)
 
-            if postconditions:
-                if 'result' in resolved_kwargs:
-                    raise TypeError("Unexpected argument 'result' in a function decorated with postconditions.")
+                preconditions = getattr(wrapper, "__preconditions__")  # type: List[List[Contract]]
+                snapshots = getattr(wrapper, "__postcondition_snapshots__")  # type: List[Snapshot]
+                postconditions = getattr(wrapper, "__postconditions__")  # type: List[Contract]
 
-                if 'OLD' in resolved_kwargs:
-                    raise TypeError("Unexpected argument 'OLD' in a function decorated with postconditions.")
+                resolved_kwargs = kwargs_from_call(
+                    param_names=param_names, kwdefaults=kwdefaults, args=args, kwargs=kwargs)
 
-            # Assert the preconditions in groups. This is necessary to implement "require else" logic when a class
-            # weakens the preconditions of its base class.
+                if postconditions:
+                    if 'result' in resolved_kwargs:
+                        raise TypeError("Unexpected argument 'result' in a function decorated with postconditions.")
 
-            exception = None  # type: Optional[Exception]
-            for group in preconditions:
-                # We need to in-line this code so that we can better reason about it
-                # (see the discussion about deep and shallow functions in
-                # https://www.youtube.com/watch?v=bmSAYlu0NcY).
-                # There were already a couple of bugs related to having the below logic separated in a function
-                # which were not obvious to detect.
-                #
-                # Please use an IDE with folding functionality to be able to read it.
-                # (It is really a pain to read as plain text.)
+                    if 'OLD' in resolved_kwargs:
+                        raise TypeError("Unexpected argument 'OLD' in a function decorated with postconditions.")
 
-                exception = None
+                # Assert the preconditions in groups. This is necessary to implement "require else" logic when a class
+                # weakens the preconditions of its base class.
 
-                for contract in group:
-                    assert exception is None, "No exception as long as pre-condition group is satisfiable."
-
-                    condition_kwargs = select_condition_kwargs(contract=contract, resolved_kwargs=resolved_kwargs)
-
-                    check = contract.condition(**condition_kwargs)
-
-                    if not_check(check=check, contract=contract):
-                        if contract.error is not None and (inspect.ismethod(contract.error)
-                                                           or inspect.isfunction(contract.error)):
-                            assert contract.error_arg_set is not None, (
-                                "Expected error_arg_set non-None if contract.error a function.")
-                            assert contract.error_args is not None, (
-                                "Expected error_args non-None if contract.error a function.")
-
-                            error_kwargs = {
-                                arg_name: value
-                                for arg_name, value in resolved_kwargs.items() if arg_name in contract.error_arg_set
-                            }
-
-                            missing_args = [
-                                arg_name for arg_name in contract.error_args if arg_name not in resolved_kwargs
-                            ]
-                            if missing_args:
-                                msg_parts = []  # type: List[str]
-                                if contract.location is not None:
-                                    msg_parts.append("{}:\n".format(contract.location))
-
-                                msg_parts.append(
-                                    ("The argument(s) of the precondition error have not been set: {}. "
-                                     "Does the original function define them? Did you supply them in the call?"
-                                     ).format(missing_args))
-
-                                raise TypeError(''.join(msg_parts))
-
-                            exception = contract.error(**error_kwargs)
-
-                        else:
-                            msg = icontract._represent.generate_message(
-                                contract=contract, condition_kwargs=condition_kwargs)
-
-                            if contract.error is None:
-                                exception = ViolationError(msg)
-                            elif isinstance(contract.error, type):
-                                exception = contract.error(msg)
-
-                        # Break out of the loop,
-                        # as we know now that the whole group of the preconditions can not be satisfied.
-                        assert exception is not None, "Exception must be set if a pre-condition failed."
-                        break
-
-                # The group of preconditions was satisfied, no need to check the other groups.
-                if exception is None:
-                    break
-
-            if exception is not None:
-                raise exception
-
-            # Capture the snapshots
-            if postconditions and snapshots:
-                old_as_mapping = dict()  # type: MutableMapping[str, Any]
-                for snap in snapshots:
-                    # This assert is just a last defense.
-                    # Conflicting snapshot names should have been caught before, either during the decoration or
-                    # in the meta-class.
-                    assert snap.name not in old_as_mapping, "Snapshots with the conflicting name: {}"
-
-                    missing_args = [arg_name for arg_name in snap.args if arg_name not in resolved_kwargs]
-                    if missing_args:
-                        msg_parts = []
-                        if snap.location is not None:
-                            msg_parts.append("{}:\n".format(snap.location))
-
-                        msg_parts.append(("The argument(s) of the snapshot have not been set: {}. "
-                                          "Does the original function define them? Did you supply them in the call?"
-                                          ).format(missing_args))
-
-                        raise TypeError(''.join(msg_parts))
-
-                    capture_kwargs = select_capture_kwargs(a_snapshot=snap, resolved_kwargs=resolved_kwargs)
-
-                    old_as_mapping[snap.name] = snap.capture(**capture_kwargs)
-
-                resolved_kwargs['OLD'] = Old(mapping=old_as_mapping)
-
-            # Ideally, we would catch any exception here and strip the checkers from the traceback.
-            # Unfortunately, this can not be done in Python 3, see
-            # https://stackoverflow.com/questions/44813333/how-can-i-elide-a-function-wrapper-from-the-traceback-in-python-3
-            result = func(*args, **kwargs)
-
-            if postconditions:
-                resolved_kwargs['result'] = result
-
-                # Assert the postconditions as a conjunction
-                for contract in postconditions:
+                exception = None  # type: Optional[Exception]
+                for group in preconditions:
                     # We need to in-line this code so that we can better reason about it
                     # (see the discussion about deep and shallow functions in
                     # https://www.youtube.com/watch?v=bmSAYlu0NcY).
@@ -399,71 +352,287 @@ def decorate_with_checker(func: CallableT) -> CallableT:
                     # Please use an IDE with folding functionality to be able to read it.
                     # (It is really a pain to read as plain text.)
 
-                    # Check that all arguments to the condition function have been set.
-                    missing_args = [arg_name for arg_name in contract.mandatory_args if arg_name not in resolved_kwargs]
-                    if missing_args:
-                        msg_parts = []
-                        if contract.location is not None:
-                            msg_parts.append("{}:\n".format(contract.location))
+                    exception = None
 
-                        msg_parts.append(("The argument(s) of the postcondition have not been set: {}. "
-                                          "Does the original function define them? Did you supply them in the call?"
-                                          ).format(missing_args))
+                    for contract in group:
+                        assert exception is None, "No exception as long as pre-condition group is satisfiable."
 
-                        if 'OLD' in missing_args:
-                            msg_parts.append(' Did you decorate the function with a snapshot to capture OLD values?')
+                        condition_kwargs = select_condition_kwargs(contract=contract, resolved_kwargs=resolved_kwargs)
 
-                        raise TypeError(''.join(msg_parts))
-
-                    condition_kwargs = {
-                        arg_name: value
-                        for arg_name, value in resolved_kwargs.items() if arg_name in contract.condition_arg_set
-                    }
-
-                    check = contract.condition(**condition_kwargs)
-
-                    if not_check(check=check, contract=contract):
-                        if contract.error is not None and (inspect.ismethod(contract.error)
-                                                           or inspect.isfunction(contract.error)):
-                            assert contract.error_arg_set is not None, (
-                                "Expected error_arg_set non-None if contract.error a function.")
-                            assert contract.error_args is not None, (
-                                "Expected error_args non-None if contract.error a function.")
-
-                            error_kwargs = {
-                                arg_name: value
-                                for arg_name, value in resolved_kwargs.items() if arg_name in contract.error_arg_set
-                            }
-
-                            missing_args = [
-                                arg_name for arg_name in contract.error_args if arg_name not in resolved_kwargs
-                            ]
-                            if missing_args:
-                                msg_parts = []
-                                if contract.location is not None:
-                                    msg_parts.append("{}:\n".format(contract.location))
-
-                                msg_parts.append(
-                                    ("The argument(s) of the postcondition error have not been set: {}. "
-                                     "Does the original function define them? Did you supply them in the call?"
-                                     ).format(missing_args))
-
-                                raise TypeError(''.join(msg_parts))
-
-                            raise contract.error(**error_kwargs)
-
+                        if inspect.iscoroutinefunction(contract.condition):
+                            check = await contract.condition(**condition_kwargs)  # type: ignore
                         else:
-                            msg = icontract._represent.generate_message(
-                                contract=contract, condition_kwargs=condition_kwargs)
-                            if contract.error is None:
-                                raise ViolationError(msg)
-                            elif isinstance(contract.error, type):
-                                raise contract.error(msg)
+                            check = contract.condition(**condition_kwargs)
 
-            return result
-        finally:
-            if hasattr(_IN_PROGRESS, id_func):
-                delattr(_IN_PROGRESS, id_func)
+                        if not_check(check=check, contract=contract):
+                            if contract.error is not None and (inspect.ismethod(contract.error)
+                                                               or inspect.isfunction(contract.error)):
+                                assert contract.error_arg_set is not None, (
+                                    "Expected error_arg_set non-None if contract.error a function.")
+                                assert contract.error_args is not None, (
+                                    "Expected error_args non-None if contract.error a function.")
+
+                                error_kwargs = select_error_kwargs(contract=contract, resolved_kwargs=resolved_kwargs)
+
+                                exception = contract.error(**error_kwargs)
+
+                            else:
+                                msg = icontract._represent.generate_message(
+                                    contract=contract, condition_kwargs=condition_kwargs)
+
+                                if contract.error is None:
+                                    exception = ViolationError(msg)
+                                elif isinstance(contract.error, type):
+                                    exception = contract.error(msg)
+
+                            # Break out of the loop,
+                            # as we know now that the whole group of the preconditions can not be satisfied.
+                            assert exception is not None, "Exception must be set if a pre-condition failed."
+                            break
+
+                    # The group of preconditions was satisfied, no need to check the other groups.
+                    if exception is None:
+                        break
+
+                if exception is not None:
+                    raise exception
+
+                # Capture the snapshots
+                if postconditions and snapshots:
+                    old_as_mapping = dict()  # type: MutableMapping[str, Any]
+                    for snap in snapshots:
+                        # This assert is just a last defense.
+                        # Conflicting snapshot names should have been caught before, either during the decoration or
+                        # in the meta-class.
+                        assert snap.name not in old_as_mapping, "Snapshots with the conflicting name: {}"
+
+                        capture_kwargs = select_capture_kwargs(a_snapshot=snap, resolved_kwargs=resolved_kwargs)
+
+                        if inspect.iscoroutinefunction(snap.capture):
+                            old_as_mapping[snap.name] = await snap.capture(**capture_kwargs)
+                        else:
+                            old_as_mapping[snap.name] = snap.capture(**capture_kwargs)
+
+                    resolved_kwargs['OLD'] = Old(mapping=old_as_mapping)
+
+                # Ideally, we would catch any exception here and strip the checkers from the traceback.
+                # Unfortunately, this can not be done in Python 3, see
+                # https://stackoverflow.com/questions/44813333/how-can-i-elide-a-function-wrapper-from-the-traceback-in-python-3
+                result = await func(*args, **kwargs)
+
+                if postconditions:
+                    resolved_kwargs['result'] = result
+
+                    # Assert the postconditions as a conjunction
+                    for contract in postconditions:
+                        # We need to in-line this code so that we can better reason about it
+                        # (see the discussion about deep and shallow functions in
+                        # https://www.youtube.com/watch?v=bmSAYlu0NcY).
+                        # There were already a couple of bugs related to having the below logic separated in a function
+                        # which were not obvious to detect.
+                        #
+                        # Please use an IDE with folding functionality to be able to read it.
+                        # (It is really a pain to read as plain text.)
+
+                        condition_kwargs = select_condition_kwargs(contract=contract, resolved_kwargs=resolved_kwargs)
+
+                        if inspect.iscoroutinefunction(contract.condition):
+                            check = await contract.condition(**condition_kwargs)  # type: ignore
+                        else:
+                            check = contract.condition(**condition_kwargs)
+
+                        if not_check(check=check, contract=contract):
+                            if contract.error is not None and (inspect.ismethod(contract.error)
+                                                               or inspect.isfunction(contract.error)):
+                                assert contract.error_arg_set is not None, (
+                                    "Expected error_arg_set non-None if contract.error a function.")
+                                assert contract.error_args is not None, (
+                                    "Expected error_args non-None if contract.error a function.")
+
+                                error_kwargs = select_error_kwargs(contract=contract, resolved_kwargs=resolved_kwargs)
+
+                                raise contract.error(**error_kwargs)
+
+                            else:
+                                msg = icontract._represent.generate_message(
+                                    contract=contract, condition_kwargs=condition_kwargs)
+                                if contract.error is None:
+                                    raise ViolationError(msg)
+                                elif isinstance(contract.error, type):
+                                    raise contract.error(msg)
+
+                return result
+            finally:
+                if hasattr(_IN_PROGRESS, id_func):
+                    delattr(_IN_PROGRESS, id_func)
+    else:
+
+        def wrapper(*args, **kwargs):  # type: ignore
+            """Wrap func by checking the preconditions and postconditions."""
+            # pylint: disable=too-many-branches,too-many-nested-blocks,too-many-locals
+
+            if '_ARGS' in kwargs:
+                raise TypeError('The arguments of the function call include "_ARGS" which is '
+                                'a placeholder for positional arguments in a condition.')
+
+            if '_KWARGS' in kwargs:
+                raise TypeError('The arguments of the function call include "_KWARGS" which is '
+                                'a placeholder for keyword arguments in a condition.')
+
+            # Use try-finally instead of ExitStack for performance.
+            try:
+                # If the wrapper is already checking the contracts for the wrapped function, avoid a recursive loop
+                # by skipping any subsequent contract checks for the same function.
+                if hasattr(_IN_PROGRESS, id_func):
+                    return func(*args, **kwargs)
+
+                setattr(_IN_PROGRESS, id_func, True)
+
+                preconditions = getattr(wrapper, "__preconditions__")  # type: List[List[Contract]]
+                snapshots = getattr(wrapper, "__postcondition_snapshots__")  # type: List[Snapshot]
+                postconditions = getattr(wrapper, "__postconditions__")  # type: List[Contract]
+
+                resolved_kwargs = kwargs_from_call(
+                    param_names=param_names, kwdefaults=kwdefaults, args=args, kwargs=kwargs)
+
+                if postconditions:
+                    if 'result' in resolved_kwargs:
+                        raise TypeError("Unexpected argument 'result' in a function decorated with postconditions.")
+
+                    if 'OLD' in resolved_kwargs:
+                        raise TypeError("Unexpected argument 'OLD' in a function decorated with postconditions.")
+
+                # Assert the preconditions in groups. This is necessary to implement "require else" logic when a class
+                # weakens the preconditions of its base class.
+
+                exception = None  # type: Optional[Exception]
+                for group in preconditions:
+                    # We need to in-line this code so that we can better reason about it
+                    # (see the discussion about deep and shallow functions in
+                    # https://www.youtube.com/watch?v=bmSAYlu0NcY).
+                    # There were already a couple of bugs related to having the below logic separated in a function
+                    # which were not obvious to detect.
+                    #
+                    # Please use an IDE with folding functionality to be able to read it.
+                    # (It is really a pain to read as plain text.)
+
+                    exception = None
+
+                    for contract in group:
+                        assert exception is None, "No exception as long as pre-condition group is satisfiable."
+
+                        condition_kwargs = select_condition_kwargs(contract=contract, resolved_kwargs=resolved_kwargs)
+
+                        if inspect.iscoroutinefunction(contract.condition):
+                            raise ValueError("Unexpected coroutine (async) condition {} for a sync function {}.".format(
+                                contract.condition, func))
+
+                        check = contract.condition(**condition_kwargs)
+
+                        if not_check(check=check, contract=contract):
+                            if contract.error is not None and (inspect.ismethod(contract.error)
+                                                               or inspect.isfunction(contract.error)):
+                                assert contract.error_arg_set is not None, (
+                                    "Expected error_arg_set non-None if contract.error a function.")
+                                assert contract.error_args is not None, (
+                                    "Expected error_args non-None if contract.error a function.")
+
+                                error_kwargs = select_error_kwargs(contract=contract, resolved_kwargs=resolved_kwargs)
+
+                                exception = contract.error(**error_kwargs)
+
+                            else:
+                                msg = icontract._represent.generate_message(
+                                    contract=contract, condition_kwargs=condition_kwargs)
+
+                                if contract.error is None:
+                                    exception = ViolationError(msg)
+                                elif isinstance(contract.error, type):
+                                    exception = contract.error(msg)
+
+                            # Break out of the loop,
+                            # as we know now that the whole group of the preconditions can not be satisfied.
+                            assert exception is not None, "Exception must be set if a pre-condition failed."
+                            break
+
+                    # The group of preconditions was satisfied, no need to check the other groups.
+                    if exception is None:
+                        break
+
+                if exception is not None:
+                    raise exception
+
+                # Capture the snapshots
+                if postconditions and snapshots:
+                    old_as_mapping = dict()  # type: MutableMapping[str, Any]
+                    for snap in snapshots:
+                        # This assert is just a last defense.
+                        # Conflicting snapshot names should have been caught before, either during the decoration or
+                        # in the meta-class.
+                        assert snap.name not in old_as_mapping, "Snapshots with the conflicting name: {}"
+
+                        if inspect.iscoroutinefunction(snap.capture):
+                            raise ValueError(
+                                "Unexpected coroutine (async) snapshot capture {} for a sync function {}.".format(
+                                    snap.capture, func))
+
+                        capture_kwargs = select_capture_kwargs(a_snapshot=snap, resolved_kwargs=resolved_kwargs)
+
+                        old_as_mapping[snap.name] = snap.capture(**capture_kwargs)
+
+                    resolved_kwargs['OLD'] = Old(mapping=old_as_mapping)
+
+                # Ideally, we would catch any exception here and strip the checkers from the traceback.
+                # Unfortunately, this can not be done in Python 3, see
+                # https://stackoverflow.com/questions/44813333/how-can-i-elide-a-function-wrapper-from-the-traceback-in-python-3
+                result = func(*args, **kwargs)
+
+                if postconditions:
+                    resolved_kwargs['result'] = result
+
+                    # Assert the postconditions as a conjunction
+                    for contract in postconditions:
+                        # We need to in-line this code so that we can better reason about it
+                        # (see the discussion about deep and shallow functions in
+                        # https://www.youtube.com/watch?v=bmSAYlu0NcY).
+                        # There were already a couple of bugs related to having the below logic separated in a function
+                        # which were not obvious to detect.
+                        #
+                        # Please use an IDE with folding functionality to be able to read it.
+                        # (It is really a pain to read as plain text.)
+
+                        if inspect.iscoroutinefunction(contract.condition):
+                            raise ValueError("Unexpected coroutine (async) condition {} for a sync function {}.".format(
+                                contract.condition, func))
+
+                        condition_kwargs = select_condition_kwargs(contract=contract, resolved_kwargs=resolved_kwargs)
+
+                        check = contract.condition(**condition_kwargs)
+
+                        if not_check(check=check, contract=contract):
+                            if contract.error is not None and (inspect.ismethod(contract.error)
+                                                               or inspect.isfunction(contract.error)):
+                                assert contract.error_arg_set is not None, (
+                                    "Expected error_arg_set non-None if contract.error a function.")
+                                assert contract.error_args is not None, (
+                                    "Expected error_args non-None if contract.error a function.")
+
+                                error_kwargs = select_error_kwargs(contract=contract, resolved_kwargs=resolved_kwargs)
+
+                                raise contract.error(**error_kwargs)
+
+                            else:
+                                msg = icontract._represent.generate_message(
+                                    contract=contract, condition_kwargs=condition_kwargs)
+                                if contract.error is None:
+                                    raise ViolationError(msg)
+                                elif isinstance(contract.error, type):
+                                    raise contract.error(msg)
+
+                return result
+            finally:
+                if hasattr(_IN_PROGRESS, id_func):
+                    delattr(_IN_PROGRESS, id_func)
 
     # Copy __doc__ and other properties so that doctests can run
     functools.update_wrapper(wrapper=wrapper, wrapped=func)
@@ -509,6 +678,10 @@ def _decorate_new_with_invariants(new_func: CallableT) -> CallableT:
     if _already_decorated_with_invariants(func=new_func):
         return new_func
 
+    # __new__ can not be async in Python, so we don't neet to check whether it is sync or async here
+    # (as opposed to the function `_decorate_with_invariants`).
+    # See this StackOverflow answer: https://stackoverflow.com/a/33134213/1600678.
+
     def wrapper(*args, **kwargs):  # type: ignore
         """Pass the arguments to __new__ and check invariants on the result."""
         instance = new_func(*args, **kwargs)
@@ -535,6 +708,7 @@ def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
     :param is_init: True if the ``func`` is __init__
     :return: function wrapped with invariant checks
     """
+    # pylint: disable=too-many-statements
     if _already_decorated_with_invariants(func=func):
         return func
 
@@ -569,39 +743,86 @@ def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
                     delattr(_IN_PROGRESS, id_instance)
 
     else:
+        # (mristin, 2021-02-16)
+        # Admittedly, this branching on sync/async is absolutely monstrous.
+        # However, I couldn't find out an easier way to refactor the code so that it supports async.
+        # Python expects us to explicitly colour functions as sync/async so we can not just put in an if-statement and
+        # introduce an "await".
+        #
+        # The two wrappers need to be manually maintained in parallel.
+        # Whenever you make a change, please inspect manually that both sync and async code exercises equivalent
+        # behavior.
+        # For example, copy/paste the two blocks of code in separate files and perform a diff.
 
-        def wrapper(*args, **kwargs):  # type: ignore
-            """Wrap a function of a class by checking the invariants *before* and *after* the invocation."""
-            try:
-                instance = _find_self(param_names=param_names, args=args, kwargs=kwargs)
-            except KeyError as err:
-                raise KeyError(("The parameter 'self' could not be found in the call to function {!r}: "
-                                "the param names were {!r}, the args were {!r} and kwargs were {!r}").format(
-                                    func, param_names, args, kwargs)) from err
+        if inspect.iscoroutinefunction(func):
 
-            # The following dunder indicates whether another invariant is currently being checked. If so,
-            # we need to suspend any further invariant check to avoid endless recursion.
-            id_instance = str(id(instance))
-            if not hasattr(_IN_PROGRESS, id_instance):
-                setattr(_IN_PROGRESS, id_instance, True)
-            else:
-                # Do not check any invariants to avoid endless recursion.
-                return func(*args, **kwargs)
+            async def wrapper(*args, **kwargs):  # type: ignore
+                """Wrap a function of a class by checking the invariants *before* and *after* the invocation."""
+                try:
+                    instance = _find_self(param_names=param_names, args=args, kwargs=kwargs)
+                except KeyError as err:
+                    raise KeyError(("The parameter 'self' could not be found in the call to function {!r}: "
+                                    "the param names were {!r}, the args were {!r} and kwargs were {!r}").format(
+                                        func, param_names, args, kwargs)) from err
 
-            # ExitStack is not used here due to performance.
-            try:
-                for contract in instance.__class__.__invariants__:
-                    _assert_invariant(contract=contract, instance=instance)
+                # The following dunder indicates whether another invariant is currently being checked. If so,
+                # we need to suspend any further invariant check to avoid endless recursion.
+                id_instance = str(id(instance))
+                if not hasattr(_IN_PROGRESS, id_instance):
+                    setattr(_IN_PROGRESS, id_instance, True)
+                else:
+                    # Do not check any invariants to avoid endless recursion.
+                    return func(*args, **kwargs)
 
-                result = func(*args, **kwargs)
+                # ExitStack is not used here due to performance.
+                try:
+                    for contract in instance.__class__.__invariants__:
+                        _assert_invariant(contract=contract, instance=instance)
 
-                for contract in instance.__class__.__invariants__:
-                    _assert_invariant(contract=contract, instance=instance)
+                    result = await func(*args, **kwargs)
 
-                return result
-            finally:
-                if hasattr(_IN_PROGRESS, id_instance):
-                    delattr(_IN_PROGRESS, id_instance)
+                    for contract in instance.__class__.__invariants__:
+                        _assert_invariant(contract=contract, instance=instance)
+
+                    return result
+                finally:
+                    if hasattr(_IN_PROGRESS, id_instance):
+                        delattr(_IN_PROGRESS, id_instance)
+
+        else:
+
+            def wrapper(*args, **kwargs):  # type: ignore
+                """Wrap a function of a class by checking the invariants *before* and *after* the invocation."""
+                try:
+                    instance = _find_self(param_names=param_names, args=args, kwargs=kwargs)
+                except KeyError as err:
+                    raise KeyError(("The parameter 'self' could not be found in the call to function {!r}: "
+                                    "the param names were {!r}, the args were {!r} and kwargs were {!r}").format(
+                                        func, param_names, args, kwargs)) from err
+
+                # The following dunder indicates whether another invariant is currently being checked. If so,
+                # we need to suspend any further invariant check to avoid endless recursion.
+                id_instance = str(id(instance))
+                if not hasattr(_IN_PROGRESS, id_instance):
+                    setattr(_IN_PROGRESS, id_instance, True)
+                else:
+                    # Do not check any invariants to avoid endless recursion.
+                    return func(*args, **kwargs)
+
+                # ExitStack is not used here due to performance.
+                try:
+                    for contract in instance.__class__.__invariants__:
+                        _assert_invariant(contract=contract, instance=instance)
+
+                    result = func(*args, **kwargs)
+
+                    for contract in instance.__class__.__invariants__:
+                        _assert_invariant(contract=contract, instance=instance)
+
+                    return result
+                finally:
+                    if hasattr(_IN_PROGRESS, id_instance):
+                        delattr(_IN_PROGRESS, id_instance)
 
     functools.update_wrapper(wrapper=wrapper, wrapped=func)
 

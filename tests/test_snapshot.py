@@ -128,7 +128,7 @@ class TestInvalid(unittest.TestCase):
             type_error = err
 
         self.assertIsNotNone(type_error)
-        self.assertEqual("The argument(s) of the postcondition have not been set: ['OLD']. "
+        self.assertEqual("The argument(s) of the contract condition have not been set: ['OLD']. "
                          "Does the original function define them? Did you supply them in the call? "
                          "Did you decorate the function with a snapshot to capture OLD values?",
                          tests.error.wo_mandatory_location(str(type_error)))
