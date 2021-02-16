@@ -133,51 +133,6 @@ def select_condition_kwargs(contract: Contract, resolved_kwargs: Mapping[str, An
     return condition_kwargs
 
 
-def _assert_precondition(contract: Contract, resolved_kwargs: Mapping[str, Any]) -> None:
-    """
-    Assert that the contract holds as a precondition.
-
-    :param contract: contract to be verified
-    :param resolved_kwargs:
-        resolved keyword arguments of the call (including the default argument values of the decorated function)
-    :return:
-    """
-    condition_kwargs = select_condition_kwargs(contract=contract, resolved_kwargs=resolved_kwargs)
-
-    check = contract.condition(**condition_kwargs)
-
-    if not_check(check=check, contract=contract):
-        if contract.error is not None and (inspect.ismethod(contract.error) or inspect.isfunction(contract.error)):
-            assert contract.error_arg_set is not None, "Expected error_arg_set non-None if contract.error a function."
-            assert contract.error_args is not None, "Expected error_args non-None if contract.error a function."
-
-            error_kwargs = {
-                arg_name: value
-                for arg_name, value in resolved_kwargs.items() if arg_name in contract.error_arg_set
-            }
-
-            missing_args = [arg_name for arg_name in contract.error_args if arg_name not in resolved_kwargs]
-            if missing_args:
-                msg_parts = []
-                if contract.location is not None:
-                    msg_parts.append("{}:\n".format(contract.location))
-
-                msg_parts.append(
-                    ("The argument(s) of the precondition error have not been set: {}. "
-                     "Does the original function define them? Did you supply them in the call?").format(missing_args))
-
-                raise TypeError(''.join(msg_parts))
-
-            raise contract.error(**error_kwargs)
-
-        else:
-            msg = icontract._represent.generate_message(contract=contract, condition_kwargs=condition_kwargs)
-            if contract.error is None:
-                raise ViolationError(msg)
-            elif isinstance(contract.error, type):
-                raise contract.error(msg)
-
-
 def _assert_invariant(contract: Contract, instance: Any) -> None:
     """Assert that the contract holds as a class invariant given the instance of the class."""
     if 'self' in contract.condition_arg_set:
@@ -217,103 +172,6 @@ def select_capture_kwargs(a_snapshot: Snapshot, resolved_kwargs: Mapping[str, An
     :return: a subset of resolved_kwargs
     """
     return {arg_name: arg_value for arg_name, arg_value in resolved_kwargs.items() if arg_name in a_snapshot.arg_set}
-
-
-def _capture_snapshot(a_snapshot: Snapshot, resolved_kwargs: Mapping[str, Any]) -> Any:
-    """
-    Capture the snapshot from the keyword arguments resolved before the function call (including the default values).
-
-    :param a_snapshot: snapshot to be captured
-    :param resolved_kwargs: resolved keyword arguments (including the default values)
-    :return: captured value
-    """
-    missing_args = [arg_name for arg_name in a_snapshot.args if arg_name not in resolved_kwargs]
-    if missing_args:
-        msg_parts = []  # type: List[str]
-        if a_snapshot.location is not None:
-            msg_parts.append("{}:\n".format(a_snapshot.location))
-
-        msg_parts.append(
-            ("The argument(s) of the snapshot have not been set: {}. "
-             "Does the original function define them? Did you supply them in the call?").format(missing_args))
-
-        raise TypeError(''.join(msg_parts))
-
-    capture_kwargs = select_capture_kwargs(a_snapshot=a_snapshot, resolved_kwargs=resolved_kwargs)
-    captured_value = a_snapshot.capture(**capture_kwargs)
-
-    return captured_value
-
-
-def _assert_postcondition(contract: Contract, resolved_kwargs: Mapping[str, Any]) -> None:
-    """
-    Assert that the contract holds as a postcondition.
-
-    The arguments to the postcondition are given as ``resolved_kwargs`` which includes
-    both argument values captured in snapshots and actual argument values and the result of a function.
-
-    :param contract: contract to be verified
-    :param resolved_kwargs:
-        resolved keyword arguments (including the default values, ``result``,``OLD``
-        ``_ARGS`` and ``_KWARGS``)
-    :return:
-    """
-    assert 'result' in resolved_kwargs, \
-        "Expected 'result' to be set in the resolved keyword arguments of a postcondition."
-
-    # Check that all arguments to the condition function have been set.
-    missing_args = [arg_name for arg_name in contract.mandatory_args if arg_name not in resolved_kwargs]
-    if missing_args:
-        msg_parts = []  # type: List[str]
-        if contract.location is not None:
-            msg_parts.append("{}:\n".format(contract.location))
-
-        msg_parts.append(
-            ("The argument(s) of the postcondition have not been set: {}. "
-             "Does the original function define them? Did you supply them in the call?").format(missing_args))
-
-        if 'OLD' in missing_args:
-            msg_parts.append(' Did you decorate the function with a snapshot to capture OLD values?')
-
-        raise TypeError(''.join(msg_parts))
-
-    condition_kwargs = {
-        arg_name: value
-        for arg_name, value in resolved_kwargs.items() if arg_name in contract.condition_arg_set
-    }
-
-    check = contract.condition(**condition_kwargs)
-
-    if not_check(check=check, contract=contract):
-        if contract.error is not None and (inspect.ismethod(contract.error) or inspect.isfunction(contract.error)):
-            assert contract.error_arg_set is not None, "Expected error_arg_set non-None if contract.error a function."
-            assert contract.error_args is not None, "Expected error_args non-None if contract.error a function."
-
-            error_kwargs = {
-                arg_name: value
-                for arg_name, value in resolved_kwargs.items() if arg_name in contract.error_arg_set
-            }
-
-            missing_args = [arg_name for arg_name in contract.error_args if arg_name not in resolved_kwargs]
-            if missing_args:
-                msg_parts = []
-                if contract.location is not None:
-                    msg_parts.append("{}:\n".format(contract.location))
-
-                msg_parts.append(
-                    ("The argument(s) of the postcondition error have not been set: {}. "
-                     "Does the original function define them? Did you supply them in the call?").format(missing_args))
-
-                raise TypeError(''.join(msg_parts))
-
-            raise contract.error(**error_kwargs)
-
-        else:
-            msg = icontract._represent.generate_message(contract=contract, condition_kwargs=condition_kwargs)
-            if contract.error is None:
-                raise ViolationError(msg)
-            elif isinstance(contract.error, type):
-                raise contract.error(msg)
 
 
 class Old:
@@ -389,7 +247,7 @@ def decorate_with_checker(func: CallableT) -> CallableT:
 
     def wrapper(*args, **kwargs):  # type: ignore
         """Wrap func by checking the preconditions and postconditions."""
-        # pylint: disable=too-many-branches
+        # pylint: disable=too-many-branches,too-many-nested-blocks,too-many-locals
 
         if '_ARGS' in kwargs:
             raise TypeError('The arguments of the function call include "_ARGS" which is '
@@ -423,18 +281,77 @@ def decorate_with_checker(func: CallableT) -> CallableT:
 
             # Assert the preconditions in groups. This is necessary to implement "require else" logic when a class
             # weakens the preconditions of its base class.
-            violation_err = None  # type: Optional[ViolationError]
-            for group in preconditions:
-                violation_err = None
-                try:
-                    for contract in group:
-                        _assert_precondition(contract=contract, resolved_kwargs=resolved_kwargs)
-                    break
-                except ViolationError as err:
-                    violation_err = err
 
-            if violation_err is not None:
-                raise violation_err  # pylint: disable=raising-bad-type
+            exception = None  # type: Optional[Exception]
+            for group in preconditions:
+                # We need to in-line this code so that we can better reason about it
+                # (see the discussion about deep and shallow functions in
+                # https://www.youtube.com/watch?v=bmSAYlu0NcY).
+                # There were already a couple of bugs related to having the below logic separated in a function
+                # which were not obvious to detect.
+                #
+                # Please use an IDE with folding functionality to be able to read it.
+                # (It is really a pain to read as plain text.)
+
+                exception = None
+
+                for contract in group:
+                    assert exception is None, "No exception as long as pre-condition group is satisfiable."
+
+                    condition_kwargs = select_condition_kwargs(contract=contract, resolved_kwargs=resolved_kwargs)
+
+                    check = contract.condition(**condition_kwargs)
+
+                    if not_check(check=check, contract=contract):
+                        if contract.error is not None and (inspect.ismethod(contract.error)
+                                                           or inspect.isfunction(contract.error)):
+                            assert contract.error_arg_set is not None, (
+                                "Expected error_arg_set non-None if contract.error a function.")
+                            assert contract.error_args is not None, (
+                                "Expected error_args non-None if contract.error a function.")
+
+                            error_kwargs = {
+                                arg_name: value
+                                for arg_name, value in resolved_kwargs.items() if arg_name in contract.error_arg_set
+                            }
+
+                            missing_args = [
+                                arg_name for arg_name in contract.error_args if arg_name not in resolved_kwargs
+                            ]
+                            if missing_args:
+                                msg_parts = []  # type: List[str]
+                                if contract.location is not None:
+                                    msg_parts.append("{}:\n".format(contract.location))
+
+                                msg_parts.append(
+                                    ("The argument(s) of the precondition error have not been set: {}. "
+                                     "Does the original function define them? Did you supply them in the call?"
+                                     ).format(missing_args))
+
+                                raise TypeError(''.join(msg_parts))
+
+                            exception = contract.error(**error_kwargs)
+
+                        else:
+                            msg = icontract._represent.generate_message(
+                                contract=contract, condition_kwargs=condition_kwargs)
+
+                            if contract.error is None:
+                                exception = ViolationError(msg)
+                            elif isinstance(contract.error, type):
+                                exception = contract.error(msg)
+
+                        # Break out of the loop,
+                        # as we know now that the whole group of the preconditions can not be satisfied.
+                        assert exception is not None, "Exception must be set if a pre-condition failed."
+                        break
+
+                # The group of preconditions was satisfied, no need to check the other groups.
+                if exception is None:
+                    break
+
+            if exception is not None:
+                raise exception
 
             # Capture the snapshots
             if postconditions and snapshots:
@@ -444,7 +361,22 @@ def decorate_with_checker(func: CallableT) -> CallableT:
                     # Conflicting snapshot names should have been caught before, either during the decoration or
                     # in the meta-class.
                     assert snap.name not in old_as_mapping, "Snapshots with the conflicting name: {}"
-                    old_as_mapping[snap.name] = _capture_snapshot(a_snapshot=snap, resolved_kwargs=resolved_kwargs)
+
+                    missing_args = [arg_name for arg_name in snap.args if arg_name not in resolved_kwargs]
+                    if missing_args:
+                        msg_parts = []
+                        if snap.location is not None:
+                            msg_parts.append("{}:\n".format(snap.location))
+
+                        msg_parts.append(("The argument(s) of the snapshot have not been set: {}. "
+                                          "Does the original function define them? Did you supply them in the call?"
+                                          ).format(missing_args))
+
+                        raise TypeError(''.join(msg_parts))
+
+                    capture_kwargs = select_capture_kwargs(a_snapshot=snap, resolved_kwargs=resolved_kwargs)
+
+                    old_as_mapping[snap.name] = snap.capture(**capture_kwargs)
 
                 resolved_kwargs['OLD'] = Old(mapping=old_as_mapping)
 
@@ -458,7 +390,75 @@ def decorate_with_checker(func: CallableT) -> CallableT:
 
                 # Assert the postconditions as a conjunction
                 for contract in postconditions:
-                    _assert_postcondition(contract=contract, resolved_kwargs=resolved_kwargs)
+                    # We need to in-line this code so that we can better reason about it
+                    # (see the discussion about deep and shallow functions in
+                    # https://www.youtube.com/watch?v=bmSAYlu0NcY).
+                    # There were already a couple of bugs related to having the below logic separated in a function
+                    # which were not obvious to detect.
+                    #
+                    # Please use an IDE with folding functionality to be able to read it.
+                    # (It is really a pain to read as plain text.)
+
+                    # Check that all arguments to the condition function have been set.
+                    missing_args = [arg_name for arg_name in contract.mandatory_args if arg_name not in resolved_kwargs]
+                    if missing_args:
+                        msg_parts = []
+                        if contract.location is not None:
+                            msg_parts.append("{}:\n".format(contract.location))
+
+                        msg_parts.append(("The argument(s) of the postcondition have not been set: {}. "
+                                          "Does the original function define them? Did you supply them in the call?"
+                                          ).format(missing_args))
+
+                        if 'OLD' in missing_args:
+                            msg_parts.append(' Did you decorate the function with a snapshot to capture OLD values?')
+
+                        raise TypeError(''.join(msg_parts))
+
+                    condition_kwargs = {
+                        arg_name: value
+                        for arg_name, value in resolved_kwargs.items() if arg_name in contract.condition_arg_set
+                    }
+
+                    check = contract.condition(**condition_kwargs)
+
+                    if not_check(check=check, contract=contract):
+                        if contract.error is not None and (inspect.ismethod(contract.error)
+                                                           or inspect.isfunction(contract.error)):
+                            assert contract.error_arg_set is not None, (
+                                "Expected error_arg_set non-None if contract.error a function.")
+                            assert contract.error_args is not None, (
+                                "Expected error_args non-None if contract.error a function.")
+
+                            error_kwargs = {
+                                arg_name: value
+                                for arg_name, value in resolved_kwargs.items() if arg_name in contract.error_arg_set
+                            }
+
+                            missing_args = [
+                                arg_name for arg_name in contract.error_args if arg_name not in resolved_kwargs
+                            ]
+                            if missing_args:
+                                msg_parts = []
+                                if contract.location is not None:
+                                    msg_parts.append("{}:\n".format(contract.location))
+
+                                msg_parts.append(
+                                    ("The argument(s) of the postcondition error have not been set: {}. "
+                                     "Does the original function define them? Did you supply them in the call?"
+                                     ).format(missing_args))
+
+                                raise TypeError(''.join(msg_parts))
+
+                            raise contract.error(**error_kwargs)
+
+                        else:
+                            msg = icontract._represent.generate_message(
+                                contract=contract, condition_kwargs=condition_kwargs)
+                            if contract.error is None:
+                                raise ViolationError(msg)
+                            elif isinstance(contract.error, type):
+                                raise contract.error(msg)
 
             return result
         finally:
