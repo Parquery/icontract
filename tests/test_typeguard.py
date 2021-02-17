@@ -40,7 +40,7 @@ class TestPrecondition(unittest.TestCase):
         b = B()
         type_error = None  # type: Optional[TypeError]
         try:
-            some_func(b)
+            some_func(b)  # type: ignore
         except TypeError as err:
             type_error = err
 
