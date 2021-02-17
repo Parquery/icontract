@@ -1,10 +1,10 @@
 # The module ``unittest`` supports async only from 3.8 on.
 # That is why we had to move this test to 3.8 specific tests.
 
-# pylint: disable=missing-docstring, invalid-name, no-member
-
+# pylint: disable=missing-docstring, invalid-name, no-member, unnecessary-lambda
+import dataclasses
 import unittest
-from typing import Optional, List
+from typing import Optional, List, Iterable, TypeVar, Awaitable
 
 import icontract
 import tests.error
@@ -252,6 +252,159 @@ class TestAsyncInvariantsFail(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(
             "Async conditions are not possible in invariants as sync methods such as __init__ have to be wrapped.",
             str(value_error))
+
+
+class TestCoroutines(unittest.IsolatedAsyncioTestCase):
+    async def test_mock_backend_example(self) -> None:
+        # This is an example of a backend system.
+        # This test demonstrates how contracts can be used with coroutines.
+
+        T = TypeVar('T')
+
+        async def awaited_all(aws: Iterable[Awaitable[T]]) -> bool:
+            for awaitable in aws:
+                if not await awaitable:
+                    return False
+
+            return True
+
+        async def has_author(identifier: str) -> bool:
+            return identifier in ["Margaret Cavendish", "Jane Austen"]
+
+        async def has_category(category: str) -> bool:
+            return category in await get_categories()
+
+        async def get_categories() -> List[str]:
+            return ["sci-fi", "romance"]
+
+        @dataclasses.dataclass
+        class Book:
+            identifier: str
+            author: str
+
+        @icontract.require(lambda categories: awaited_all(map(has_category, categories)))
+        @icontract.ensure(lambda result: awaited_all(has_author(book.author) for book in result))
+        async def list_books(categories: List[str]) -> List[Book]:
+            result = []  # type: List[Book]
+            for category in categories:
+                if category == "sci-fi":
+                    result.extend([Book(identifier="The Blazing World", author="Margaret Cavendish")])
+                elif category == "romance":
+                    result.extend([Book(identifier="Pride and Prejudice", author="Jane Austen")])
+                else:
+                    raise AssertionError(category)
+
+            return result
+
+        sci_fi_books = await list_books(categories=['sci-fi'])
+        self.assertListEqual(['The Blazing World'], [book.identifier for book in sci_fi_books])
+
+
+class TestCoroutinePrecondition(unittest.IsolatedAsyncioTestCase):
+    async def test_ok(self) -> None:
+        async def some_condition() -> bool:
+            return True
+
+        @icontract.require(lambda: some_condition())
+        async def some_func() -> None:
+            pass
+
+        await some_func()
+
+    async def test_fail(self) -> None:
+        async def some_condition() -> bool:
+            return False
+
+        @icontract.require(lambda: some_condition(), error=lambda: icontract.ViolationError("hihi"))
+        async def some_func() -> None:
+            pass
+
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            await some_func()
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual("hihi", str(violation_error))
+
+    async def test_reported_if_without_error(self) -> None:
+        async def some_condition() -> bool:
+            return False
+
+        @icontract.require(lambda: some_condition())
+        async def some_func() -> None:
+            pass
+
+        value_error = None  # type: Optional[ValueError]
+        try:
+            await some_func()
+        except ValueError as err:
+            value_error = err
+
+        self.assertIsNotNone(value_error)
+        self.assertRegex(
+            str(value_error), r"^Unexpected coroutine function <function .*> as a condition of a contract\. "
+            r"You must specify your own error if the condition of your contract is a coroutine function\.")
+
+
+class TestCoroutinePostcondition(unittest.IsolatedAsyncioTestCase):
+    async def test_ok(self) -> None:
+        async def some_condition() -> bool:
+            return True
+
+        @icontract.ensure(lambda: some_condition())
+        async def some_func() -> None:
+            pass
+
+        await some_func()
+
+    async def test_fail(self) -> None:
+        async def some_condition() -> bool:
+            return False
+
+        @icontract.ensure(lambda: some_condition(), error=lambda: icontract.ViolationError("hihi"))
+        async def some_func() -> None:
+            pass
+
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            await some_func()
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual("hihi", str(violation_error))
+
+    async def test_reported_if_without_error(self) -> None:
+        async def some_condition() -> bool:
+            return False
+
+        @icontract.ensure(lambda: some_condition())
+        async def some_func() -> None:
+            pass
+
+        value_error = None  # type: Optional[ValueError]
+        try:
+            await some_func()
+        except ValueError as err:
+            value_error = err
+
+        self.assertIsNotNone(value_error)
+        self.assertRegex(
+            str(value_error), r"^Unexpected coroutine function <function .*> as a condition of a contract\. "
+            r"You must specify your own error if the condition of your contract is a coroutine function\.")
+
+    async def test_snapshot(self) -> None:
+        async def some_capture() -> int:
+            return 1984
+
+        @icontract.snapshot(lambda: some_capture(), name="hoho")
+        @icontract.ensure(lambda OLD: OLD.hoho == 1984)
+        async def some_func() -> None:
+            pass
+
+        await some_func()
 
 
 if __name__ == '__main__':

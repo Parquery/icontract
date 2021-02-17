@@ -362,7 +362,11 @@ def decorate_with_checker(func: CallableT) -> CallableT:
                         if inspect.iscoroutinefunction(contract.condition):
                             check = await contract.condition(**condition_kwargs)  # type: ignore
                         else:
-                            check = contract.condition(**condition_kwargs)
+                            check_or_coroutine = contract.condition(**condition_kwargs)
+                            if inspect.iscoroutine(check_or_coroutine):
+                                check = await check_or_coroutine  # type: ignore
+                            else:
+                                check = check_or_coroutine
 
                         if not_check(check=check, contract=contract):
                             if contract.error is not None and (inspect.ismethod(contract.error)
@@ -411,7 +415,13 @@ def decorate_with_checker(func: CallableT) -> CallableT:
                         if inspect.iscoroutinefunction(snap.capture):
                             old_as_mapping[snap.name] = await snap.capture(**capture_kwargs)
                         else:
-                            old_as_mapping[snap.name] = snap.capture(**capture_kwargs)
+                            captured_or_coroutine = snap.capture(**capture_kwargs)
+                            if inspect.iscoroutine(captured_or_coroutine):
+                                captured = await captured_or_coroutine
+                            else:
+                                captured = captured_or_coroutine
+
+                            old_as_mapping[snap.name] = captured
 
                     resolved_kwargs['OLD'] = Old(mapping=old_as_mapping)
 
@@ -439,7 +449,11 @@ def decorate_with_checker(func: CallableT) -> CallableT:
                         if inspect.iscoroutinefunction(contract.condition):
                             check = await contract.condition(**condition_kwargs)  # type: ignore
                         else:
-                            check = contract.condition(**condition_kwargs)
+                            check_or_coroutine = contract.condition(**condition_kwargs)
+                            if inspect.iscoroutine(check_or_coroutine):
+                                check = await check_or_coroutine  # type: ignore
+                            else:
+                                check = check_or_coroutine
 
                         if not_check(check=check, contract=contract):
                             if contract.error is not None and (inspect.ismethod(contract.error)
@@ -529,6 +543,11 @@ def decorate_with_checker(func: CallableT) -> CallableT:
 
                         check = contract.condition(**condition_kwargs)
 
+                        if inspect.iscoroutine(check):
+                            raise ValueError(
+                                "Unexpected coroutine resulting from the condition {} for a sync function {}.".format(
+                                    contract.condition, func))
+
                         if not_check(check=check, contract=contract):
                             if contract.error is not None and (inspect.ismethod(contract.error)
                                                                or inspect.isfunction(contract.error)):
@@ -578,6 +597,11 @@ def decorate_with_checker(func: CallableT) -> CallableT:
 
                         capture_kwargs = select_capture_kwargs(a_snapshot=snap, resolved_kwargs=resolved_kwargs)
 
+                        captured = snap.capture(**capture_kwargs)
+                        if inspect.iscoroutine(captured):
+                            raise ValueError(("Unexpected coroutine resulting from the snapshot capture {} "
+                                              "of a sync function {}.").format(snap.capture, func))
+
                         old_as_mapping[snap.name] = snap.capture(**capture_kwargs)
 
                     resolved_kwargs['OLD'] = Old(mapping=old_as_mapping)
@@ -608,6 +632,11 @@ def decorate_with_checker(func: CallableT) -> CallableT:
                         condition_kwargs = select_condition_kwargs(contract=contract, resolved_kwargs=resolved_kwargs)
 
                         check = contract.condition(**condition_kwargs)
+
+                        if inspect.iscoroutine(check):
+                            raise ValueError(
+                                "Unexpected coroutine resulting from the condition {} for a sync function {}.".format(
+                                    contract.condition, func))
 
                         if not_check(check=check, contract=contract):
                             if contract.error is not None and (inspect.ismethod(contract.error)

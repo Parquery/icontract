@@ -29,6 +29,9 @@ class require:  # pylint: disable=invalid-name
         Initialize.
 
         :param condition: precondition predicate
+
+            If the condition returns a coroutine, you must specify the `error` as
+            coroutines have side effects and can not be recomputed.
         :param description: textual description of the precondition
         :param a_repr: representation instance that defines how the values are represented
         :param enabled:
@@ -203,7 +206,11 @@ class ensure:  # pylint: disable=invalid-name
         """
         Initialize.
 
-        :param condition: postcondition predicate
+        :param condition:
+            postcondition predicate.
+
+            If the condition returns a coroutine, you must specify the `error` as
+            coroutines have side effects and can not be recomputed.
         :param description: textual description of the postcondition
         :param a_repr: representation instance that defines how the values are represented
         :param enabled:
@@ -296,7 +303,11 @@ class invariant:  # pylint: disable=invalid-name
         """
         Initialize a class decorator to establish the invariant on all the public methods.
 
-        :param condition: invariant predicate
+        :param condition:
+            invariant predicate.
+
+            The condition must not be a coroutine function as dunder functions (including ``__init__``)
+            of a class can not be async.
         :param description: textual description of the invariant
         :param a_repr: representation instance that defines how the values are represented
         :param enabled:
