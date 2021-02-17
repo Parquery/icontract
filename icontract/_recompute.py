@@ -3,6 +3,7 @@
 import ast
 import builtins
 import functools
+import inspect
 import platform
 import sys
 from typing import Any, Mapping, Dict, List, Optional, Union, Tuple, Set, Callable, \
@@ -310,6 +311,12 @@ class Visitor(ast.NodeVisitor):
         """Visit the function and the arguments and finally make the function call with them."""
         func = self.visit(node=node.func)
 
+        if inspect.iscoroutinefunction(func):
+            raise ValueError(
+                ("Unexpected coroutine function {} as a condition of a contract. "
+                 "You must specify your own error if the condition of your contract is a coroutine function."
+                 ).format(func))
+
         args = []  # type: List[Any]
         for arg_node in node.args:
             if isinstance(arg_node, ast.Starred):
@@ -328,6 +335,11 @@ class Visitor(ast.NodeVisitor):
                 kwargs[keyword.arg] = self.visit(node=keyword.value)
 
         result = func(*args, **kwargs)
+
+        if inspect.iscoroutine(result):
+            raise ValueError(
+                ("Unexpected coroutine {} as a result from a call. "
+                 "You must specify your own error if the condition of your contract gives a coroutine.").format(result))
 
         self.recomputed_values[node] = result
         return result
