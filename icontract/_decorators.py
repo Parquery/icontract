@@ -2,10 +2,10 @@
 import inspect
 import reprlib
 import traceback
-from typing import Callable, Optional, Union, Any, List  # pylint: disable=unused-import
+from typing import Callable, Optional, Union, Any, List, Type  # pylint: disable=unused-import
 
 import icontract._checkers
-from icontract._globals import CallableT
+from icontract._globals import CallableT, ExceptionT
 from icontract._types import Contract, Snapshot
 
 # pylint: disable=protected-access
@@ -24,7 +24,7 @@ class require:  # pylint: disable=invalid-name
                  description: Optional[str] = None,
                  a_repr: reprlib.Repr = icontract._globals.aRepr,
                  enabled: bool = __debug__,
-                 error: Optional[Union[Callable[..., Exception], type]] = None) -> None:
+                 error: Optional[Union[Callable[..., ExceptionT], Type[ExceptionT]]] = None) -> None:
         """
         Initialize.
 
@@ -56,6 +56,10 @@ class require:  # pylint: disable=invalid-name
 
         if not enabled:
             return
+
+        if isinstance(error, type) and not issubclass(error, BaseException):
+            raise ValueError(("The error of the contract is given as a type, "
+                              "but the type does not inherit from BaseException: {}").format(error))
 
         location = None  # type: Optional[str]
         tb_stack = traceback.extract_stack(limit=2)[:1]
@@ -202,7 +206,7 @@ class ensure:  # pylint: disable=invalid-name
                  description: Optional[str] = None,
                  a_repr: reprlib.Repr = icontract._globals.aRepr,
                  enabled: bool = __debug__,
-                 error: Optional[Union[Callable[..., Exception], type]] = None) -> None:
+                 error: Optional[Union[Callable[..., ExceptionT], Type[ExceptionT]]] = None) -> None:
         """
         Initialize.
 
@@ -235,6 +239,10 @@ class ensure:  # pylint: disable=invalid-name
 
         if not enabled:
             return
+
+        if isinstance(error, type) and not issubclass(error, BaseException):
+            raise ValueError(("The error of the contract is given as a type, "
+                              "but the type does not inherit from BaseException: {}").format(error))
 
         location = None  # type: Optional[str]
         tb_stack = traceback.extract_stack(limit=2)[:1]
@@ -299,7 +307,7 @@ class invariant:  # pylint: disable=invalid-name
                  description: Optional[str] = None,
                  a_repr: reprlib.Repr = icontract._globals.aRepr,
                  enabled: bool = __debug__,
-                 error: Optional[Union[Callable[..., Exception], type]] = None) -> None:
+                 error: Optional[Union[Callable[..., ExceptionT], Type[ExceptionT]]] = None) -> None:
         """
         Initialize a class decorator to establish the invariant on all the public methods.
 
@@ -333,6 +341,10 @@ class invariant:  # pylint: disable=invalid-name
 
         if not enabled:
             return
+
+        if isinstance(error, type) and not issubclass(error, BaseException):
+            raise ValueError(("The error of the contract is given as a type, "
+                              "but the type does not inherit from BaseException: {}").format(error))
 
         location = None  # type: Optional[str]
         tb_stack = traceback.extract_stack(limit=2)[:1]
