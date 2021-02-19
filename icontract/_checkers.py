@@ -178,7 +178,12 @@ def _assert_resolved_kwargs_valid(postconditions: List[Contract],
 def _create_violation_error(contract: Contract, resolved_kwargs: Mapping[str, Any],
                             condition_kwargs: Mapping[str, Any]) -> BaseException:
     """Create the violation error based on the violated contract."""
-    if contract.error is not None and (inspect.ismethod(contract.error) or inspect.isfunction(contract.error)):
+    exception = None  # type: Optional[BaseException]
+
+    if contract.error is None:
+        msg = icontract._represent.generate_message(contract=contract, condition_kwargs=condition_kwargs)
+        exception = ViolationError(msg)
+    elif inspect.ismethod(contract.error) or inspect.isfunction(contract.error):
         assert contract.error_arg_set is not None, ("Expected error_arg_set non-None if contract.error a function.")
         assert contract.error_args is not None, ("Expected error_args non-None if contract.error a function.")
 
@@ -190,23 +195,23 @@ def _create_violation_error(contract: Contract, resolved_kwargs: Mapping[str, An
             raise TypeError(
                 "The exception returned by the contract's error {} does not inherit from BaseException.".format(
                     contract.error))
+    elif isinstance(contract.error, type):
+        if not issubclass(contract.error, BaseException):
+            raise TypeError(
+                "The exception class supplied in the contract's error {} is not a subclass of BaseException.".format(
+                    contract.error))
 
-    else:
         msg = icontract._represent.generate_message(contract=contract, condition_kwargs=condition_kwargs)
+        exception = contract.error(msg)
+    elif isinstance(contract.error, BaseException):
+        exception = contract.error
+    else:
+        raise NotImplementedError(
+            ("icontract does not know how to handle the error of type {} "
+             "(expected a function, a subclass of BaseException or an instance of BaseException)").format(
+                 type(contract.error)))
 
-        if contract.error is None:
-            exception = ViolationError(msg)
-        elif isinstance(contract.error, type) and issubclass(contract.error, BaseException):
-            exception = contract.error(msg)
-
-            if not isinstance(exception, BaseException):
-                raise TypeError(
-                    "The exception returned by the contract's error {} does not inherit from BaseException.".format(
-                        contract.error))
-        else:
-            raise NotImplementedError(("icontract does not know how to handle the error of type {} "
-                                       "(expected a function or a class)").format(type(contract.error)))
-
+    assert exception is not None
     return exception
 
 
