@@ -537,7 +537,6 @@ by supplying ``error`` argument to the decorator.
 
 The ``error`` argument can either be:
 
-* **An exception class.** The exception is constructed with the violation message and finally raised.
 * **A callable that returns an exception.** The callable accepts the subset of arguments of the original function
   (including ``result`` and ``OLD`` for postconditions) or ``self`` in case of invariants, respectively,
   and returns an exception. The arguments to the condition function can freely differ from the arguments
@@ -549,22 +548,10 @@ The ``error`` argument can either be:
   be parsed. Hence, violation of contracts with ``error`` arguments as callables incur a much smaller computational
   overhead in case of violations compared to contracts with default violation messages for which we need to  trace
   the argument values and parse the condition function.
+* **A subclass of `BaseException`_.** The exception is constructed with the violation message and finally raised.
+* **An instance of `BaseException`_.** The exception is raised as-is on contract violation.
 
-Here is an example of the error given as an exception class:
-
-.. code-block:: python
-
-    >>> @icontract.require(lambda x: x > 0, error=ValueError)
-    ... def some_func(x: int) -> int:
-    ...     return 123
-    ...
-
-    # Custom Exception class
-    >>> some_func(x=0)
-    Traceback (most recent call last):
-        ...
-    ValueError: File <doctest usage.rst[60]>, line 1 in <module>:
-    x > 0: x was 0
+.. _BaseException: https://docs.python.org/3/library/exceptions.html#BaseException
 
 Here is an example of the error given as a callable:
 
@@ -582,6 +569,39 @@ Here is an example of the error given as a callable:
     Traceback (most recent call last):
         ...
     ValueError: x must be positive, got: 0
+
+
+Here is an example of the error given as a subclass of `BaseException`_:
+
+.. code-block:: python
+
+    >>> @icontract.require(lambda x: x > 0, error=ValueError)
+    ... def some_func(x: int) -> int:
+    ...     return 123
+    ...
+
+    # Custom Exception class
+    >>> some_func(x=0)
+    Traceback (most recent call last):
+        ...
+    ValueError: File <doctest usage.rst[62]>, line 1 in <module>:
+    x > 0: x was 0
+
+Here is an example of the error given as an instance of a `BaseException`_:
+
+.. code-block:: python
+
+    >>> @icontract.require(lambda x: x > 0, error=ValueError("x non-positive"))
+    ... def some_func(x: int) -> int:
+    ...     return 123
+    ...
+
+    # Custom Exception class
+    >>> some_func(x=0)
+    Traceback (most recent call last):
+        ...
+    ValueError: x non-positive
+
 
 .. danger::
     Be careful when you write contracts with custom errors. This might lead the caller to (ab)use the contracts as

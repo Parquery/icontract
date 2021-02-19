@@ -24,7 +24,7 @@ class require:  # pylint: disable=invalid-name
                  description: Optional[str] = None,
                  a_repr: reprlib.Repr = icontract._globals.aRepr,
                  enabled: bool = __debug__,
-                 error: Optional[Union[Callable[..., ExceptionT], Type[ExceptionT]]] = None) -> None:
+                 error: Optional[Union[Callable[..., ExceptionT], Type[ExceptionT], BaseException]] = None) -> None:
         """
         Initialize.
 
@@ -42,12 +42,13 @@ class require:  # pylint: disable=invalid-name
             The default is to always check the condition unless the interpreter runs in optimized mode (``-O`` or
             ``-OO``).
         :param error:
-            if given as a callable, ``error`` is expected to accept a subset of function arguments
-            (*e.g.*, also including ``result`` for perconditions, only ``self`` for invariants *etc.*) and return
-            an exception. The ``error`` is called on contract violation and the resulting exception is raised.
+            The error is expected to denote either:
 
-            Otherwise, it is expected to denote an Exception class which is instantiated with the violation message
-            and raised on contract violation.
+            * A callable. ``error`` is expected to accept a subset of function arguments and return an exception.
+              The ``error`` is called on contract violation and the resulting exception is raised.
+            * A subclass of ``BaseException`` which is instantiated with the violation message and raised
+              on contract violation.
+            * An instance of ``BaseException`` that will be raised with the traceback on contract violation.
 
         """
         # pylint: disable=too-many-arguments
@@ -57,9 +58,17 @@ class require:  # pylint: disable=invalid-name
         if not enabled:
             return
 
-        if isinstance(error, type) and not issubclass(error, BaseException):
-            raise ValueError(("The error of the contract is given as a type, "
-                              "but the type does not inherit from BaseException: {}").format(error))
+        if error is None:
+            pass
+        elif isinstance(error, type):
+            if not issubclass(error, BaseException):
+                raise ValueError(("The error of the contract is given as a type, "
+                                  "but the type does not inherit from BaseException: {}").format(error))
+        else:
+            if not inspect.isfunction(error) and not inspect.ismethod(error) and not isinstance(error, BaseException):
+                raise ValueError(
+                    ("The error of the contract must be either a callable (a function or a method), "
+                     "a class (subclass of BaseException) or an instance of BaseException, but got: {}").format(error))
 
         location = None  # type: Optional[str]
         tb_stack = traceback.extract_stack(limit=2)[:1]
@@ -206,7 +215,7 @@ class ensure:  # pylint: disable=invalid-name
                  description: Optional[str] = None,
                  a_repr: reprlib.Repr = icontract._globals.aRepr,
                  enabled: bool = __debug__,
-                 error: Optional[Union[Callable[..., ExceptionT], Type[ExceptionT]]] = None) -> None:
+                 error: Optional[Union[Callable[..., ExceptionT], Type[ExceptionT], BaseException]] = None) -> None:
         """
         Initialize.
 
@@ -225,13 +234,13 @@ class ensure:  # pylint: disable=invalid-name
             The default is to always check the condition unless the interpreter runs in optimized mode (``-O`` or
             ``-OO``).
         :param error:
-            if given as a callable, ``error`` is expected to accept a subset of function arguments
-            (*e.g.*, also including ``result`` for perconditions, only ``self`` for invariants *etc.*) and return
-            an exception. The ``error`` is called on contract violation and the resulting exception is raised.
+            The error is expected to denote either:
 
-            Otherwise, it is expected to denote an Exception class which is instantiated with the violation message
-            and raised on contract violation.
-
+            * A callable. ``error`` is expected to accept a subset of function arguments and return an exception.
+              The ``error`` is called on contract violation and the resulting exception is raised.
+            * A subclass of ``BaseException`` which is instantiated with the violation message and raised
+              on contract violation.
+            * An instance of ``BaseException`` that will be raised with the traceback on contract violation.
         """
         # pylint: disable=too-many-arguments
         self.enabled = enabled
@@ -240,9 +249,17 @@ class ensure:  # pylint: disable=invalid-name
         if not enabled:
             return
 
-        if isinstance(error, type) and not issubclass(error, BaseException):
-            raise ValueError(("The error of the contract is given as a type, "
-                              "but the type does not inherit from BaseException: {}").format(error))
+        if error is None:
+            pass
+        elif isinstance(error, type):
+            if not issubclass(error, BaseException):
+                raise ValueError(("The error of the contract is given as a type, "
+                                  "but the type does not inherit from BaseException: {}").format(error))
+        else:
+            if not inspect.isfunction(error) and not inspect.ismethod(error) and not isinstance(error, BaseException):
+                raise ValueError(
+                    ("The error of the contract must be either a callable (a function or a method), "
+                     "a class (subclass of BaseException) or an instance of BaseException, but got: {}").format(error))
 
         location = None  # type: Optional[str]
         tb_stack = traceback.extract_stack(limit=2)[:1]
@@ -307,7 +324,7 @@ class invariant:  # pylint: disable=invalid-name
                  description: Optional[str] = None,
                  a_repr: reprlib.Repr = icontract._globals.aRepr,
                  enabled: bool = __debug__,
-                 error: Optional[Union[Callable[..., ExceptionT], Type[ExceptionT]]] = None) -> None:
+                 error: Optional[Union[Callable[..., ExceptionT], Type[ExceptionT], BaseException]] = None) -> None:
         """
         Initialize a class decorator to establish the invariant on all the public methods.
 
@@ -326,12 +343,13 @@ class invariant:  # pylint: disable=invalid-name
                 The default is to always check the condition unless the interpreter runs in optimized mode (``-O`` or
                 ``-OO``).
         :param error:
-            if given as a callable, ``error`` is expected to accept a subset of function arguments
-            (*e.g.*, also including ``result`` for perconditions, only ``self`` for invariants *etc.*) and return
-            an exception. The ``error`` is called on contract violation and the resulting exception is raised.
+            The error is expected to denote either:
 
-            Otherwise, it is expected to denote an Exception class which is instantiated with the violation message
-            and raised on contract violation.
+            * A callable. ``error`` is expected to accept a subset of function arguments and return an exception.
+              The ``error`` is called on contract violation and the resulting exception is raised.
+            * A subclass of ``BaseException`` which is instantiated with the violation message and raised
+              on contract violation.
+            * An instance of ``BaseException`` that will be raised with the traceback on contract violation.
         :return:
 
         """
@@ -342,9 +360,17 @@ class invariant:  # pylint: disable=invalid-name
         if not enabled:
             return
 
-        if isinstance(error, type) and not issubclass(error, BaseException):
-            raise ValueError(("The error of the contract is given as a type, "
-                              "but the type does not inherit from BaseException: {}").format(error))
+        if error is None:
+            pass
+        elif isinstance(error, type):
+            if not issubclass(error, BaseException):
+                raise ValueError(("The error of the contract is given as a type, "
+                                  "but the type does not inherit from BaseException: {}").format(error))
+        else:
+            if not inspect.isfunction(error) and not inspect.ismethod(error) and not isinstance(error, BaseException):
+                raise ValueError(
+                    ("The error of the contract must be either a callable (a function or a method), "
+                     "a class (subclass of BaseException) or an instance of BaseException, but got: {}").format(error))
 
         location = None  # type: Optional[str]
         tb_stack = traceback.extract_stack(limit=2)[:1]

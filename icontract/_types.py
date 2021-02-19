@@ -1,7 +1,7 @@
 """Define data structures shared among the modules."""
 import inspect
 import reprlib
-from typing import Callable, Optional, Union, Set, List, Any, Type  # pylint: disable=unused-import
+from typing import Callable, Optional, Union, Set, List, Any, Type, cast  # pylint: disable=unused-import
 
 import icontract._globals
 
@@ -19,7 +19,7 @@ class Contract:
                  condition: Callable[..., bool],
                  description: Optional[str] = None,
                  a_repr: reprlib.Repr = icontract._globals.aRepr,
-                 error: Optional[Union[Callable[..., ExceptionT], Type[ExceptionT]]] = None,
+                 error: Optional[Union[Callable[..., ExceptionT], Type[ExceptionT], BaseException]] = None,
                  location: Optional[str] = None) -> None:
         """
         Initialize.
@@ -57,7 +57,8 @@ class Contract:
         self.error_args = None  # type: Optional[List[str]]
         self.error_arg_set = None  # type: Optional[Set[str]]
         if error is not None and (inspect.isfunction(error) or inspect.ismethod(error)):
-            self.error_args = list(inspect.signature(error).parameters.keys())
+            error_as_callable = cast(Callable[..., ExceptionT], error)
+            self.error_args = list(inspect.signature(error_as_callable).parameters.keys())
             self.error_arg_set = set(self.error_args)
 
         self.location = location

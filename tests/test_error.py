@@ -114,6 +114,46 @@ class TestSpecifiedAsType(unittest.TestCase):
         self.assertEqual('x > 0: x was -1', tests.error.wo_mandatory_location(str(value_error)))
 
 
+class TestSpecifiedAsInstance(unittest.TestCase):
+    def test_valid_exception(self) -> None:
+        @icontract.require(lambda x: x > 0, error=ValueError("negative x"))
+        def some_func(x: int) -> None:
+            pass
+
+        value_error = None  # type: Optional[ValueError]
+        try:
+            some_func(x=-1)
+        except ValueError as err:
+            value_error = err
+
+        assert value_error is not None
+        self.assertEqual('negative x', str(value_error))
+
+    def test_repeated_raising(self) -> None:
+        @icontract.require(lambda x: x > 0, error=ValueError("negative x"))
+        def some_func(x: int) -> None:
+            pass
+
+        value_error = None  # type: Optional[ValueError]
+        try:
+            some_func(x=-1)
+        except ValueError as err:
+            value_error = err
+
+        assert value_error is not None
+        self.assertEqual('negative x', str(value_error))
+
+        # Repeat
+        value_error = None
+        try:
+            some_func(x=-1)
+        except ValueError as err:
+            value_error = err
+
+        assert value_error is not None
+        self.assertEqual('negative x', str(value_error))
+
+
 class TestSpecifiedAsInvalidType(unittest.TestCase):
     def test_in_precondition(self) -> None:
         class A:
@@ -171,67 +211,67 @@ class TestSpecifiedAsInvalidType(unittest.TestCase):
             r"but the type does not inherit from BaseException: <class .*\.A'>")
 
 
-class TestSpecifiedAsInvalidInstance(unittest.TestCase):
+class TestSpecifiedAsInstanceOfInvalidType(unittest.TestCase):
     def test_in_precondition(self) -> None:
         class A:
             def __init__(self, msg: str) -> None:
                 self.msg = msg
 
-        @icontract.require(lambda x: x > 0, error=A("something went wrong"))  # type: ignore
-        def some_func(x: int) -> None:
-            pass
-
-        not_implemented_error = None  # type: Optional[NotImplementedError]
+        value_error = None  # type: Optional[ValueError]
         try:
-            some_func(-1)
-        except NotImplementedError as err:
-            not_implemented_error = err
 
-        assert not_implemented_error is not None
+            @icontract.require(lambda x: x > 0, error=A("something went wrong"))  # type: ignore
+            def some_func(x: int) -> None:
+                pass
+        except ValueError as err:
+            value_error = err
+
+        assert value_error is not None
         self.assertRegex(
-            str(not_implemented_error), r"^icontract does not know how to handle "
-            r"the error of type <class '.*.A'> \(expected a function or a class\)$")
+            str(value_error), r"^The error of the contract must be either a callable \(a function or a method\), "
+            r"a class \(subclass of BaseException\) or an instance of BaseException, "
+            r"but got: <.*\.A object at 0x.*>$")
 
     def test_in_postcondition(self) -> None:
         class A:
             def __init__(self, msg: str) -> None:
                 self.msg = msg
 
-        @icontract.ensure(lambda result: result > 0, error=A("something went wrong"))  # type: ignore
-        def some_func() -> int:
-            return -1
-
-        not_implemented_error = None  # type: Optional[NotImplementedError]
+        value_error = None  # type: Optional[ValueError]
         try:
-            some_func()
-        except NotImplementedError as err:
-            not_implemented_error = err
 
-        assert not_implemented_error is not None
+            @icontract.ensure(lambda result: result > 0, error=A("something went wrong"))  # type: ignore
+            def some_func() -> int:
+                return -1
+        except ValueError as err:
+            value_error = err
+
+        assert value_error is not None
         self.assertRegex(
-            str(not_implemented_error), r"^icontract does not know how to handle "
-            r"the error of type <class '.*.A'> \(expected a function or a class\)$")
+            str(value_error), r"^The error of the contract must be either a callable \(a function or a method\), "
+            r"a class \(subclass of BaseException\) or an instance of BaseException, "
+            r"but got: <.*\.A object at 0x.*>$")
 
     def test_in_invariant(self) -> None:
         class A:
             def __init__(self, msg: str) -> None:
                 self.msg = msg
 
-        @icontract.invariant(lambda self: self.x > 0, error=A("something went wrong"))  # type: ignore
-        class B:
-            def __init__(self) -> None:
-                self.x = -1
-
-        not_implemented_error = None  # type: Optional[NotImplementedError]
+        value_error = None  # type: Optional[ValueError]
         try:
-            _ = B()
-        except NotImplementedError as err:
-            not_implemented_error = err
 
-        assert not_implemented_error is not None
+            @icontract.invariant(lambda self: self.x > 0, error=A("something went wrong"))  # type: ignore
+            class B:
+                def __init__(self) -> None:
+                    self.x = -1
+        except ValueError as err:
+            value_error = err
+
+        assert value_error is not None
         self.assertRegex(
-            str(not_implemented_error), r"^icontract does not know how to handle "
-            r"the error of type <class '.*.A'> \(expected a function or a class\)$")
+            str(value_error), r"^The error of the contract must be either a callable \(a function or a method\), "
+            r"a class \(subclass of BaseException\) or an instance of BaseException, "
+            r"but got: <.*\.A object at 0x.*>$")
 
 
 if __name__ == '__main__':
