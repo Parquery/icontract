@@ -1,9 +1,11 @@
 """Define data structures shared among the modules."""
 import inspect
 import reprlib
-from typing import Callable, Optional, Union, Set, List, Any  # pylint: disable=unused-import
+from typing import Callable, Optional, Union, Set, List, Any, Type  # pylint: disable=unused-import
 
 import icontract._globals
+
+from icontract._globals import ExceptionT
 
 # pylint: disable=protected-access
 
@@ -17,7 +19,7 @@ class Contract:
                  condition: Callable[..., bool],
                  description: Optional[str] = None,
                  a_repr: reprlib.Repr = icontract._globals.aRepr,
-                 error: Optional[Union[Callable[..., Exception], type]] = None,
+                 error: Optional[Union[Callable[..., ExceptionT], Type[ExceptionT]]] = None,
                  location: Optional[str] = None) -> None:
         """
         Initialize.
@@ -27,7 +29,7 @@ class Contract:
         :param a_repr: representation instance that defines how the values are represented
         :param error:
             if given as a callable, ``error`` is expected to accept a subset of function arguments
-            (*e.g.*, also including ``result`` for perconditions, only ``self`` for invariants *etc.*) and return
+            (*e.g.*, also including ``result`` for preconditions, only ``self`` for invariants *etc.*) and return
             an exception. The ``error`` is called on contract violation and the resulting exception is raised.
 
             Otherwise, it is expected to denote an Exception class which is instantiated with the violation message

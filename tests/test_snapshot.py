@@ -236,6 +236,25 @@ class TestInvalid(unittest.TestCase):
         self.assertEqual("You are decorating a function with a snapshot, "
                          "but no postcondition was defined on the function before.", str(value_error))
 
+    def test_missing_old_attribute(self) -> None:
+        @icontract.snapshot(lambda lst: lst[:])
+        @icontract.ensure(lambda OLD, lst: OLD.len_list == lst)  # We miss len_lst in OLD here!
+        def some_func(lst: List[int]) -> None:
+            return
+
+        attribute_error = None  # type: Optional[AttributeError]
+
+        try:
+            some_func(lst=[1, 2, 3])
+        except AttributeError as error:
+            attribute_error = error
+
+        assert attribute_error is not None
+
+        self.assertEqual("The snapshot with the name 'len_list' is not available in the OLD of a postcondition. "
+                         "Have you decorated the function with a corresponding snapshot decorator?",
+                         str(attribute_error))
+
 
 if __name__ == '__main__':
     unittest.main()
