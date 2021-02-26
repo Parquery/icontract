@@ -5,7 +5,7 @@
 
 import ast
 import unittest
-from typing import List, MutableMapping, Any
+from typing import List, MutableMapping, Any, Optional
 
 import icontract._checkers
 import icontract._represent
@@ -34,12 +34,14 @@ class ClassWithInvariants(icontract.DBC):
         self.x = 1
 
 
-class TestForIntegrators(unittest.TestCase):
+class TestInitial(unittest.TestCase):
     def test_that_there_is_no_checker_if_no_contracts(self) -> None:
         checker = icontract._checkers.find_checker(func=func_without_contracts)
         self.assertIsNone(checker)
 
-    def test_dealing_with_preconditions(self) -> None:
+
+class TestPreconditions(unittest.TestCase):
+    def test_evaluating(self) -> None:
         checker = icontract._checkers.find_checker(func=func_with_contracts)
         assert checker is not None
 
@@ -71,7 +73,36 @@ class TestForIntegrators(unittest.TestCase):
 
         assert success
 
-    def test_dealing_with_postconditions(self) -> None:
+    def test_adding(self) -> None:
+        def some_func(x: int) -> None:  # pylint: disable=unused-argument
+            return
+
+        checker = icontract._checkers.find_checker(func=some_func)
+        assert checker is None
+
+        wrapped = checker = icontract._checkers.decorate_with_checker(func=some_func)
+
+        # The contract needs to have its own error specified since it is not added as a decorator,
+        # so the module ``icontract._represent`` will be confused.
+        icontract._checkers.add_precondition_to_checker(
+            checker=checker,
+            contract=icontract._types.Contract(
+                condition=lambda x: x > 0,
+                error=lambda x: icontract.ViolationError("x must be positive, but got: {}".format(x))))
+
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            wrapped(x=-1)
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        assert violation_error is not None
+
+        self.assertEqual('x must be positive, but got: -1', str(violation_error))
+
+
+class TestPostconditions(unittest.TestCase):
+    def test_evaluating(self) -> None:
         checker = icontract._checkers.find_checker(func=func_with_contracts)
         assert checker is not None
 
@@ -118,7 +149,41 @@ class TestForIntegrators(unittest.TestCase):
 
         assert success
 
-    def test_dealing_with_invariants(self) -> None:
+    def test_adding(self) -> None:
+        def some_func(lst: List[int]) -> None:
+            # This will break the post-condition, see below.
+            lst.append(1984)
+
+        checker = icontract._checkers.find_checker(func=some_func)
+        assert checker is None
+
+        wrapped = checker = icontract._checkers.decorate_with_checker(func=some_func)
+
+        # The contract needs to have its own error specified since it is not added as a decorator,
+        # so the module ``icontract._represent`` will be confused.
+        icontract._checkers.add_postcondition_to_checker(
+            checker=checker,
+            contract=icontract._types.Contract(
+                condition=lambda OLD, lst: OLD.len_lst == len(lst),
+                error=icontract.ViolationError("The size of lst must not change.")))
+
+        icontract._checkers.add_snapshot_to_checker(
+            checker=checker, snapshot=icontract._types.Snapshot(capture=lambda lst: len(lst), name="len_lst"))
+
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            lst = [1, 2, 3]
+            wrapped(lst=lst)
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        assert violation_error is not None
+
+        self.assertEqual('The size of lst must not change.', str(violation_error))
+
+
+class TestInvariants(unittest.TestCase):
+    def test_reading(self) -> None:
         instance = ClassWithInvariants()
         assert instance.x == 1  # Test assumption
 
@@ -139,6 +204,8 @@ class TestForIntegrators(unittest.TestCase):
 
         assert success
 
+
+class TestRepresentation(unittest.TestCase):
     def test_condition_text(self) -> None:
         checker = icontract._checkers.find_checker(func=func_with_contracts)
         assert checker is not None

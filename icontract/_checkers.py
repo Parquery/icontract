@@ -14,6 +14,7 @@ from icontract.errors import ViolationError
 # pylint does not play with typing.Mapping.
 # pylint: disable=unsubscriptable-object
 # pylint: disable=raising-bad-type
+# pylint: disable=too-many-lines
 
 
 def _walk_decorator_stack(func: CallableT) -> Iterable['CallableT']:
@@ -232,11 +233,11 @@ async def _assert_preconditions_async(preconditions: List[List[Contract]],
             condition_kwargs = select_condition_kwargs(contract=contract, resolved_kwargs=resolved_kwargs)
 
             if inspect.iscoroutinefunction(contract.condition):
-                check = await contract.condition(**condition_kwargs)  # type: ignore
+                check = await contract.condition(**condition_kwargs)
             else:
                 check_or_coroutine = contract.condition(**condition_kwargs)
                 if inspect.iscoroutine(check_or_coroutine):
-                    check = await check_or_coroutine  # type: ignore
+                    check = await check_or_coroutine
                 else:
                     check = check_or_coroutine
 
@@ -350,11 +351,11 @@ async def _assert_postconditions_async(postconditions: List[Contract],
         condition_kwargs = select_condition_kwargs(contract=contract, resolved_kwargs=resolved_kwargs)
 
         if inspect.iscoroutinefunction(contract.condition):
-            check = await contract.condition(**condition_kwargs)  # type: ignore
+            check = await contract.condition(**condition_kwargs)
         else:
             check_or_coroutine = contract.condition(**condition_kwargs)
             if inspect.iscoroutine(check_or_coroutine):
-                check = await check_or_coroutine  # type: ignore
+                check = await check_or_coroutine
             else:
                 check = check_or_coroutine
 
@@ -677,6 +678,63 @@ def decorate_with_checker(func: CallableT) -> CallableT:
     setattr(wrapper, "__postconditions__", [])
 
     return wrapper  # type: ignore
+
+
+def add_precondition_to_checker(checker: CallableT, contract: Contract) -> None:
+    """
+    Add the precondition to the function's checker.
+
+    Use :func:`find_checker` to find the checker.
+    If it returns ``None``, decorate it with the checker first using :func:`decorate_with_checker`.
+    """
+    # Add the precondition to the list of preconditions stored at the checker
+    assert hasattr(checker, "__preconditions__")
+    preconditions = getattr(checker, "__preconditions__")
+    assert isinstance(preconditions, list)
+    assert len(preconditions) <= 1, \
+        ("At most a single group of preconditions expected when wrapping with a contract checker. "
+         "The preconditions are merged only in the DBC metaclass. "
+         "The current number of precondition groups: {}").format(len(preconditions))
+
+    if len(preconditions) == 0:
+        # Create the first group if there is no group so far, i.e. this is the first decorator.
+        preconditions.append([])
+
+    preconditions[0].append(contract)
+
+
+def add_snapshot_to_checker(checker: CallableT, snapshot: Snapshot) -> None:
+    """
+    Add the snapshot to the function's checker.
+
+    Use :func:`find_checker` to find the checker.
+    If it returns ``None``, decorate it with the checker first using :func:`decorate_with_checker`.
+    """
+    # Add the snapshot to the list of snapshots stored at the checker
+    assert hasattr(checker, "__postcondition_snapshots__")
+
+    snapshots = getattr(checker, "__postcondition_snapshots__")
+    assert isinstance(snapshots, list)
+
+    for snap in snapshots:
+        assert isinstance(snap, Snapshot)
+        if snap.name == snapshot.name:
+            raise ValueError("There are conflicting snapshots with the name: {!r}".format(snap.name))
+
+    snapshots.append(snapshot)
+
+
+def add_postcondition_to_checker(checker: CallableT, contract: Contract) -> None:
+    """
+    Add the postcondition to the function's checker.
+
+    Use :func:`find_checker` to find the checker.
+    If it returns ``None``, decorate it with the checker first using :func:`decorate_with_checker`.
+    """
+    # Add the postcondition to the list of postconditions stored at the checker
+    assert hasattr(checker, "__postconditions__")
+    assert isinstance(getattr(checker, "__postconditions__"), list)
+    getattr(checker, "__postconditions__").append(contract)
 
 
 def _find_self(param_names: List[str], args: Tuple[Any, ...], kwargs: Dict[str, Any]) -> Any:
