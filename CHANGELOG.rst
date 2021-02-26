@@ -1,3 +1,11 @@
+2.5.0
+=====
+* Encapsulated adding contracts for integrators (#202)
+* Added support for error-as-instance (#201)
+* Added support for coroutine (#197)
+* Added support for async (#196)
+
+
 2.4.1
 =====
 *  Removed automatic registration with Hypothesis and replaced it with a hook that
