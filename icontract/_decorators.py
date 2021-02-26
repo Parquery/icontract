@@ -95,28 +95,14 @@ class require:  # pylint: disable=invalid-name
         # Find a contract checker
         contract_checker = icontract._checkers.find_checker(func=func)
 
-        if contract_checker is not None:
-            # Do not add an additional wrapper since the function has been already wrapped with a contract checker
-            result = func
-        else:
+        if contract_checker is None:
             # Wrap the function with a contract checker
             contract_checker = icontract._checkers.decorate_with_checker(func=func)
-            result = contract_checker
 
-        # Add the precondition to the list of preconditions stored at the checker
-        assert hasattr(contract_checker, "__preconditions__")
-        preconditions = getattr(contract_checker, "__preconditions__")
-        assert isinstance(preconditions, list)
-        assert len(preconditions) <= 1, \
-            ("At most a single group of preconditions expected when wrapping with a contract checker. "
-             "The preconditions are merged only in the DBC metaclass. "
-             "The current number of precondition groups: {}").format(len(preconditions))
+        result = contract_checker
 
-        if len(preconditions) == 0:
-            # Create the first group if there is no group so far, i.e. this is the first decorator.
-            preconditions.append([])
-
-        preconditions[0].append(self._contract)
+        assert self._contract is not None
+        icontract._checkers.add_precondition_to_checker(checker=contract_checker, contract=self._contract)
 
         return result
 
@@ -184,18 +170,7 @@ class snapshot:  # pylint: disable=invalid-name
 
         assert self._snapshot is not None, "Expected the enabled snapshot to have the property ``snapshot`` set."
 
-        # Add the snapshot to the list of snapshots stored at the checker
-        assert hasattr(contract_checker, "__postcondition_snapshots__")
-
-        snapshots = getattr(contract_checker, "__postcondition_snapshots__")
-        assert isinstance(snapshots, list)
-
-        for snap in snapshots:
-            assert isinstance(snap, Snapshot)
-            if snap.name == self._snapshot.name:
-                raise ValueError("There are conflicting snapshots with the name: {!r}".format(snap.name))
-
-        snapshots.append(self._snapshot)
+        icontract._checkers.add_snapshot_to_checker(checker=contract_checker, snapshot=self._snapshot)
 
         return func
 
@@ -286,18 +261,14 @@ class ensure:  # pylint: disable=invalid-name
         # Find a contract checker
         contract_checker = icontract._checkers.find_checker(func=func)
 
-        if contract_checker is not None:
-            # Do not add an additional wrapper since the function has been already wrapped with a contract checker
-            result = func
-        else:
+        if contract_checker is None:
             # Wrap the function with a contract checker
             contract_checker = icontract._checkers.decorate_with_checker(func=func)
-            result = contract_checker
 
-        # Add the postcondition to the list of postconditions stored at the checker
-        assert hasattr(contract_checker, "__postconditions__")
-        assert isinstance(getattr(contract_checker, "__postconditions__"), list)
-        getattr(contract_checker, "__postconditions__").append(self._contract)
+        result = contract_checker
+
+        assert self._contract is not None
+        icontract._checkers.add_postcondition_to_checker(checker=contract_checker, contract=self._contract)
 
         return result
 

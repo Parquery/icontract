@@ -16,7 +16,7 @@ class Contract:
     # pylint: disable=too-many-instance-attributes
 
     def __init__(self,
-                 condition: Callable[..., bool],
+                 condition: Callable[..., Any],
                  description: Optional[str] = None,
                  a_repr: reprlib.Repr = icontract._globals.aRepr,
                  error: Optional[Union[Callable[..., ExceptionT], Type[ExceptionT], BaseException]] = None,
