@@ -5,18 +5,34 @@ violation messages and inheritance.
 
 It also gives a base for a flourishing of a wider ecosystem:
 
-* A linter `pyicontract-lint <https://pypi.org/project/pyicontract-lint>`__,
-* A sphinx plug-in `sphinx-icontract <https://pypi.org/project/sphinx-icontract>`_,
-* A tool `icontract-hypothesis <https://github.com/mristin/icontract-hypothesis>`_
-  for automated testing and ghostwriting test files which infers
-  `Hypothesis <https://hypothesis.readthedocs.io/en/latest/>`_ strategies based on the contracts,
+* A linter `pyicontract-lint`_,
+* A sphinx plug-in `sphinx-icontract`_,
+* A tool `icontract-hypothesis`_ for automated testing and ghostwriting test files which infers
+  `Hypothesis`_ strategies based on the contracts,
 
   * together with IDE integrations such as
-    `icontract-hypothesis-vim <https://github.com/mristin/icontract-hypothesis-vim>`_,
-    `icontract-hypothesis-pycharm <https://github.com/mristin/icontract-hypothesis-pycharm>`_, and
-    `icontract-hypothesis-vscode <https://github.com/mristin/icontract-hypothesis-vscode>`_,
-* An ongoing integration with `CrossHair <https://github.com/pschanely/CrossHair>`_, and
-* An ongoing integration with `FastAPI <https://github.com/tiangolo/fastapi/issues/1996>`_.
+    `icontract-hypothesis-vim`_,
+    `icontract-hypothesis-pycharm`_, and
+    `icontract-hypothesis-vscode`_,
+* Directly integrated into `CrossHair`_, a tool for automatic verification of Python programs,
+
+  * together with IDE integrations such as
+    `crosshair-pycharm`_ and `crosshair-vscode`_, and
+* An integration with `FastAPI`_ through `fastapi-icontract`_ to enforce contracts on your HTTP API and display them
+  in OpenAPI 3 schema and Swagger UI.
+
+.. _pyicontract-lint: https://pypi.org/project/pyicontract-lint
+.. _sphinx-icontract: https://pypi.org/project/sphinx-icontract
+.. _icontract-hypothesis: https://github.com/mristin/icontract-hypothesis
+.. _Hypothesis: https://hypothesis.readthedocs.io/en/latest/
+.. _icontract-hypothesis-vim: https://github.com/mristin/icontract-hypothesis-vim
+.. _icontract-hypothesis-pycharm: https://github.com/mristin/icontract-hypothesis-pycharm
+.. _icontract-hypothesis-vscode: https://github.com/mristin/icontract-hypothesis-vscode
+.. _CrossHair: https://github.com/pschanely/CrossHair
+.. _crosshair-pycharm: https://github.com/mristin/crosshair-pycharm/
+.. _crosshair-vscode: https://github.com/mristin/crosshair-vscode/
+.. _FastAPI: https://github.com/tiangolo/fastapi/issues/1996
+.. _fastapi-icontract: https://pypi.org/project/fastapi-icontract/
 
 Related Projects
 ----------------
