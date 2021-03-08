@@ -5,21 +5,13 @@ import unittest
 from typing import TypeVar, Iterable, Awaitable, List
 
 import icontract
+import asyncstdlib as a
 
 
 class TestCoroutines(unittest.IsolatedAsyncioTestCase):
     async def test_mock_backend_example(self) -> None:
         # This is an example of a backend system.
         # This test demonstrates how contracts can be used with coroutines.
-
-        T = TypeVar('T')
-
-        async def awaited_all(aws: Iterable[Awaitable[T]]) -> bool:
-            for awaitable in aws:
-                if not await awaitable:
-                    return False
-
-            return True
 
         async def has_author(identifier: str) -> bool:
             return identifier in ["Margaret Cavendish", "Jane Austen"]
@@ -35,8 +27,8 @@ class TestCoroutines(unittest.IsolatedAsyncioTestCase):
             identifier: str
             author: str
 
-        @icontract.require(lambda categories: awaited_all(map(has_category, categories)))
-        @icontract.ensure(lambda result: awaited_all(has_author(book.author) for book in result))
+        @icontract.require(lambda categories: a.map(has_category, categories))
+        @icontract.ensure(lambda result: a.all(a.await_each(has_author(book.author) for book in result)))
         async def list_books(categories: List[str]) -> List[Book]:
             result = []  # type: List[Book]
             for category in categories:

@@ -80,25 +80,25 @@ For example:
 A big fraction of contracts on sequences require an `all`_ operation to check that all the item of a sequence are
 ``True``.
 Unfortunately, `all`_ does not automatically operate on a sequence of `Awaitables <awaitable_>`_,
-but you can introduce a short helper function as a substitute:
+but the library `asyncstdlib`_ comes in very handy:
 
 .. _all: https://docs.python.org/3/library/functions.html#all
 .. _awaitable: https://docs.python.org/3/library/asyncio-task.html#awaitables
+.. _asyncstdlib: https://pypi.org/project/asyncstdlib/
 
 .. code-block:: python
 
-    T = TypeVar('T')
+    import asyncstdlib as a
 
-    async def awaited_all(aws: Iterable[Awaitable[T]]) -> bool:
-        for awaitable in aws:
-            if not await awaitable:
-                return False
+Here is a practical example that uses `asyncstdlib.map`_, `asyncstdlib.all`_ and `asyncstdlib.await_each`_:
 
-        return True
-
-Here is a practical example that uses ``awaited_all``:
+.. _asyncstdlib.map: https://asyncstdlib.readthedocs.io/en/latest/source/api/builtins.html#asyncstdlib.builtins.map
+.. _asyncstdlib.all: https://asyncstdlib.readthedocs.io/en/latest/source/api/builtins.html#asyncstdlib.builtins.all
+.. _asyncstdlib.await_each: https://asyncstdlib.readthedocs.io/en/latest/source/api/asynctools.html#asyncstdlib.asynctools.await_each
 
 .. code-block:: python
+
+    import asyncstdlib as a
 
     async def has_author(identifier: str) -> bool:
         ...
@@ -111,8 +111,9 @@ Here is a practical example that uses ``awaited_all``:
         identifier: str
         author: str
 
-    @icontract.require(lambda categories: awaited_all(map(has_category, categories)))
-    @icontract.ensure(lambda result: awaited_all(has_author(book.author) for book in result))
+    @icontract.require(lambda categories: a.map(has_category, categories))
+    @icontract.ensure(
+        lambda result: a.all(a.await_each(has_author(book.author) for book in result)))
     async def list_books(categories: List[str]) -> List[Book]:
         ...
 
