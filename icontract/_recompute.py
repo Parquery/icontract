@@ -337,6 +337,12 @@ class Visitor(ast.NodeVisitor):
             else:
                 kwargs[keyword.arg] = self.visit(node=keyword.value)
 
+        # If any of the positional or keyword arguments are placeholders, that means that we are re-computing a
+        # generator expression.
+        # As we re-compute them by re-compilation, we do not re-compute the individual calls here.
+        if PLACEHOLDER in args or PLACEHOLDER in kwargs.values():
+            return PLACEHOLDER
+
         result = func(*args, **kwargs)
 
         if inspect.iscoroutine(result):

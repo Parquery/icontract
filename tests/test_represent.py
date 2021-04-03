@@ -426,6 +426,50 @@ class TestReprValues(unittest.TestCase):
                          'all(item == x for sublst in lst for item in sublst) was False\n'
                          'lst was [[1, 2], [3]]', tests.error.wo_mandatory_location(str(violation_error)))
 
+    def test_generator_expression_with_zip_and_multiple_for(self) -> None:
+        # Taken from a solution for Advent of Code 2020 day 11.
+        @icontract.ensure(
+            lambda layout, result:
+            all(cell == result_cell
+                for row, result_row in zip(layout, result[0])
+                for cell, result_cell in zip(row, result_row)
+                if cell == '.'),
+            "Floor remains floor"
+        )
+        def apply(layout: List[List[str]]) -> Tuple[List[List[str]], int]:
+            height = len(layout)
+            width = len(layout[0])
+
+            result = [[''] * width] * height
+            return result, 0
+
+        layout = [['L', '.', '#'], ['.', '#', '#']]
+
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            _, _ = apply(layout=layout)
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+
+        text = re.sub(r'<zip object at 0x[0-9a-fA-F]+>', '<zip object at some address>',
+                      tests.error.wo_mandatory_location(str(violation_error)))
+
+        self.assertEqual(
+            textwrap.dedent('''\
+                Floor remains floor: all(cell == result_cell
+                        for row, result_row in zip(layout, result[0])
+                        for cell, result_cell in zip(row, result_row)
+                        if cell == '.'):
+                all(cell == result_cell
+                        for row, result_row in zip(layout, result[0])
+                        for cell, result_cell in zip(row, result_row)
+                        if cell == '.') was False
+                layout was [['L', '.', '#'], ['.', '#', '#']]
+                result was ([['', '', ''], ['', '', '']], 0)
+                zip(layout, result[0]) was <zip object at some address>'''), text)
+
     def test_list_comprehension(self) -> None:
         lst = [1, 2, 3]
 
