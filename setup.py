@@ -65,8 +65,8 @@ setup(
             'py-cpuinfo>=5.0.0,<6',
             'typeguard>=2,<3'
             # yapf: enable
-        ] + (['deal==4.1.0'] if sys.version_info >= (3, 8) else []) +
-               (['asyncstdlib==3.9.1'] if sys.version_info >= (3, 8) else []),
+        ] + (['deal==4.1.0'] if sys.version_info >= (3, 8) else []) + (['asyncstdlib==3.9.1']
+                                                                       if sys.version_info >= (3, 8) else []),
     },
     py_modules=['icontract'],
     package_data={"icontract": ["py.typed"]},

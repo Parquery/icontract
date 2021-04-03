@@ -2,10 +2,11 @@
 
 import dataclasses
 import unittest
-from typing import TypeVar, Iterable, Awaitable, List
+from typing import List
+
+import asyncstdlib as a
 
 import icontract
-import asyncstdlib as a
 
 
 class TestCoroutines(unittest.IsolatedAsyncioTestCase):
