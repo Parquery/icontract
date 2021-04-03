@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [ master, main ]
+    tags: [ "**" ]
+  pull_request:
+    branches: [ "**" ]
+
+jobs:
+  Execute:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8]
+
+    steps:
+      - uses: actions/checkout@master
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip3 install --upgrade coveralls
+          pip3 install -e .[dev]
+
+      - name: Run checks
+        run: |
+          python3 precommit.py
+
+      - name: Upload Coverage
+        run: coveralls --service=github
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COVERALLS_FLAG_NAME: ${{ matrix.python-version }}
+          COVERALLS_PARALLEL: true
+
+  Finish-Coveralls:
+    name: Finish Coveralls
+    needs: Execute
+    runs-on: ubuntu-latest
+    container: python:3-slim
+    steps:
+      - name: Finish Coveralls
+        run: |
+          pip3 install --upgrade coveralls
+          coveralls --finish --service=github
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
