@@ -93,7 +93,7 @@ class TestCoroutine(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(violation_error)
         self.assertEqual("hihi", str(violation_error))
 
-    async def test_reported_if_without_error(self) -> None:
+    async def test_reported_if_no_error_is_specified_as_we_can_not_recompute_coroutine_functions(self) -> None:
         async def some_condition() -> bool:
             return False
 
@@ -101,13 +101,22 @@ class TestCoroutine(unittest.IsolatedAsyncioTestCase):
         async def some_func() -> None:
             pass
 
-        value_error = None  # type: Optional[ValueError]
+        runtime_error = None  # type: Optional[RuntimeError]
         try:
             await some_func()
-        except ValueError as err:
-            value_error = err
+        except RuntimeError as err:
+            runtime_error = err
 
-        self.assertIsNotNone(value_error)
+        assert runtime_error is not None
+        assert runtime_error.__cause__ is not None
+        assert isinstance(runtime_error.__cause__, ValueError)
+
+        value_error = runtime_error.__cause__
+
         self.assertRegex(
             str(value_error), r"^Unexpected coroutine function <function .*> as a condition of a contract\. "
             r"You must specify your own error if the condition of your contract is a coroutine function\.")
+
+
+if __name__ == "__main__":
+    unittest.main()
