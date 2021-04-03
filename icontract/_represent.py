@@ -6,14 +6,14 @@ import reprlib
 import sys
 import textwrap
 import uuid
-from typing import Any, Mapping, MutableMapping, Callable, List, Dict, Iterable, cast  # pylint: disable=unused-import
-from typing import Optional, Tuple  # pylint: disable=unused-import
+from typing import Any, Mapping, MutableMapping, Callable, List, Dict, cast  # pylint: disable=unused-import
+from typing import Optional  # pylint: disable=unused-import
 
 import asttokens
 
 import icontract._recompute
-
 from icontract._types import Contract
+from icontract._globals import CallableT
 
 # pylint does not play with typing.Mapping.
 # pylint: disable=unsubscriptable-object
@@ -156,7 +156,7 @@ class Visitor(ast.NodeVisitor):
         self.generic_visit(node=node)
 
 
-def is_lambda(a_function: Callable[..., Any]) -> bool:
+def is_lambda(a_function: CallableT) -> bool:
     """
     Check whether the function is a lambda function.
 
@@ -458,6 +458,21 @@ def repr_values(condition: Callable[..., bool], lambda_inspection: Optional[Cond
     return parts
 
 
+def represent_condition(condition: CallableT) -> str:
+    """Represent the condition as a string."""
+    lambda_inspection = None  # type: Optional[ConditionLambdaInspection]
+    if not is_lambda(a_function=condition):
+        condition_repr = condition.__name__
+    else:
+        # We need to extract the source code corresponding to the decorator since inspect.getsource() is broken with
+        # lambdas.
+        lambda_inspection = inspect_lambda_condition(condition=condition)
+        assert lambda_inspection is not None, "Unexpected no lambda inspection for condition: {}".format(condition)
+        condition_repr = lambda_inspection.atok.get_text(lambda_inspection.node)
+
+    return condition_repr
+
+
 def generate_message(contract: Contract, condition_kwargs: Mapping[str, Any]) -> str:
     """Generate the message upon contract violation."""
     # pylint: disable=protected-access
@@ -475,18 +490,9 @@ def generate_message(contract: Contract, condition_kwargs: Mapping[str, Any]) ->
     else:
         # We need to extract the source code corresponding to the decorator since inspect.getsource() is broken with
         # lambdas.
-
-        # Find the line corresponding to the condition lambda
-        lines, condition_lineno = inspect.findsource(contract.condition)
-        filename = inspect.getsourcefile(contract.condition)
-        assert filename is not None
-
-        decorator_inspection = inspect_decorator(lines=lines, lineno=condition_lineno, filename=filename)
-        lambda_inspection = find_lambda_condition(decorator_inspection=decorator_inspection)
-
+        lambda_inspection = inspect_lambda_condition(condition=contract.condition)
         assert lambda_inspection is not None, \
-            "Expected lambda_inspection to be non-None if is_lambda is True on: {}".format(contract.condition)
-
+            "Unexpected no lambda inspection for condition: {}".format(contract.condition)
         condition_text = lambda_inspection.text
 
     parts.append(condition_text)

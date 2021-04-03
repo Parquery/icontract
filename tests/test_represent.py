@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 # pylint: disable=missing-docstring,invalid-name,too-many-public-methods,no-self-use
 # pylint: disable=unused-argument
+# pylint: disable=unnecessary-lambda
 
 import pathlib
+import re
 import reprlib
 import textwrap
 import unittest
@@ -362,13 +364,22 @@ class TestReprValues(unittest.TestCase):
         def func(x: int) -> int:
             return x
 
-        not_implemented_err = None  # type: Optional[NotImplementedError]
+        runtime_error = None  # type: Optional[RuntimeError]
         try:
             func(x=1)
-        except NotImplementedError as err:
-            not_implemented_err = err
+        except RuntimeError as err:
+            runtime_error = err
 
-        self.assertIsNotNone(not_implemented_err)
+        assert runtime_error is not None
+        assert runtime_error.__cause__ is not None
+        assert isinstance(runtime_error.__cause__, NotImplementedError)
+
+        not_implemented_error = runtime_error.__cause__
+
+        self.assertEqual(
+            'Recomputation of in-line lambda functions is not supported since it is quite tricky to implement and '
+            'we decided to implement it only once there is a real need for it. '
+            'Please make a feature request on https://github.com/Parquery/icontract', str(not_implemented_error))
 
     def test_generator_expression_with_attr_on_element(self) -> None:
         @icontract.ensure(lambda result: all(single_res[1].is_absolute() for single_res in result))
@@ -802,6 +813,46 @@ class TestWithNumpyMock(unittest.TestCase):
 
         self.assertIsNotNone(value_err)
         self.assertEqual('The truth value of an array with more than one element is ambiguous.', str(value_err))
+
+
+class TestRecomputationFailure(unittest.TestCase):
+    def test_that_the_error_is_informative(self) -> None:
+        counter = 0
+
+        def some_condition() -> bool:
+            nonlocal counter
+            if counter == 0:
+                # The first time we return False, so that the pre-condition fails.
+                counter += 1
+                return False
+
+            # Every next time we raise the exception, so that the re-computation fails.
+            raise RuntimeError("Recomputation shall fail.")
+
+        @icontract.require(lambda: some_condition())
+        def some_func() -> None:
+            pass
+
+        runtime_error = None  # type: Optional[RuntimeError]
+        try:
+            some_func()
+        except RuntimeError as err:
+            runtime_error = err
+
+        assert runtime_error is not None
+
+        lines = [
+            re.sub(r'^File (.*), line ([0-9]+) in (.*):$',
+                   'File <erased path>, line <erased line> in <erased function>:', line)
+            for line in str(runtime_error).splitlines()
+        ]
+        text = '\n'.join(lines)
+
+        self.assertEqual(
+            textwrap.dedent('''\
+            Failed to recompute the values of the contract condition:
+            File <erased path>, line <erased line> in <erased function>:
+            lambda: some_condition()'''), text)
 
 
 if __name__ == '__main__':

@@ -182,7 +182,20 @@ def _create_violation_error(contract: Contract, resolved_kwargs: Mapping[str, An
     exception = None  # type: Optional[BaseException]
 
     if contract.error is None:
-        msg = icontract._represent.generate_message(contract=contract, condition_kwargs=condition_kwargs)
+        try:
+            msg = icontract._represent.generate_message(contract=contract, condition_kwargs=condition_kwargs)
+        except Exception as err:
+            parts = ["Failed to recompute the values of the contract condition:\n"]
+            if contract.location is not None:
+                parts.append("{}:\n".format(contract.location))
+
+            if contract.description is not None:
+                parts.append("{}: ".format(contract.description))
+
+            parts.append(icontract._represent.represent_condition(condition=contract.condition))
+
+            raise RuntimeError(''.join(parts)) from err
+
         exception = ViolationError(msg)
     elif inspect.ismethod(contract.error) or inspect.isfunction(contract.error):
         assert contract.error_arg_set is not None, ("Expected error_arg_set non-None if contract.error a function.")

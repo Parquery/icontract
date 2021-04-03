@@ -223,3 +223,18 @@ class TestRepresentation(unittest.TestCase):
         self.assertEqual('OLD.last is not None or x == cumulative[-1]', lambda_inspection.text)
 
         assert isinstance(lambda_inspection.node, ast.Lambda)
+
+    def test_condition_representation(self) -> None:
+        checker = icontract._checkers.find_checker(func=func_with_contracts)
+        assert checker is not None
+
+        # Retrieve postconditions
+        contract = checker.__postconditions__[0]  # type: ignore
+        assert isinstance(contract, icontract._types.Contract)
+
+        text = icontract._represent.represent_condition(contract.condition)
+        self.assertEqual('lambda x, cumulative, OLD: OLD.last is not None or x == cumulative[-1]', text)
+
+
+if __name__ == "__main__":
+    unittest.main()

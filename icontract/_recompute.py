@@ -311,6 +311,9 @@ class Visitor(ast.NodeVisitor):
         """Visit the function and the arguments and finally make the function call with them."""
         func = self.visit(node=node.func)
 
+        if not callable(func):
+            raise ValueError(("Unexpected call to a non-callle during the re-computation: {}").format(func))
+
         if inspect.iscoroutinefunction(func):
             raise ValueError(
                 ("Unexpected coroutine function {} as a condition of a contract. "
