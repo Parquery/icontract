@@ -1,7 +1,8 @@
 icontract
 =========
-.. image:: https://travis-ci.com/Parquery/icontract.svg?branch=master
-    :target: https://travis-ci.com/Parquery/icontract
+.. image:: https://github.com/Parquery/icontract/workflows/CI/badge.svg
+    :target: https://github.com/Parquery/icontract/actions?query=workflow%3ACI
+    :alt: Continuous integration
 
 .. image:: https://coveralls.io/repos/github/Parquery/icontract/badge.svg?branch=master
     :target: https://coveralls.io/github/Parquery/icontract
