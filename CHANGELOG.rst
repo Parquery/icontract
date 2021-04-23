@@ -1,3 +1,9 @@
+2.5.1
+=====
+* Allowed ``__new__`` to tighten pre-conditions (#211)
+* Fixed recomputation of calls in generator expr (#210)
+* Added better reporting on recompute failure (#207)
+
 2.5.0
 =====
 * Encapsulated adding contracts for integrators (#202)

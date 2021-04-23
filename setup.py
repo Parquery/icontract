@@ -28,7 +28,7 @@ with open(os.path.join(here, "requirements.txt"), encoding="utf-8") as fid:
 setup(
     name='icontract',
     # Don't forget to update the version in __init__.py and CHANGELOG.rst!
-    version='2.5.0',
+    version='2.5.1',
     description='Provide design-by-contract with informative violation messages.',
     long_description=long_description,
     url='https://github.com/Parquery/icontract',
