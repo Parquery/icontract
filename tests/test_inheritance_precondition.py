@@ -3,8 +3,9 @@
 # pylint: disable=no-self-use
 
 import abc
+import textwrap
 import unittest
-from typing import Optional  # pylint: disable=unused-import
+from typing import Optional, Sequence, cast  # pylint: disable=unused-import
 
 import icontract
 import tests.error
@@ -375,6 +376,60 @@ class TestPropertyViolation(unittest.TestCase):
         self.assertEqual('not self.toggled:\n'
                          'self was SomeClass\n'
                          'self.toggled was True', tests.error.wo_mandatory_location(str(violation_error)))
+
+
+class TestConstructor(unittest.TestCase):
+    def test_init_tightens_preconditions(self) -> None:
+        class A(icontract.DBC):
+            def __init__(self, x: int) -> None:
+                pass
+
+        class B(A):
+            # B can require tighter pre-conditions than A.
+            # __init__ is a special case: while other functions need to satisfy Liskov substitution principle,
+            # __init__ is an exception.
+            @icontract.require(lambda x: x > 0)
+            def __init__(self, x: int) -> None:
+                super().__init__(x=x)
+
+        _ = B(3)
+
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            _ = B(-1)
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual('x > 0: x was -1', tests.error.wo_mandatory_location(str(violation_error)))
+
+    def test_new_tightens_preconditions(self) -> None:
+        class A(icontract.DBC):
+            def __new__(cls, xs: Sequence[int]) -> 'A':
+                return cast(A, xs)
+
+        class B(A):
+            # B can require tighter pre-conditions than A.
+            # __new__ is a special case: while other functions need to satisfy Liskov substitution principle,
+            # __new__ is an exception.
+            @icontract.require(lambda xs: all(x > 0 for x in xs))
+            def __new__(cls, xs: Sequence[int]) -> 'B':
+                return cast(B, xs)
+
+        _ = B([1, 2, 3])
+
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            _ = B([-1, -2, -3])
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual(
+            textwrap.dedent('''\
+                all(x > 0 for x in xs):
+                all(x > 0 for x in xs) was False
+                xs was [-1, -2, -3]'''), tests.error.wo_mandatory_location(str(violation_error)))
 
 
 class TestInvalid(unittest.TestCase):

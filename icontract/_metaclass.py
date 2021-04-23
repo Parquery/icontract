@@ -116,9 +116,10 @@ def _decorate_namespace_function(bases: List[type], namespace: MutableMapping[st
 
     # Collect the preconditions and postconditions from bases.
     #
-    # Preconditions and postconditions of __init__ of base classes are deliberately ignored (and not collapsed) since
-    # initialization is an operation specific to the concrete class and does not relate to the class hierarchy.
-    if key not in ['__init__']:
+    # Preconditions and postconditions of __init__ and __new__ of base classes are deliberately ignored
+    # (and not collapsed) since initialization is an operation specific to the concrete class and
+    # does not relate to the class hierarchy.
+    if key not in ['__init__', '__new__']:
         base_preconditions = []  # type: List[List[Contract]]
         base_snapshots = []  # type: List[Snapshot]
         base_postconditions = []  # type: List[Contract]
