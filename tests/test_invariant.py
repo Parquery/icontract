@@ -35,6 +35,21 @@ class TestOK(unittest.TestCase):
         inst.some_method()
         self.assertEqual(1000, inst.x)
 
+    def test_unbound_instance_method_with_self_as_kwarg(self) -> None:
+        @icontract.invariant(lambda self: self.x > 0)
+        class SomeClass:
+            def __init__(self) -> None:
+                self.x = 100
+
+            def some_method(self) -> None:
+                self.x = 1000
+
+        inst = SomeClass()
+
+        func = inst.some_method.__func__  # type: ignore
+
+        func(self=inst)
+
     def test_magic_method(self) -> None:
         @icontract.invariant(lambda self: self.x > 0)
         class SomeClass:

@@ -400,6 +400,33 @@ class TestInClass(unittest.TestCase):
                          'self was A\n'
                          'self.y was 5', tests.error.wo_mandatory_location(str(violation_error)))
 
+    def test_unbound_instance_method_with_self_as_kwarg(self) -> None:
+        class A:
+            def __init__(self) -> None:
+                self.y = 5
+
+            @icontract.require(lambda self: self.y > 10)
+            def some_method_with_self(self) -> None:
+                pass
+
+            def __repr__(self) -> str:
+                return self.__class__.__name__
+
+        a = A()
+
+        func = a.some_method_with_self.__func__  # type: ignore
+
+        violation_error = None
+        try:
+            func(self=a)
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual('self.y > 10:\n'
+                         'self was A\n'
+                         'self.y was 5', tests.error.wo_mandatory_location(str(violation_error)))
+
     def test_getter(self) -> None:
         class SomeClass:
             def __init__(self) -> None:
