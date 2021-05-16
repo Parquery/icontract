@@ -758,7 +758,7 @@ def _find_self(param_names: List[str], args: Tuple[Any, ...], kwargs: Dict[str, 
     except ValueError:
         pass
 
-    if instance_i is not None:
+    if instance_i is not None and instance_i < len(args):
         return args[instance_i]
 
     return kwargs["self"]
