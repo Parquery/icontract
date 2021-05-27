@@ -61,7 +61,9 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('some_condition: result was 1', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual('some_condition:\n'
+                         'result was 1\n'
+                         'x was 1', tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_condition_as_function_with_default_argument_value(self) -> None:
         def some_condition(result: int, y: int = 0) -> bool:
@@ -82,7 +84,9 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('some_condition: result was -1', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual('some_condition:\n'
+                         'result was -1\n'
+                         'x was -1', tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_condition_as_function_with_default_argument_value_set(self) -> None:
         def some_condition(result: int, y: int = 0) -> bool:
@@ -105,6 +109,7 @@ class TestViolation(unittest.TestCase):
         self.assertIsNotNone(violation_error)
         self.assertEqual('some_condition:\n'
                          'result was 1\n'
+                         'x was 1\n'
                          'y was 3', tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_with_description(self) -> None:

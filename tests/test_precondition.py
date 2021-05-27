@@ -71,7 +71,9 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("some_condition: x was 1", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual("some_condition:\n"
+                         "x was 1\n"
+                         "y was 5", tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_condition_as_function_with_default_argument_value(self) -> None:
         def some_condition(x: int, y: int = 0) -> bool:

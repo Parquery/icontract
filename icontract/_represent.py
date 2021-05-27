@@ -168,7 +168,6 @@ def is_lambda(a_function: CallableT) -> bool:
     >>> is_lambda(lmbd)
     True
 
-    :param condition: condition function of a contract
     :return: True if condition is defined as lambda function
     """
     return a_function.__name__ == "<lambda>"
@@ -365,7 +364,7 @@ def inspect_lambda_condition(condition: Callable[..., Any]) -> Optional[Conditio
 # yapf: disable
 def collect_variable_lookup(
         condition: Callable[..., Any],
-        condition_kwargs: Optional[Mapping[str, Any]] = None
+        resolved_kwargs: Optional[Mapping[str, Any]] = None
 ) -> List[Mapping[str, Any]]:
     """
     Collect the variable lookups in order of precedence.
@@ -379,8 +378,8 @@ def collect_variable_lookup(
     # Condition-specific kwargs
     ##
 
-    if condition_kwargs is not None:
-        variable_lookup.append(condition_kwargs)
+    if resolved_kwargs is not None:
+        variable_lookup.append(resolved_kwargs)
 
     ##
     # Add closure to the lookup
@@ -412,7 +411,7 @@ def collect_variable_lookup(
 
 
 def repr_values(condition: Callable[..., bool], lambda_inspection: Optional[ConditionLambdaInspection],
-                condition_kwargs: Mapping[str, Any], a_repr: reprlib.Repr) -> List[str]:
+                resolved_kwargs: Mapping[str, Any], a_repr: reprlib.Repr) -> List[str]:
     # pylint: disable=too-many-locals
     """
     Represent function arguments and frame values in the error message on contract breach.
@@ -421,10 +420,31 @@ def repr_values(condition: Callable[..., bool], lambda_inspection: Optional[Cond
     :param lambda_inspection:
         inspected lambda AST node corresponding to the condition function (None if the condition was not given as a
         lambda function)
-    :param condition_kwargs: condition arguments
+    :param resolved_kwargs: arguments put in the function call
     :param a_repr: representation instance that defines how the values are represented.
     :return: list of value representations
     """
+    # Hide _ARGS and _KWARGS if they are not part of the condition for better readability
+    if '_ARGS' in resolved_kwargs or '_KWARGS' in resolved_kwargs:
+        parameters = inspect.signature(condition).parameters
+        malleable_kwargs = cast(
+            MutableMapping[str, Any],
+            resolved_kwargs.copy()  # type: ignore
+        )
+
+        if '_ARGS' not in parameters:
+            malleable_kwargs.pop('_ARGS', None)
+
+        if '_KWARGS' not in parameters:
+            malleable_kwargs.pop('_KWARGS', None)
+
+        selected_kwargs = cast(Mapping[str, Any], malleable_kwargs)
+    else:
+        selected_kwargs = resolved_kwargs
+
+    # Don't use ``resolved_kwargs`` from this point on.
+    # ``selected_kwargs`` is meant to be used instead for better readability of error messages.
+
     if is_lambda(a_function=condition):
         assert lambda_inspection is not None, "Expected a lambda inspection when given a condition as a lambda function"
     else:
@@ -433,7 +453,7 @@ def repr_values(condition: Callable[..., bool], lambda_inspection: Optional[Cond
     reprs = dict()  # type: MutableMapping[str, Any]
 
     if lambda_inspection is not None:
-        variable_lookup = collect_variable_lookup(condition=condition, condition_kwargs=condition_kwargs)
+        variable_lookup = collect_variable_lookup(condition=condition, resolved_kwargs=selected_kwargs)
 
         # pylint: disable=protected-access
         recompute_visitor = icontract._recompute.Visitor(variable_lookup=variable_lookup)
@@ -447,7 +467,7 @@ def repr_values(condition: Callable[..., bool], lambda_inspection: Optional[Cond
 
         reprs = repr_visitor.reprs
     else:
-        for key, val in condition_kwargs.items():
+        for key, val in selected_kwargs.items():
             if _representable(value=val):
                 reprs[key] = val
 
@@ -473,7 +493,7 @@ def represent_condition(condition: CallableT) -> str:
     return condition_repr
 
 
-def generate_message(contract: Contract, condition_kwargs: Mapping[str, Any]) -> str:
+def generate_message(contract: Contract, resolved_kwargs: Mapping[str, Any]) -> str:
     """Generate the message upon contract violation."""
     # pylint: disable=protected-access
     parts = []  # type: List[str]
@@ -500,7 +520,7 @@ def generate_message(contract: Contract, condition_kwargs: Mapping[str, Any]) ->
     repr_vals = repr_values(
         condition=contract.condition,
         lambda_inspection=lambda_inspection,
-        condition_kwargs=condition_kwargs,
+        resolved_kwargs=resolved_kwargs,
         a_repr=contract._a_repr)
 
     if len(repr_vals) == 0:
