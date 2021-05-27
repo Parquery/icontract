@@ -176,14 +176,13 @@ def _assert_resolved_kwargs_valid(postconditions: List[Contract],
     return None
 
 
-def _create_violation_error(contract: Contract, resolved_kwargs: Mapping[str, Any],
-                            condition_kwargs: Mapping[str, Any]) -> BaseException:
+def _create_violation_error(contract: Contract, resolved_kwargs: Mapping[str, Any]) -> BaseException:
     """Create the violation error based on the violated contract."""
     exception = None  # type: Optional[BaseException]
 
     if contract.error is None:
         try:
-            msg = icontract._represent.generate_message(contract=contract, condition_kwargs=condition_kwargs)
+            msg = icontract._represent.generate_message(contract=contract, resolved_kwargs=resolved_kwargs)
         except Exception as err:
             parts = ["Failed to recompute the values of the contract condition:\n"]
             if contract.location is not None:
@@ -215,7 +214,7 @@ def _create_violation_error(contract: Contract, resolved_kwargs: Mapping[str, An
                 "The exception class supplied in the contract's error {} is not a subclass of BaseException.".format(
                     contract.error))
 
-        msg = icontract._represent.generate_message(contract=contract, condition_kwargs=condition_kwargs)
+        msg = icontract._represent.generate_message(contract=contract, resolved_kwargs=resolved_kwargs)
         exception = contract.error(msg)
     elif isinstance(contract.error, BaseException):
         exception = contract.error
@@ -255,8 +254,7 @@ async def _assert_preconditions_async(preconditions: List[List[Contract]],
                     check = check_or_coroutine
 
             if not_check(check=check, contract=contract):
-                exception = _create_violation_error(
-                    contract=contract, resolved_kwargs=resolved_kwargs, condition_kwargs=condition_kwargs)
+                exception = _create_violation_error(contract=contract, resolved_kwargs=resolved_kwargs)
                 break
 
         # The group of preconditions was satisfied, no need to check the other groups.
@@ -293,8 +291,7 @@ def _assert_preconditions(preconditions: List[List[Contract]], resolved_kwargs: 
                     contract.condition, func))
 
             if not_check(check=check, contract=contract):
-                exception = _create_violation_error(
-                    contract=contract, resolved_kwargs=resolved_kwargs, condition_kwargs=condition_kwargs)
+                exception = _create_violation_error(contract=contract, resolved_kwargs=resolved_kwargs)
                 break
 
         # The group of preconditions was satisfied, no need to check the other groups.
@@ -373,8 +370,7 @@ async def _assert_postconditions_async(postconditions: List[Contract],
                 check = check_or_coroutine
 
         if not_check(check=check, contract=contract):
-            exception = _create_violation_error(
-                contract=contract, resolved_kwargs=resolved_kwargs, condition_kwargs=condition_kwargs)
+            exception = _create_violation_error(contract=contract, resolved_kwargs=resolved_kwargs)
 
             return exception
 
@@ -401,8 +397,7 @@ def _assert_postconditions(postconditions: List[Contract], resolved_kwargs: Mapp
                 contract.condition, func))
 
         if not_check(check=check, contract=contract):
-            exception = _create_violation_error(
-                contract=contract, resolved_kwargs=resolved_kwargs, condition_kwargs=condition_kwargs)
+            exception = _create_violation_error(contract=contract, resolved_kwargs=resolved_kwargs)
 
             return exception
 
@@ -417,13 +412,7 @@ def _assert_invariant(contract: Contract, instance: Any) -> None:
         check = contract.condition()
 
     if not_check(check=check, contract=contract):
-        if 'self' in contract.condition_arg_set:
-            condition_kwargs = {"self": instance}
-        else:
-            condition_kwargs = dict()
-
-        raise _create_violation_error(
-            contract=contract, resolved_kwargs={'self': instance}, condition_kwargs=condition_kwargs)
+        raise _create_violation_error(contract=contract, resolved_kwargs={'self': instance})
 
 
 def select_capture_kwargs(a_snapshot: Snapshot, resolved_kwargs: Mapping[str, Any]) -> Mapping[str, Any]:
