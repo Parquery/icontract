@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 
-# pylint: disable=protected-access
 # pylint: disable=missing-docstring
 # pylint: disable=invalid-name
 # pylint: disable=unused-argument
-# pylint: disable=too-many-function-args
 
 import functools
 import unittest

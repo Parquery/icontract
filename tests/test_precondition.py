@@ -562,7 +562,6 @@ class TestInvalid(unittest.TestCase):
 
         type_error = None  # type: Optional[TypeError]
         try:
-            # pylint: disable=too-many-function-args
             some_func(0)  # type: ignore
         except TypeError as err:
             type_error = err

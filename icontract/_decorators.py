@@ -8,8 +8,6 @@ import icontract._checkers
 from icontract._globals import CallableT, ExceptionT
 from icontract._types import Contract, Snapshot
 
-# pylint: disable=protected-access
-
 
 class require:  # pylint: disable=invalid-name
     """
@@ -18,7 +16,6 @@ class require:  # pylint: disable=invalid-name
     The arguments of the precondition are expected to be a subset of the arguments of the wrapped function.
     """
 
-    # pylint: disable=too-many-instance-attributes
     def __init__(self,
                  condition: Callable[..., Any],
                  description: Optional[str] = None,
@@ -51,7 +48,6 @@ class require:  # pylint: disable=invalid-name
             * An instance of ``BaseException`` that will be raised with the traceback on contract violation.
 
         """
-        # pylint: disable=too-many-arguments
         self.enabled = enabled
         self._contract = None  # type: Optional[Contract]
 
@@ -184,7 +180,6 @@ class ensure:  # pylint: disable=invalid-name
     not have "result" among its arguments.
     """
 
-    # pylint: disable=too-many-instance-attributes
     def __init__(self,
                  condition: Callable[..., Any],
                  description: Optional[str] = None,
@@ -217,7 +212,6 @@ class ensure:  # pylint: disable=invalid-name
               on contract violation.
             * An instance of ``BaseException`` that will be raised with the traceback on contract violation.
         """
-        # pylint: disable=too-many-arguments
         self.enabled = enabled
         self._contract = None  # type: Optional[Contract]
 
@@ -324,7 +318,6 @@ class invariant:  # pylint: disable=invalid-name
         :return:
 
         """
-        # pylint: disable=too-many-arguments
         self.enabled = enabled
         self._contract = None  # type: Optional[Contract]
 

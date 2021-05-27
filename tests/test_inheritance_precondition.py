@@ -428,7 +428,8 @@ class TestConstructor(unittest.TestCase):
         self.assertEqual(
             textwrap.dedent('''\
                 all(x > 0 for x in xs):
-                all(x > 0 for x in xs) was False
+                all(x > 0 for x in xs) was False, e.g., with
+                  x = -1
                 xs was [-1, -2, -3]'''), tests.error.wo_mandatory_location(str(violation_error)))
 
 
