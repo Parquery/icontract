@@ -1,3 +1,9 @@
+2.5.2
+=====
+* Fixed handling of ``self`` when passed as kwarg (#213)
+* Added reporting of all arguments on violation (#214)
+* Added tracing of ``all`` on generator expressions (#215)
+
 2.5.1
 =====
 * Allowed ``__new__`` to tighten pre-conditions (#211)
