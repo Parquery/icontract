@@ -7,13 +7,9 @@ import icontract._globals
 
 from icontract._globals import ExceptionT
 
-# pylint: disable=protected-access
-
 
 class Contract:
     """Represent a contract to be enforced as a precondition, postcondition or as an invariant."""
-
-    # pylint: disable=too-many-instance-attributes
 
     def __init__(self,
                  condition: Callable[..., Any],
@@ -36,7 +32,6 @@ class Contract:
             and raised on contract violation.
         :param location: indicate where the contract was defined (*e.g.*, path and line number)
         """
-        # pylint: disable=too-many-arguments
         self.condition = condition
 
         signature = inspect.signature(condition)

@@ -49,25 +49,16 @@ setup(
     keywords='design-by-contract precondition postcondition validation',
     packages=find_packages(exclude=['tests']),
     install_requires=install_requires,
+    # yapf: disable
     extras_require={
         'dev': [
-            # yapf: disable
-            'mypy==0.812',
-            'pylint==2.3.1',
-            'yapf==0.20.2',
-            'tox>=3.0.0',
-            'pydocstyle>=2.1.1,<3',
-            'coverage>=4.5.1,<5',
-            'docutils>=0.14,<1',
-            'pygments>=2.2.0,<3',
-            'dpcontracts==0.6.0',
-            'tabulate>=0.8.7,<1',
-            'py-cpuinfo>=5.0.0,<6',
-            'typeguard>=2,<3'
-            # yapf: enable
+            'mypy==0.812', 'pylint==2.3.1', 'yapf==0.20.2', 'tox>=3.0.0', 'pydocstyle>=2.1.1,<3', 'coverage>=4.5.1,<5',
+            'docutils>=0.14,<1', 'pygments>=2.2.0,<3', 'dpcontracts==0.6.0', 'tabulate>=0.8.7,<1',
+            'py-cpuinfo>=5.0.0,<6', 'typeguard>=2,<3', 'astor==0.8.1'
         ] + (['deal==4.1.0'] if sys.version_info >= (3, 8) else []) + (['asyncstdlib==3.9.1']
                                                                        if sys.version_info >= (3, 8) else []),
     },
+    # yapf: enable
     py_modules=['icontract'],
     package_data={"icontract": ["py.typed"]},
     data_files=[(".", ["LICENSE.txt", "README.rst", "requirements.txt"])])

@@ -6,8 +6,7 @@ import reprlib
 import sys
 import textwrap
 import uuid
-from typing import Any, Mapping, MutableMapping, Callable, List, Dict, cast  # pylint: disable=unused-import
-from typing import Optional  # pylint: disable=unused-import
+from typing import (Any, Mapping, MutableMapping, Callable, List, Dict, cast, Optional)  # pylint: disable=unused-import
 
 import asttokens
 
@@ -412,7 +411,6 @@ def collect_variable_lookup(
 
 def repr_values(condition: Callable[..., bool], lambda_inspection: Optional[ConditionLambdaInspection],
                 resolved_kwargs: Mapping[str, Any], a_repr: reprlib.Repr) -> List[str]:
-    # pylint: disable=too-many-locals
     """
     Represent function arguments and frame values in the error message on contract breach.
 
@@ -455,7 +453,6 @@ def repr_values(condition: Callable[..., bool], lambda_inspection: Optional[Cond
     if lambda_inspection is not None:
         variable_lookup = collect_variable_lookup(condition=condition, resolved_kwargs=selected_kwargs)
 
-        # pylint: disable=protected-access
         recompute_visitor = icontract._recompute.Visitor(variable_lookup=variable_lookup)
 
         recompute_visitor.visit(node=lambda_inspection.node.body)
@@ -473,7 +470,16 @@ def repr_values(condition: Callable[..., bool], lambda_inspection: Optional[Cond
 
     parts = []  # type: List[str]
     for key in sorted(reprs.keys()):
-        parts.append('{} was {}'.format(key, a_repr.repr(reprs[key])))
+        value = reprs[key]
+        if isinstance(value, icontract._recompute.FirstExceptionInAll):
+            writing = ['{} was False, e.g., with'.format(key)]
+            for input_name, input_value in value.inputs:
+                writing.append('\n')
+                writing.append('  {} = {}'.format(input_name, a_repr.repr(input_value)))
+
+            parts.append(''.join(writing))
+        else:
+            parts.append('{} was {}'.format(key, a_repr.repr(value)))
 
     return parts
 
@@ -495,7 +501,6 @@ def represent_condition(condition: CallableT) -> str:
 
 def generate_message(contract: Contract, resolved_kwargs: Mapping[str, Any]) -> str:
     """Generate the message upon contract violation."""
-    # pylint: disable=protected-access
     parts = []  # type: List[str]
 
     if contract.location is not None:

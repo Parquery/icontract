@@ -9,8 +9,6 @@ from typing import List, MutableMapping, Any, Callable, Optional, cast, Set, Typ
 from icontract._types import Contract, Snapshot
 import icontract._checkers
 
-# pylint: disable=protected-access
-
 # Pylint can't deal with multiple Python versions.
 # pylint: disable=arguments-differ
 
@@ -89,9 +87,6 @@ def _collapse_postconditions(base_postconditions: List[Contract], postconditions
 
 def _decorate_namespace_function(bases: List[type], namespace: MutableMapping[str, Any], key: str) -> None:
     """Collect preconditions and postconditions from the bases and decorate the function at the ``key``."""
-    # pylint: disable=too-many-branches
-    # pylint: disable=too-many-locals
-
     value = namespace[key]
     assert inspect.isfunction(value) or isinstance(value, (staticmethod, classmethod))
 
@@ -175,10 +170,6 @@ def _decorate_namespace_function(bases: List[type], namespace: MutableMapping[st
 
 def _decorate_namespace_property(bases: List[type], namespace: MutableMapping[str, Any], key: str) -> None:
     """Collect contracts for all getters/setters/deleters corresponding to ``key`` and decorate them."""
-    # pylint: disable=too-many-locals
-    # pylint: disable=too-many-branches
-    # pylint: disable=too-many-statements
-
     value = namespace[key]
     assert isinstance(value, property)
 

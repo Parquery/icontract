@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# pylint: disable=missing-docstring,invalid-name,too-many-public-methods,no-self-use
+# pylint: disable=missing-docstring,invalid-name,no-self-use
 # pylint: disable=unused-argument
 # pylint: disable=unnecessary-lambda
 
@@ -377,7 +377,7 @@ class TestReprValues(unittest.TestCase):
         not_implemented_error = runtime_error.__cause__
 
         self.assertEqual(
-            'Recomputation of in-line lambda functions is not supported since it is quite tricky to implement and '
+            'Re-computation of in-line lambda functions is not supported since it is quite tricky to implement and '
             'we decided to implement it only once there is a real need for it. '
             'Please make a feature request on https://github.com/Parquery/icontract', str(not_implemented_error))
 
@@ -398,9 +398,10 @@ class TestReprValues(unittest.TestCase):
         self.assertIsNotNone(violation_error)
         self.assertEqual(
             textwrap.dedent('''\
-                 all(single_res[1].is_absolute() for single_res in result):
-                 all(single_res[1].is_absolute() for single_res in result) was False
-                 result was [({0}('/home/file1'), {0}('home/file2'))]''').format(dummy_path.__class__.__name__),
+                all(single_res[1].is_absolute() for single_res in result):
+                all(single_res[1].is_absolute() for single_res in result) was False, e.g., with
+                  single_res = ({0}('/home/file1'), {0}('home/file2'))
+                result was [({0}('/home/file1'), {0}('home/file2'))]''').format(dummy_path.__class__.__name__),
             tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_generator_expression_multiple_for(self) -> None:
@@ -422,9 +423,14 @@ class TestReprValues(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
 
-        self.assertEqual('all(item == x for sublst in lst for item in sublst):\n'
-                         'all(item == x for sublst in lst for item in sublst) was False\n'
-                         'lst was [[1, 2], [3]]', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent('''\
+                all(item == x for sublst in lst for item in sublst):
+                all(item == x for sublst in lst for item in sublst) was False, e.g., with
+                  sublst = [1, 2]
+                  item = 1
+                lst was [[1, 2], [3]]
+                x was 0'''), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_generator_expression_with_zip_and_multiple_for(self) -> None:
         # Taken from a solution for Advent of Code 2020 day 11.
@@ -465,7 +471,11 @@ class TestReprValues(unittest.TestCase):
                 all(cell == result_cell
                         for row, result_row in zip(layout, result[0])
                         for cell, result_cell in zip(row, result_row)
-                        if cell == '.') was False
+                        if cell == '.') was False, e.g., with
+                  row = ['L', '.', '#']
+                  result_row = ['', '', '']
+                  cell = '.'
+                  result_cell = ''
                 layout was [['L', '.', '#'], ['.', '#', '#']]
                 result was ([['', '', ''], ['', '', '']], 0)
                 zip(layout, result[0]) was <zip object at some address>'''), text)
@@ -897,6 +907,167 @@ class TestRecomputationFailure(unittest.TestCase):
             Failed to recompute the values of the contract condition:
             File <erased path>, line <erased line> in <erased function>:
             lambda: some_condition()'''), text)
+
+
+class TestTracingAll(unittest.TestCase):
+    def test_global_variable(self) -> None:
+        # yapf: disable
+        @icontract.require(
+            lambda lst:
+            all(
+                value > SOME_GLOBAL_CONSTANT
+                for value in lst
+            )
+        )
+        # yapf: enable
+        def func(lst: List[int]) -> None:
+            pass
+
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(lst=[-1, -2])
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+
+        got = tests.error.wo_mandatory_location(str(violation_error))
+
+        self.assertEqual(
+            textwrap.dedent('''\
+                all(
+                        value > SOME_GLOBAL_CONSTANT
+                        for value in lst
+                    ):
+                SOME_GLOBAL_CONSTANT was 10
+                all(
+                        value > SOME_GLOBAL_CONSTANT
+                        for value in lst
+                    ) was False, e.g., with
+                  value = -1
+                lst was [-1, -2]'''), got)
+
+    def test_formatted_string(self) -> None:
+        # yapf: disable
+        @icontract.require(
+            lambda lst:
+            all(
+                f'{value}' == 'x'
+                for value in lst
+            )
+        )
+        # yapf: enable
+        def func(lst: List[str]) -> None:
+            pass
+
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(lst=['y'])
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+
+        got = tests.error.wo_mandatory_location(str(violation_error))
+
+        self.assertEqual(
+            textwrap.dedent('''\
+                all(
+                        f'{value}' == 'x'
+                        for value in lst
+                    ):
+                all(
+                        f'{value}' == 'x'
+                        for value in lst
+                    ) was False, e.g., with
+                  value = 'y'
+                lst was ['y']'''), got)
+
+    def test_two_fors_and_two_ifs(self) -> None:
+        # yapf: disable
+        @icontract.require(
+            lambda matrix:
+            all(
+                cell > SOME_GLOBAL_CONSTANT
+                for i, row in enumerate(matrix)
+                if i > 0
+                for j, cell in enumerate(row)
+                if i == j
+            )
+        )
+        # yapf: enable
+        def func(matrix: List[List[int]]) -> None:
+            pass
+
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(matrix=[[-1, -1], [-1, -1]])
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+
+        got = re.sub(r'<enumerate object at 0x[0-9A-Za-z]+>', '<enumerate object at 0x...>',
+                     tests.error.wo_mandatory_location(str(violation_error)))
+
+        self.assertEqual(
+            textwrap.dedent('''\
+            all(
+                    cell > SOME_GLOBAL_CONSTANT
+                    for i, row in enumerate(matrix)
+                    if i > 0
+                    for j, cell in enumerate(row)
+                    if i == j
+                ):
+            SOME_GLOBAL_CONSTANT was 10
+            all(
+                    cell > SOME_GLOBAL_CONSTANT
+                    for i, row in enumerate(matrix)
+                    if i > 0
+                    for j, cell in enumerate(row)
+                    if i == j
+                ) was False, e.g., with
+              i = 1
+              row = [-1, -1]
+              j = 1
+              cell = -1
+            enumerate(matrix) was <enumerate object at 0x...>
+            matrix was [[-1, -1], [-1, -1]]'''), got)
+
+    def test_nested_all(self) -> None:
+        # Nesting is not recursively followed by design. Only the outer-most all expression should be traced.
+
+        # yapf: disable
+        @icontract.require(
+            lambda lst_of_lsts:
+            all(
+                all(item > 0 for item in sublst)
+                for sublst in lst_of_lsts
+            )
+        )
+        # yapf: enable
+        def func(lst_of_lsts: List[List[int]]) -> None:
+            pass
+
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(lst_of_lsts=[[-1, -1]])
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual(
+            textwrap.dedent('''\
+                all(
+                        all(item > 0 for item in sublst)
+                        for sublst in lst_of_lsts
+                    ):
+                all(
+                        all(item > 0 for item in sublst)
+                        for sublst in lst_of_lsts
+                    ) was False, e.g., with
+                  sublst = [-1, -1]
+                lst_of_lsts was [[-1, -1]]'''), tests.error.wo_mandatory_location(str(violation_error)))
 
 
 if __name__ == '__main__':

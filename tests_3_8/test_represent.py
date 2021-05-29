@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-# pylint: disable=missing-docstring,invalid-name,too-many-public-methods,no-self-use
+# pylint: disable=missing-docstring,invalid-name,no-self-use
 # pylint: disable=unused-argument
-
 import textwrap
 import unittest
 from typing import Optional  # pylint: disable=unused-import
 
+import icontract._recompute
 import icontract._represent
 import tests.error
 import tests.mock

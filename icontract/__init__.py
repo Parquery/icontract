@@ -15,7 +15,6 @@ __license__ = 'MIT'
 __status__ = 'Production'
 
 # pylint: disable=invalid-name
-# pylint: disable=protected-access
 # pylint: disable=wrong-import-position
 
 # We need to explicitly assign the aliases instead of using

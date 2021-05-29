@@ -10,11 +10,9 @@ from icontract._globals import CallableT
 from icontract._types import Contract, Snapshot
 from icontract.errors import ViolationError
 
-# pylint: disable=protected-access
 # pylint does not play with typing.Mapping.
 # pylint: disable=unsubscriptable-object
 # pylint: disable=raising-bad-type
-# pylint: disable=too-many-lines
 
 
 def _walk_decorator_stack(func: CallableT) -> Iterable['CallableT']:
@@ -52,8 +50,6 @@ def kwargs_from_call(param_names: List[str], kwdefaults: Dict[str, Any], args: T
     :param kwargs: keyword arguments supplied to the call
     :return: resolved arguments as they would be passed to the function
     """
-    # pylint: disable=too-many-arguments
-
     # (Marko Ristin, 2020-12-01)
     # Insert _ARGS and _KWARGS preemptively even if they are not needed by any contract.
     # This makes the code logic much simpler since we do not explicitly check if a contract would
@@ -511,7 +507,6 @@ _IN_PROGRESS = threading.local()
 
 def decorate_with_checker(func: CallableT) -> CallableT:
     """Decorate the function with a checker that verifies the preconditions and postconditions."""
-    # pylint: disable=too-many-statements
     assert not hasattr(func, "__preconditions__"), \
         "Expected func to have no list of preconditions (there should be only a single contract checker per function)."
 
@@ -554,8 +549,6 @@ def decorate_with_checker(func: CallableT) -> CallableT:
 
         async def wrapper(*args, **kwargs):  # type: ignore
             """Wrap func by checking the preconditions and postconditions."""
-            # pylint: disable=too-many-branches,too-many-nested-blocks,too-many-locals
-
             kwargs_error = _assert_no_invalid_kwargs(kwargs)
             if kwargs_error:
                 raise kwargs_error
@@ -609,8 +602,6 @@ def decorate_with_checker(func: CallableT) -> CallableT:
 
         def wrapper(*args, **kwargs):  # type: ignore
             """Wrap func by checking the preconditions and postconditions."""
-            # pylint: disable=too-many-branches,too-many-nested-blocks,too-many-locals
-
             kwargs_error = _assert_no_invalid_kwargs(kwargs)
             if kwargs_error:
                 raise kwargs_error
@@ -793,7 +784,6 @@ def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
     :param is_init: True if the ``func`` is __init__
     :return: function wrapped with invariant checks
     """
-    # pylint: disable=too-many-statements
     if _already_decorated_with_invariants(func=func):
         return func
 
@@ -936,8 +926,6 @@ def _already_decorated_with_invariants(func: CallableT) -> bool:
 
 def add_invariant_checks(cls: type) -> None:
     """Decorate each of the class functions with invariant checks if not already decorated."""
-    # pylint: disable=too-many-branches
-
     # Candidates for the decoration as list of (name, dir() value)
     init_name_func = None  # type: Optional[Tuple[str, Callable[..., None]]]
     names_funcs = []  # type: List[Tuple[str, Callable[..., None]]]
