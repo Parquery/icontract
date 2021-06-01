@@ -368,7 +368,12 @@ def collect_variable_lookup(
     """
     Collect the variable lookups in order of precedence.
 
-    If ``condition_kwargs`` is None, no condition-specific kwargs will be added.
+    :param condition: contract condition for which we are constructing a variable look-up tables
+    :param resolved_kwargs:
+        keyword arguments of the original function to be passed over to the condition (where applicable).
+
+        The keyword arguments are added to the variable look-up tables accordingly.
+        If ``resolved_kwargs`` is None, no keyword arguments will be added to the variable look-up table.
     """
     # yapf: enable
     variable_lookup = []  # type: List[Mapping[str, Any]]
