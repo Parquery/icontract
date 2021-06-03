@@ -2,12 +2,14 @@
 
 import ast
 import builtins
+import copy
 import functools
 import inspect
 import platform
 import sys
 import uuid
 from typing import (Any, Mapping, Dict, List, Optional, Union, Tuple, Set, Callable, cast, Iterable, TypeVar)  # pylint: disable=unused-import
+
 from _ast import If
 
 
@@ -83,6 +85,7 @@ def _collect_name_loads(nodes: Iterable[ast.expr]) -> List[ast.expr]:
     return visitor.nodes
 
 
+# noinspection PyTypeChecker
 def _translate_all_expression_to_a_module(generator_exp: ast.GeneratorExp, generated_function_name: str,
                                           name_to_value: Mapping[str, Any]) -> ast.Module:
     """
@@ -143,19 +146,15 @@ def _translate_all_expression_to_a_module(generator_exp: ast.GeneratorExp, gener
         assert block is not None
 
         for condition in reversed(comprehension.ifs):
-            # noinspection PyTypeChecker
             block = [ast.If(test=condition, body=block, orelse=[])]
 
         if not comprehension.is_async:
-            # noinspection PyTypeChecker
             block = [ast.For(target=comprehension.target, iter=comprehension.iter, body=block, orelse=[])]
         else:
-            # noinspection PyTypeChecker
             block = [ast.AsyncFor(target=comprehension.target, iter=comprehension.iter, body=block, orelse=[])]
 
     assert block is not None
 
-    # noinspection PyTypeChecker
     block.append(happy_return)
 
     # Now we are ready to generate the function.
@@ -204,12 +203,12 @@ def _translate_all_expression_to_a_module(generator_exp: ast.GeneratorExp, gener
 
             module_node = ast.Module(body=[func_def_node], type_ignores=[])
 
-    # noinspection PyTypeChecker
     ast.fix_missing_locations(module_node)
 
     return module_node
 
 
+# noinspection PyTypeChecker
 class Visitor(ast.NodeVisitor):
     """
     Traverse the abstract syntax tree and recompute the values of each node defined by the function frame.
@@ -279,8 +278,21 @@ class Visitor(ast.NodeVisitor):
 
     if sys.version_info >= (3, 6):
 
-        def visit_FormattedValue(self, node: ast.FormattedValue) -> Any:
+        def visit_FormattedValue(self, node: ast.FormattedValue) -> Union[str, Placeholder]:
             """Format the node value."""
+            recomputed_format_spec = None  # type: Optional[Union[str, Placeholder]]
+            if node.format_spec is not None:
+                # The following assert serves only documentation purposes so that the code is easier to follow.
+                assert isinstance(node.format_spec, ast.JoinedStr)
+                recomputed_format_spec = self.visit(node.format_spec)
+                assert isinstance(recomputed_format_spec, (str, Placeholder))
+
+            recomputed_value = self.visit(node.value)
+
+            # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
+            if recomputed_format_spec is PLACEHOLDER or recomputed_value is PLACEHOLDER:
+                return PLACEHOLDER
+
             fmt = ['{']
             # See https://docs.python.org/3/library/ast.html#ast.FormattedValue for these
             # constants
@@ -296,70 +308,77 @@ class Visitor(ast.NodeVisitor):
                 raise NotImplementedError("Unhandled conversion of a formatted value node {!r}: {}".format(
                     node, node.conversion))
 
-            if node.format_spec is not None:
-                fmt.append(":")
-
-                # The following assert serves only documentation purposes so that the code is easier to follow.
-                assert isinstance(node.format_spec, ast.JoinedStr)
-                # noinspection PyTypeChecker
-                fmt.append(self.visit(node.format_spec))
+            if recomputed_format_spec is not None:
+                fmt.append(f":{recomputed_format_spec}")
 
             fmt.append('}')
 
-            # noinspection PyTypeChecker
-            recomputed_value = self.visit(node.value)
-
             return ''.join(fmt).format(recomputed_value)
 
-        def visit_JoinedStr(self, node: ast.JoinedStr) -> Any:
+        def visit_JoinedStr(self, node: ast.JoinedStr) -> Union[str, Placeholder]:
             """Visit the values and concatenate them."""
-            # noinspection PyTypeChecker
-            joined_str = ''.join(self.visit(value_node) for value_node in node.values)
+            recomputed_values = [self.visit(value_node) for value_node in node.values]
+
+            # See "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION" above.
+            if PLACEHOLDER in recomputed_values:
+                return PLACEHOLDER
+
+            joined_str = ''.join(recomputed_values)
 
             self.recomputed_values[node] = joined_str
             return joined_str
 
     # pylint: enable=no-member
 
-    def visit_List(self, node: ast.List) -> List[Any]:
+    def visit_List(self, node: ast.List) -> Union[List[Any], Placeholder]:
         """Visit the elements and assemble the results into a list."""
         if isinstance(node.ctx, ast.Store):
             raise NotImplementedError("Can not compute the value of a Store on a list")
 
-        # noinspection PyTypeChecker
-        result = [self.visit(node=elt) for elt in node.elts]
+        recomputed_elts = [self.visit(node=elt) for elt in node.elts]
 
-        self.recomputed_values[node] = result
-        return result
+        # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
+        if PLACEHOLDER in recomputed_elts:
+            return PLACEHOLDER
 
-    def visit_Tuple(self, node: ast.Tuple) -> Tuple[Any, ...]:
+        self.recomputed_values[node] = recomputed_elts
+        return recomputed_elts
+
+    def visit_Tuple(self, node: ast.Tuple) -> Union[Tuple[Any, ...], Placeholder]:
         """Visit the elements and assemble the results into a tuple."""
         if isinstance(node.ctx, ast.Store):
             raise NotImplementedError("Can not compute the value of a Store on a tuple")
 
-        # noinspection PyTypeChecker
-        result = tuple(self.visit(node=elt) for elt in node.elts)
+        recomputed_elts = tuple(self.visit(node=elt) for elt in node.elts)
+        # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
+        if PLACEHOLDER in recomputed_elts:
+            return PLACEHOLDER
 
-        self.recomputed_values[node] = result
-        return result
+        self.recomputed_values[node] = recomputed_elts
+        return recomputed_elts
 
-    def visit_Set(self, node: ast.Set) -> Set[Any]:
+    def visit_Set(self, node: ast.Set) -> Union[Set[Any], Placeholder]:
         """Visit the elements and assemble the results into a set."""
-        # noinspection PyTypeChecker
-        result = set(self.visit(node=elt) for elt in node.elts)
+        recomputed_elts = set(self.visit(node=elt) for elt in node.elts)
+        # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
+        if PLACEHOLDER in recomputed_elts:
+            return PLACEHOLDER
 
-        self.recomputed_values[node] = result
-        return result
+        self.recomputed_values[node] = recomputed_elts
+        return recomputed_elts
 
-    def visit_Dict(self, node: ast.Dict) -> Dict[Any, Any]:
+    def visit_Dict(self, node: ast.Dict) -> Union[Dict[Any, Any], Placeholder]:
         """Visit keys and values and assemble a dictionary with the results."""
         recomputed_dict = dict()  # type: Dict[Any, Any]
         for key, val in zip(node.keys, node.values):
             assert isinstance(key, ast.AST)
             assert isinstance(val, ast.AST)
 
-            # noinspection PyTypeChecker
             recomputed_dict[self.visit(node=key)] = self.visit(node=val)
+
+        # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
+        if PLACEHOLDER in recomputed_dict or PLACEHOLDER in recomputed_dict.values():
+            return PLACEHOLDER
 
         self.recomputed_values[node] = recomputed_dict
         return recomputed_dict
@@ -388,26 +407,31 @@ class Visitor(ast.NodeVisitor):
 
     def visit_Expr(self, node: ast.Expr) -> Any:
         """Visit the node's ``value``."""
-        # noinspection PyTypeChecker
-        result = self.visit(node=node.value)
+        recomputed_value = self.visit(node=node.value)
 
-        self.recomputed_values[node] = result
-        return result
+        # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
+        if recomputed_value is PLACEHOLDER:
+            return PLACEHOLDER
+
+        self.recomputed_values[node] = recomputed_value
+        return recomputed_value
 
     def visit_UnaryOp(self, node: ast.UnaryOp) -> Any:
         """Visit the node operand and apply the operation on the result."""
+        recomputed_operand = self.visit(node=node.operand)
+
+        # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
+        if recomputed_operand is PLACEHOLDER:
+            return PLACEHOLDER
+
         if isinstance(node.op, ast.UAdd):
-            # noinspection PyTypeChecker
-            result = +self.visit(node=node.operand)
+            result = +recomputed_operand
         elif isinstance(node.op, ast.USub):
-            # noinspection PyTypeChecker
-            result = -self.visit(node=node.operand)
+            result = -recomputed_operand
         elif isinstance(node.op, ast.Not):
-            # noinspection PyTypeChecker
-            result = not self.visit(node=node.operand)
+            result = not recomputed_operand
         elif isinstance(node.op, ast.Invert):
-            # noinspection PyTypeChecker
-            result = ~self.visit(node=node.operand)
+            result = ~recomputed_operand
         else:
             raise NotImplementedError("Unhandled op of {}: {}".format(node, node.op))
 
@@ -416,10 +440,12 @@ class Visitor(ast.NodeVisitor):
 
     def visit_BinOp(self, node: ast.BinOp) -> Any:
         """Recursively visit the left and right operand, respectively, and apply the operation on the results."""
-        # noinspection PyTypeChecker
         left = self.visit(node=node.left)
-        # noinspection PyTypeChecker
         right = self.visit(node=node.right)
+
+        # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
+        if left == PLACEHOLDER or right == PLACEHOLDER:
+            return PLACEHOLDER
 
         if isinstance(node.op, ast.Add):
             result = left + right
@@ -455,8 +481,11 @@ class Visitor(ast.NodeVisitor):
 
     def visit_BoolOp(self, node: ast.BoolOp) -> Any:
         """Recursively visit the operands and apply the operation on them."""
-        # noinspection PyTypeChecker
         values = [self.visit(value_node) for value_node in node.values]
+
+        # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
+        if PLACEHOLDER in values:
+            return PLACEHOLDER
 
         if isinstance(node.op, ast.And):
             result = functools.reduce(lambda left, right: left and right, values, True)
@@ -470,11 +499,13 @@ class Visitor(ast.NodeVisitor):
 
     def visit_Compare(self, node: ast.Compare) -> Any:
         """Recursively visit the comparators and apply the operations on them."""
-        # noinspection PyTypeChecker
         left = self.visit(node=node.left)
 
-        # noinspection PyTypeChecker
         comparators = [self.visit(node=comparator) for comparator in node.comparators]
+
+        # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
+        if left is PLACEHOLDER or PLACEHOLDER in comparators:
+            return PLACEHOLDER
 
         result = None  # type: Optional[Any]
         for comparator, op in zip(comparators, node.ops):
@@ -513,8 +544,11 @@ class Visitor(ast.NodeVisitor):
 
     def visit_Call(self, node: ast.Call) -> Any:
         """Visit the function and the arguments and finally make the function call with them."""
-        # noinspection PyTypeChecker
         func = self.visit(node=node.func)
+
+        # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
+        if func == PLACEHOLDER:
+            return PLACEHOLDER
 
         if not callable(func):
             raise ValueError("Unexpected call to a non-calllable during the re-computation: {}".format(func))
@@ -534,35 +568,34 @@ class Visitor(ast.NodeVisitor):
         ):
             # yapf: enable
             result = self._trace_all_with_generator(func=func, node=node)
+
+            if result is PLACEHOLDER:
+                return PLACEHOLDER
         else:
             args = []  # type: List[Any]
             for arg_node in node.args:
                 if isinstance(arg_node, ast.Starred):
-                    # noinspection PyTypeChecker
                     args.extend(self.visit(node=arg_node))
                 else:
-                    # noinspection PyTypeChecker
                     args.append(self.visit(node=arg_node))
 
-            kwargs = dict()  # type: Dict[str, Any]
+            kwargs = dict()  # type: Dict[Union[str, Placeholder], Any]
             for keyword in node.keywords:
                 if keyword.arg is None:
-                    # noinspection PyTypeChecker
                     kw = self.visit(node=keyword.value)
                     for key, val in kw.items():
                         kwargs[key] = val
 
                 else:
-                    # noinspection PyTypeChecker
                     kwargs[keyword.arg] = self.visit(node=keyword.value)
 
-            # If any of the positional or keyword arguments are placeholders, that means that we are re-computing a
-            # generator expression.
-            # As we re-compute them by re-compilation, we do not re-compute the individual calls here.
-            if PLACEHOLDER in args or PLACEHOLDER in kwargs.values():
+            # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
+            if PLACEHOLDER in args or PLACEHOLDER in kwargs or PLACEHOLDER in kwargs.values():
                 return PLACEHOLDER
 
             result = func(*args, **kwargs)
+
+        assert result is not PLACEHOLDER
 
         self.recomputed_values[node] = result
         if inspect.iscoroutine(result):
@@ -575,23 +608,32 @@ class Visitor(ast.NodeVisitor):
 
     def visit_IfExp(self, node: ast.IfExp) -> Any:
         """Visit the ``test``, and depending on its outcome, the ``body`` or ``orelse``."""
-        # noinspection PyTypeChecker
         test = self.visit(node=node.test)
 
+        # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
+        if test is PLACEHOLDER:
+            return PLACEHOLDER
+
         if test:
-            # noinspection PyTypeChecker
             result = self.visit(node=node.body)
         else:
-            # noinspection PyTypeChecker
             result = self.visit(node=node.orelse)
+
+        # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
+        if result is PLACEHOLDER:
+            return PLACEHOLDER
 
         self.recomputed_values[node] = result
         return result
 
     def visit_Attribute(self, node: ast.Attribute) -> Any:
         """Visit the node's ``value`` and get the attribute from the result."""
-        # noinspection PyTypeChecker
         value = self.visit(node=node.value)
+
+        # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
+        if value is PLACEHOLDER:
+            return PLACEHOLDER
+
         if not isinstance(node.ctx, ast.Load):
             raise NotImplementedError(
                 "Can only compute a value of Load on the attribute {}, but got context: {}".format(node.attr, node.ctx))
@@ -605,8 +647,12 @@ class Visitor(ast.NodeVisitor):
         # pylint: disable=no-member
         def visit_NamedExpr(self, node: ast.NamedExpr) -> Any:
             """Visit the node's ``value`` and assign it to both this node and the target."""
-            # noinspection PyTypeChecker
             value = self.visit(node=node.value)
+
+            # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
+            if value is PLACEHOLDER:
+                return PLACEHOLDER
+
             self.recomputed_values[node] = value
 
             # This assignment is needed to make mypy happy.
@@ -622,48 +668,56 @@ class Visitor(ast.NodeVisitor):
 
     def visit_Index(self, node: ast.Index) -> Any:
         """Visit the node's ``value``."""
-        # noinspection PyTypeChecker
         result = self.visit(node=node.value)
+
+        # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
+        if result is PLACEHOLDER:
+            return PLACEHOLDER
 
         self.recomputed_values[node] = result
         return result
 
-    def visit_Slice(self, node: ast.Slice) -> slice:
+    def visit_Slice(self, node: ast.Slice) -> Union[slice, Placeholder]:
         """Visit ``lower``, ``upper`` and ``step`` and recompute the node as a ``slice``."""
-        lower = None  # type: Optional[int]
+        lower = None  # type: Optional[Union[int, Placeholder]]
         if node.lower is not None:
-            # noinspection PyTypeChecker
             lower = self.visit(node=node.lower)
 
-        upper = None  # type: Optional[int]
+        upper = None  # type: Optional[Union[int, Placeholder]]
         if node.upper is not None:
-            # noinspection PyTypeChecker
             upper = self.visit(node=node.upper)
 
-        step = None  # type: Optional[int]
+        step = None  # type: Optional[Union[int, Placeholder]]
         if node.step is not None:
-            # noinspection PyTypeChecker
             step = self.visit(node=node.step)
+
+        # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
+        if lower is PLACEHOLDER or upper is PLACEHOLDER or step is PLACEHOLDER:
+            return PLACEHOLDER
 
         result = slice(lower, upper, step)
 
         self.recomputed_values[node] = result
         return result
 
-    def visit_ExtSlice(self, node: ast.ExtSlice) -> Tuple[Any, ...]:
+    def visit_ExtSlice(self, node: ast.ExtSlice) -> Union[Tuple[Any, ...], Placeholder]:
         """Visit each dimension of the advanced slicing and assemble the dimensions in a tuple."""
-        # noinspection PyTypeChecker
         result = tuple(self.visit(node=dim) for dim in node.dims)
+
+        if PLACEHOLDER in result:
+            return PLACEHOLDER
 
         self.recomputed_values[node] = result
         return result
 
     def visit_Subscript(self, node: ast.Subscript) -> Any:
         """Visit the ``slice`` and a ``value`` and get the element."""
-        # noinspection PyTypeChecker
         value = self.visit(node=node.value)
-        # noinspection PyTypeChecker
         a_slice = self.visit(node=node.slice)
+
+        # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
+        if value is PLACEHOLDER or a_slice is PLACEHOLDER:
+            return PLACEHOLDER
 
         result = value[a_slice]
 
@@ -673,11 +727,16 @@ class Visitor(ast.NodeVisitor):
     def _trace_all_with_generator(self, func: Callable[..., Any], node: ast.Call) -> Any:
         """Re-write the all call with for loops to trace the first offending item, if any."""
         assert func == builtins.all  # pylint: disable=comparison-with-callable
-        assert len(node.args) == 1 and isinstance(node.args[0], ast.GeneratorExp)
+        assert len(node.args) == 1
+        assert isinstance(node.args[0], ast.GeneratorExp)
 
         # Try the happy path first
 
-        # noinspection PyTypeChecker
+        # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
+        recomputed_arg = self.visit(node=node.args[0])
+        if recomputed_arg is PLACEHOLDER:
+            return PLACEHOLDER
+
         result = func(*(self.visit(node=node.args[0]), ))
         if result:
             return result
@@ -687,6 +746,7 @@ class Visitor(ast.NodeVisitor):
         # execute it.
 
         generator_exp = node.args[0]
+        assert isinstance(generator_exp, ast.GeneratorExp)
 
         generated_function_name = "icontract_tracing_all_with_generator_expr_{}".format(uuid.uuid4().hex)
 
@@ -699,7 +759,6 @@ class Visitor(ast.NodeVisitor):
         # you probably want to use ``astor`` module to generate the source code
         # based on the ``module_node``.
 
-        # noinspection PyTypeChecker
         code = compile(source=module_node, filename='<ast>', mode='exec')
 
         module_locals = {}  # type: Dict[str, Any]
@@ -718,6 +777,10 @@ class Visitor(ast.NodeVisitor):
 
     def _execute_comprehension(self, node: Union[ast.ListComp, ast.SetComp, ast.GeneratorExp, ast.DictComp]) -> Any:
         """Compile the generator or comprehension from the node and execute the compiled code."""
+        # Please see "NOTE ABOUT NAME 🠒 VALUE STACKING".
+        if PLACEHOLDER in self._name_to_value.values():
+            return PLACEHOLDER
+
         args = [ast.arg(arg=name, annotation=None) for name in sorted(self._name_to_value.keys())]
 
         if platform.python_version_tuple() < ('3', ):
@@ -741,10 +804,8 @@ class Visitor(ast.NodeVisitor):
 
             module_node = ast.Module(body=[func_def_node], type_ignores=[])
 
-        # noinspection PyTypeChecker
         ast.fix_missing_locations(module_node)
 
-        # noinspection PyTypeChecker
         code = compile(source=module_node, filename='<ast>', mode='exec')
 
         module_locals = {}  # type: Dict[str, Any]
@@ -757,52 +818,129 @@ class Visitor(ast.NodeVisitor):
 
     def visit_GeneratorExp(self, node: ast.GeneratorExp) -> Any:
         """Compile the generator expression as a function and call it."""
-        result = self._execute_comprehension(node=node)
+        # NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION:
+        # Re-computing the comprehensions would be too slow. Therefore we re-compile the comprehension and call
+        # the compiled code directly.
+        #
+        # However, we still want to report the values of the variables unrelated to the comprehension back
+        # to the user. Therefore we introduce PLACEHOLDER's and propagate them through re-computation in all
+        # the visit methods.
 
-        # We can not visit ``node.elt`` as its re-computation would involve evaluating PLACEHOLDER's,
-        # which is of course not possible. Instead, we visit all the names in ``node.elt`` so that they are at least
-        # reported in the representation.
-        for name_node in _collect_name_loads(nodes=[node.elt]):
-            self.visit(name_node)
+        # The following visits propagate the visitation to descendant nodes.
+        # However, as we re-compute the comprehension *via* re-compilation & execution,
+        # the results of the visits are all PLACEHOLDER's.
+
+        # NOTE ABOUT NAME 🠒 VALUE STACKING:
+        # We need to make a copy of name 🠒 value mapping since we need to add targets as placeholders
+        # while we visit the comprehension. For example, as we compute comprehensions through re-compilation
+        # and not through manual re-computation, we can not re-compute nested comprehensions.
+        #
+        # However, when our visit of comprehension is finished, the targets are not valid any more,
+        # so we need to remove them from the mapping.
+        #
+        # Finally, we compute the comprehension with the original name 🠒 value mapping by using
+        # re-compilation. This final step is skipped if any of the names involved in the comprehension are
+        # PLACEHOLDER's.
+
+        old_name_to_value = copy.copy(self._name_to_value)
+        for target_name in _collect_stored_names([generator.target for generator in node.generators]):
+            self._name_to_value[target_name] = PLACEHOLDER
+
+        self.visit(node.elt)
 
         for generator in node.generators:
-            # noinspection PyTypeChecker
             self.visit(generator.iter)
+
+            for generator_if in generator.ifs:
+                self.visit(generator_if)
+
+        self._name_to_value = old_name_to_value
+
+        result = self._execute_comprehension(node=node)
 
         # Do not set the computed value of the node since its representation would be non-informative.
         return result
 
     def visit_ListComp(self, node: ast.ListComp) -> Any:
         """Compile the list comprehension as a function and call it."""
-        result = self._execute_comprehension(node=node)
+        # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION".
+        # The note also explains why we do not use the result of the following visits.
+
+        # Please see "NOTE ABOUT NAME 🠒 VALUE STACKING".
+        old_name_to_value = copy.copy(self._name_to_value)
+        for target_name in _collect_stored_names([generator.target for generator in node.generators]):
+            self._name_to_value[target_name] = PLACEHOLDER
+
+        self.visit(node.elt)
 
         for generator in node.generators:
-            # noinspection PyTypeChecker
             self.visit(generator.iter)
 
-        self.recomputed_values[node] = result
+            for generator_if in generator.ifs:
+                self.visit(generator_if)
+
+        self._name_to_value = old_name_to_value
+
+        result = self._execute_comprehension(node=node)
+
+        if result is not PLACEHOLDER:
+            self.recomputed_values[node] = result
+
         return result
 
     def visit_SetComp(self, node: ast.SetComp) -> Any:
         """Compile the set comprehension as a function and call it."""
-        result = self._execute_comprehension(node=node)
+        # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION".
+        # The note also explains why we do not use the result of the following visits.
+
+        # Please see "NOTE ABOUT NAME 🠒 VALUE STACKING".
+        old_name_to_value = copy.copy(self._name_to_value)
+        for target_name in _collect_stored_names([generator.target for generator in node.generators]):
+            self._name_to_value[target_name] = PLACEHOLDER
+
+        self.visit(node.elt)
 
         for generator in node.generators:
-            # noinspection PyTypeChecker
             self.visit(generator.iter)
 
-        self.recomputed_values[node] = result
+            for generator_if in generator.ifs:
+                self.visit(generator_if)
+
+        self._name_to_value = old_name_to_value
+
+        result = self._execute_comprehension(node=node)
+
+        if result is not PLACEHOLDER:
+            self.recomputed_values[node] = result
+
         return result
 
     def visit_DictComp(self, node: ast.DictComp) -> Any:
         """Compile the dictionary comprehension as a function and call it."""
-        result = self._execute_comprehension(node=node)
+        # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION".
+        # The note also explains why we do not use the result of the following visits.
+
+        # Please see "NOTE ABOUT NAME 🠒 VALUE STACKING".
+        old_name_to_value = copy.copy(self._name_to_value)
+        for target_name in _collect_stored_names([generator.target for generator in node.generators]):
+            self._name_to_value[target_name] = PLACEHOLDER
+
+        self.visit(node.key)
+        self.visit(node.value)
 
         for generator in node.generators:
-            # noinspection PyTypeChecker
             self.visit(generator.iter)
 
-        self.recomputed_values[node] = result
+            for generator_if in generator.ifs:
+                self.visit(generator_if)
+
+        self._name_to_value = old_name_to_value
+
+        result = self._execute_comprehension(node=node)
+
+        if result is not PLACEHOLDER:
+            self.recomputed_values[node] = result
+
         return result
 
     def visit_Lambda(self, node: ast.Lambda) -> Callable[..., Any]:

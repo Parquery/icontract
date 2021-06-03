@@ -381,7 +381,9 @@ class TestReprValues(unittest.TestCase):
             'we decided to implement it only once there is a real need for it. '
             'Please make a feature request on https://github.com/Parquery/icontract', str(not_implemented_error))
 
-    def test_generator_expression_with_attr_on_element(self) -> None:
+
+class TestGeneratorExpr(unittest.TestCase):
+    def test_attr_on_element(self) -> None:
         @icontract.ensure(lambda result: all(single_res[1].is_absolute() for single_res in result))
         def some_func() -> List[Tuple[pathlib.Path, pathlib.Path]]:
             return [(pathlib.Path("/home/file1"), pathlib.Path("home/file2"))]
@@ -404,7 +406,7 @@ class TestReprValues(unittest.TestCase):
                 result was [({0}('/home/file1'), {0}('home/file2'))]''').format(dummy_path.__class__.__name__),
             tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_generator_expression_multiple_for(self) -> None:
+    def test_multiple_for(self) -> None:
         lst = [[1, 2], [3]]
 
         # yapf: disable
@@ -432,7 +434,7 @@ class TestReprValues(unittest.TestCase):
                 lst was [[1, 2], [3]]
                 x was 0'''), tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_generator_expression_with_zip_and_multiple_for(self) -> None:
+    def test_zip_and_multiple_for(self) -> None:
         # Taken from a solution for Advent of Code 2020 day 11.
         @icontract.ensure(
             lambda layout, result:
@@ -480,7 +482,9 @@ class TestReprValues(unittest.TestCase):
                 result was ([['', '', ''], ['', '', '']], 0)
                 zip(layout, result[0]) was <zip object at some address>'''), text)
 
-    def test_list_comprehension(self) -> None:
+
+class TestListComprehension(unittest.TestCase):
+    def test_single(self) -> None:
         lst = [1, 2, 3]
 
         @icontract.require(lambda x: [item < x for item in lst if item % x == 0] == [])
@@ -494,11 +498,50 @@ class TestReprValues(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('[item < x for item in lst if item % x == 0] == []:\n'
-                         '[item < x for item in lst if item % x == 0] was [False]\n'
-                         'lst was [1, 2, 3]', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent('''\
+                [item < x for item in lst if item % x == 0] == []:
+                [item < x for item in lst if item % x == 0] was [False]
+                lst was [1, 2, 3]
+                x was 2'''), tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_set_comprehension(self) -> None:
+    def test_nested(self) -> None:
+        lst_of_lsts = [[1, 2, 3]]
+
+        # yapf: disable
+        @icontract.require(
+            lambda:
+            [
+                [item for item in sublst if item > 0]
+                for sublst in lst_of_lsts
+            ] == [[]]
+        )
+        # yapf: enable
+        def func() -> None:
+            pass
+
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func()
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual(
+            textwrap.dedent('''\
+                [
+                        [item for item in sublst if item > 0]
+                        for sublst in lst_of_lsts
+                    ] == [[]]:
+                [
+                        [item for item in sublst if item > 0]
+                        for sublst in lst_of_lsts
+                    ] was [[1, 2, 3]]
+                lst_of_lsts was [[1, 2, 3]]'''), tests.error.wo_mandatory_location(str(violation_error)))
+
+
+class TestSetComprehension(unittest.TestCase):
+    def test_single(self) -> None:
         lst = [1, 2, 3]
 
         @icontract.require(lambda x: len({item < x for item in lst if item % x == 0}) == 0)
@@ -512,13 +555,53 @@ class TestReprValues(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('len({item < x for item in lst if item % x == 0}) == 0:\n'
-                         'len({item < x for item in lst if item % x == 0}) was 1\n'
-                         'lst was [1, 2, 3]\n'
-                         '{item < x for item in lst if item % x == 0} was {False}',
-                         tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent('''\
+                len({item < x for item in lst if item % x == 0}) == 0:
+                len({item < x for item in lst if item % x == 0}) was 1
+                lst was [1, 2, 3]
+                x was 2
+                {item < x for item in lst if item % x == 0} was {False}'''),
+            tests.error.wo_mandatory_location(str(violation_error)))
 
-    def test_dict_comprehension(self) -> None:
+    def test_nested(self) -> None:
+        lst_of_lsts = [[1, 2, 3]]
+
+        # yapf: disable
+        @icontract.require(
+            lambda:
+            {
+                len({item for item in lst if item > 0})
+                for lst in lst_of_lsts
+            } == set()
+        )
+        # yapf: enable
+        def func() -> None:
+            pass
+
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func()
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual(
+            textwrap.dedent('''\
+                {
+                        len({item for item in lst if item > 0})
+                        for lst in lst_of_lsts
+                    } == set():
+                lst_of_lsts was [[1, 2, 3]]
+                set() was set()
+                {
+                        len({item for item in lst if item > 0})
+                        for lst in lst_of_lsts
+                    } was {3}'''), tests.error.wo_mandatory_location(str(violation_error)))
+
+
+class TestDictComprehension(unittest.TestCase):
+    def test_single(self) -> None:
         @icontract.require(lambda x: len({i: i**2 for i in range(x)}) == 0)
         def func(x: int) -> int:
             return x
@@ -530,12 +613,52 @@ class TestReprValues(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('len({i: i**2 for i in range(x)}) == 0:\n'
-                         'len({i: i**2 for i in range(x)}) was 2\n'
-                         'range(x) was range(0, 2)\n'
-                         'x was 2\n'
-                         '{i: i**2 for i in range(x)} was {0: 0, 1: 1}',
-                         tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent('''\
+                len({i: i**2 for i in range(x)}) == 0:
+                len({i: i**2 for i in range(x)}) was 2
+                range(x) was range(0, 2)
+                x was 2
+                {i: i**2 for i in range(x)} was {0: 0, 1: 1}'''), tests.error.wo_mandatory_location(
+                str(violation_error)))
+
+    def test_nested(self) -> None:
+        lst_of_lsts = [[1, 2, 3]]
+
+        # yapf: disable
+        @icontract.require(
+            lambda:
+            len({
+                len(lst): {item: item for item in lst}
+                for lst in lst_of_lsts
+            }) == 0
+        )
+        # yapf: enable
+        def func() -> None:
+            pass
+
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func()
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual(
+            textwrap.dedent('''\
+                len({
+                        len(lst): {item: item for item in lst}
+                        for lst in lst_of_lsts
+                    }) == 0:
+                len({
+                        len(lst): {item: item for item in lst}
+                        for lst in lst_of_lsts
+                    }) was 1
+                lst_of_lsts was [[1, 2, 3]]
+                {
+                        len(lst): {item: item for item in lst}
+                        for lst in lst_of_lsts
+                    } was {3: {1: 1, 2: 2, 3: 3}}'''), tests.error.wo_mandatory_location(str(violation_error)))
 
 
 class TestConditionAsText(unittest.TestCase):
@@ -1067,6 +1190,82 @@ class TestTracingAll(unittest.TestCase):
                         for sublst in lst_of_lsts
                     ) was False, e.g., with
                   sublst = [-1, -1]
+                lst_of_lsts was [[-1, -1]]'''), tests.error.wo_mandatory_location(str(violation_error)))
+
+    def test_property_of_an_object_represented(self) -> None:
+        class Something:
+            def __init__(self) -> None:
+                self.some_property = 0
+
+            def __repr__(self) -> str:
+                return "Something()"
+
+        # yapf: disable
+        @icontract.require(
+            lambda something, lst:
+            all(
+                item > something.some_property
+                for item in lst
+            )
+        )
+        # yapf: enable
+        def func(something: Something, lst: List[int]) -> None:
+            pass
+
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(something=Something(), lst=[-1])
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+
+        self.assertEqual(
+            textwrap.dedent('''\
+                all(
+                        item > something.some_property
+                        for item in lst
+                    ):
+                all(
+                        item > something.some_property
+                        for item in lst
+                    ) was False, e.g., with
+                  item = -1
+                lst was [-1]
+                something was Something()
+                something.some_property was 0'''), tests.error.wo_mandatory_location(str(violation_error)))
+
+    def test_shadows_in_targets(self) -> None:
+        # yapf: disable
+        @icontract.require(
+            lambda lst_of_lsts:
+            all(
+                all(item > 0 for item in item)
+                for item in lst_of_lsts
+            )
+        )
+        # yapf: enable
+        def func(lst_of_lsts: List[List[int]]) -> None:
+            pass
+
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            func(lst_of_lsts=[[-1, -1]])
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual(
+            textwrap.dedent('''\
+                all(
+                        all(item > 0 for item in item)
+                        for item in lst_of_lsts
+                    ):
+                all(
+                        all(item > 0 for item in item)
+                        for item in lst_of_lsts
+                    ) was False, e.g., with
+                  item = [-1, -1]
                 lst_of_lsts was [[-1, -1]]'''), tests.error.wo_mandatory_location(str(violation_error)))
 
 
