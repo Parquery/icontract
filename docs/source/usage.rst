@@ -43,7 +43,9 @@ If you want to customize the error, see Section :ref:`Custom Errors`.
     Traceback (most recent call last):
       ...
     icontract.errors.ViolationError: File <doctest usage.rst[1]>, line 1 in <module>:
-    x > 3: x was 1
+    x > 3:
+    x was 1
+    y was 5
 
     # Pre-condition violation with a description
     >>> @icontract.require(lambda x: x > 3, "x must not be small")
@@ -54,7 +56,9 @@ If you want to customize the error, see Section :ref:`Custom Errors`.
     Traceback (most recent call last):
       ...
     icontract.errors.ViolationError: File <doctest usage.rst[4]>, line 1 in <module>:
-    x must not be small: x > 3: x was 1
+    x must not be small: x > 3:
+    x was 1
+    y was 5
 
     # Pre-condition violation with more complex values
     >>> class B:
@@ -65,14 +69,14 @@ If you want to customize the error, see Section :ref:`Custom Errors`.
     ...         return 2
     ...
     ...     def __repr__(self) -> str:
-    ...         return "instance of B"
+    ...         return "an instance of B"
     ...
     >>> class A:
     ...     def __init__(self)->None:
     ...         self.b = B()
     ...
     ...     def __repr__(self) -> str:
-    ...         return "instance of A"
+    ...         return "an instance of A"
     ...
     >>> SOME_GLOBAL_VAR = 13
     >>> @icontract.require(lambda a: a.b.x + a.b.y() > SOME_GLOBAL_VAR)
@@ -86,8 +90,8 @@ If you want to customize the error, see Section :ref:`Custom Errors`.
     icontract.errors.ViolationError: File <doctest usage.rst[9]>, line 1 in <module>:
     a.b.x + a.b.y() > SOME_GLOBAL_VAR:
     SOME_GLOBAL_VAR was 13
-    a was instance of A
-    a.b was instance of B
+    a was an instance of A
+    a.b was an instance of B
     a.b.x was 7
     a.b.y() was 2
 
@@ -103,6 +107,7 @@ If you want to customize the error, see Section :ref:`Custom Errors`.
     result > x:
     result was 5
     x was 10
+    y was 5
 
 Invariants
 ----------
@@ -261,6 +266,7 @@ Here is an example that uses snapshots to check that a value was appended to the
     OLD was a bunch of OLD values
     OLD.lst was [1, 2]
     lst was [1, 2, 3, 1984]
+    result was None
     value was 3
 
 The following example shows how you can name the snapshot:
@@ -285,6 +291,8 @@ The following example shows how you can name the snapshot:
     OLD.len_lst was 2
     len(lst) was 4
     lst was [1, 2, 3, 1984]
+    result was None
+    value was 3
 
 The next code snippet shows how you can combine multiple arguments of a function to be captured in a single snapshot:
 
@@ -309,6 +317,7 @@ The next code snippet shows how you can combine multiple arguments of a function
     OLD.union was {1, 2, 3, 4}
     lst_a was [1, 2, 1984]
     lst_b was [3, 4]
+    result was None
     set(lst_a) was {1, 2, 1984}
     set(lst_a).union(lst_b) was {1, 2, 3, 4, 1984}
 
@@ -362,7 +371,7 @@ The following example shows an abstract parent class and a child class that inhe
         ...         pass
         ...
         ...     def __repr__(self) -> str:
-        ...         return "instance of A"
+        ...         return "an instance of A"
 
         >>> @icontract.invariant(lambda self: self.x < 100)
         ... class B(A):
@@ -378,7 +387,7 @@ The following example shows an abstract parent class and a child class that inhe
         ...         self.x = 101
         ...
         ...     def __repr__(self) -> str:
-        ...         return "instance of B"
+        ...         return "an instance of B"
 
         # Break the parent's postcondition
         >>> some_b = B()
@@ -388,6 +397,7 @@ The following example shows an abstract parent class and a child class that inhe
         icontract.errors.ViolationError: File <doctest usage.rst[40]>, line 7 in A:
         result < y:
         result was 1
+        self was an instance of B
         y was 0
 
         # Break the parent's invariant
@@ -397,7 +407,7 @@ The following example shows an abstract parent class and a child class that inhe
             ...
         icontract.errors.ViolationError: File <doctest usage.rst[40]>, line 1 in <module>:
         self.x > 0:
-        self was instance of B
+        self was an instance of B
         self.x was -1
 
         # Break the child's invariant
@@ -407,7 +417,7 @@ The following example shows an abstract parent class and a child class that inhe
             ...
         icontract.errors.ViolationError: File <doctest usage.rst[41]>, line 1 in <module>:
         self.x < 100:
-        self was instance of B
+        self was an instance of B
         self.x was 101
 
 The following example shows how preconditions are weakened:
@@ -423,6 +433,10 @@ The following example shows how preconditions are weakened:
         ...     @icontract.require(lambda x: x % 3 == 0)
         ...     def func(self, x: int) -> None:
         ...         pass
+        ...
+        ...     def __repr__(self) -> str:
+        ...         return "an instance of B"
+
 
         >>> b = B()
 
@@ -440,7 +454,9 @@ The following example shows how preconditions are weakened:
         Traceback (most recent call last):
             ...
         icontract.errors.ViolationError: File <doctest usage.rst[49]>, line 2 in B:
-        x % 3 == 0: x was 5
+        x % 3 == 0:
+        self was an instance of B
+        x was 5
 
 The example below illustrates how snapshots are inherited:
 
@@ -459,6 +475,10 @@ The example below illustrates how snapshots are inherited:
         ...     def func(self, lst: List[int], value: int) -> None:
         ...         lst.append(value)
         ...         lst.append(1984)  # bug
+        ...
+        ...     def __repr__(self) -> str:
+        ...         return "an instance of B"
+
 
         >>> b = B()
         >>> b.func(lst=[1, 2], value=3)
@@ -471,6 +491,9 @@ The example below illustrates how snapshots are inherited:
         len(OLD.lst) was 2
         len(lst) was 4
         lst was [1, 2, 3, 1984]
+        result was None
+        self was an instance of B
+        value was 3
 
 
 Toggling Contracts

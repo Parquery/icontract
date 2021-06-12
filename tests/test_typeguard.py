@@ -111,7 +111,7 @@ class TestInvariant(unittest.TestCase):
                 self.x = x
 
             def __repr__(self) -> str:
-                return "an instance of A"
+                return "an instance of {}".format(self.__class__.__name__)
 
         violation_error = None  # type: Optional[icontract.ViolationError]
         try:
@@ -183,11 +183,11 @@ class TestInheritance(unittest.TestCase):
                 self.x = x
 
             def __repr__(self) -> str:
-                return "an instance of A"
+                return "an instance of {}".format(self.__class__.__name__)
 
         class B(A):
             def __repr__(self) -> str:
-                return "an instance of B"
+                return "an instance of {}".format(self.__class__.__name__)
 
         violation_error = None  # type: Optional[icontract.ViolationError]
         try:

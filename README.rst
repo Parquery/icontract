@@ -116,7 +116,9 @@ The script is also available as a `repl.it post`_.
     Traceback (most recent call last):
       ...
     icontract.errors.ViolationError: File <doctest README.rst[1]>, line 1 in <module>:
-    x > 3: x was 1
+    x > 3:
+    x was 1
+    y was 5
 
     # Pre-condition violation with a description
     >>> @icontract.require(lambda x: x > 3, "x must not be small")
@@ -127,7 +129,9 @@ The script is also available as a `repl.it post`_.
     Traceback (most recent call last):
       ...
     icontract.errors.ViolationError: File <doctest README.rst[4]>, line 1 in <module>:
-    x must not be small: x > 3: x was 1
+    x must not be small: x > 3:
+    x was 1
+    y was 5
 
     # Pre-condition violation with more complex values
     >>> class B:
@@ -176,6 +180,7 @@ The script is also available as a `repl.it post`_.
     result > x:
     result was 5
     x was 10
+    y was 5
 
 
     # Pre-conditions fail before post-conditions.
@@ -188,7 +193,9 @@ The script is also available as a `repl.it post`_.
     Traceback (most recent call last):
       ...
     icontract.errors.ViolationError: File <doctest README.rst[14]>, line 2 in <module>:
-    x must not be small: x > 3: x was 3
+    x must not be small: x > 3:
+    x was 3
+    y was 5
 
     # Invariant
     >>> @icontract.invariant(lambda self: self.x > 0)

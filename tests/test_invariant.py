@@ -2,7 +2,7 @@
 # pylint: disable=invalid-name
 # pylint: disable=unused-argument
 # pylint: disable=no-member
-
+import textwrap
 import time
 import unittest
 from typing import Dict, Iterator, Mapping, Optional, Any, NamedTuple  # pylint: disable=unused-import
@@ -419,7 +419,7 @@ class TestViolation(unittest.TestCase):
                 self.x = -1
 
             def __repr__(self) -> str:
-                return "some instance"
+                return "an instance of {}".format(self.__class__.__name__)
 
         violation_error = None  # type: Optional[icontract.ViolationError]
         try:
@@ -429,7 +429,11 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("y > 0: y was -1", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                y > 0:
+                self was an instance of SomeClass
+                y was -1"""), tests.error.wo_mandatory_location(str(violation_error)))
 
         violation_error = None
         try:
@@ -439,9 +443,11 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("self.x > 0:\n"
-                         "self was some instance\n"
-                         "self.x was -1", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                self.x > 0:
+                self was an instance of SomeClass
+                self.x was -1"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_inv_ok_but_post_violated(self) -> None:
         @icontract.invariant(lambda self: self.x > 0)
@@ -455,7 +461,7 @@ class TestViolation(unittest.TestCase):
                 return -1
 
             def __repr__(self) -> str:
-                return "some instance"
+                return "an instance of {}".format(self.__class__.__name__)
 
         violation_error = None  # type: Optional[icontract.ViolationError]
         try:
@@ -465,7 +471,11 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("result > 0: result was -1", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                result > 0:
+                result was -1
+                self was an instance of SomeClass"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_inv_violated_but_post_ok(self) -> None:
         @icontract.invariant(lambda self: self.x > 0)
@@ -498,7 +508,8 @@ class TestViolation(unittest.TestCase):
 
         @icontract.invariant(lambda: z != 42)
         class A:
-            pass
+            def __repr__(self) -> str:
+                return "an instance of {}".format(self.__class__.__name__)
 
         violation_error = None  # type: Optional[icontract.ViolationError]
         try:
@@ -507,7 +518,11 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("z != 42: z was 42", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                z != 42:
+                self was an instance of A
+                z was 42"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_condition_as_function(self) -> None:
         def some_condition(self: 'A') -> bool:
@@ -579,7 +594,7 @@ class TestProperty(unittest.TestCase):
                 return 0
 
             def __repr__(self) -> str:
-                return self.__class__.__name__
+                return "an instance of {}".format(self.__class__.__name__)
 
         some_inst = SomeClass()
 
@@ -590,9 +605,11 @@ class TestProperty(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('not self.toggled:\n'
-                         'self was SomeClass\n'
-                         'self.toggled was True', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                not self.toggled:
+                self was an instance of SomeClass
+                self.toggled was True"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_property_setter(self) -> None:
         @icontract.invariant(lambda self: not self.toggled)
@@ -609,7 +626,7 @@ class TestProperty(unittest.TestCase):
                 self.toggled = True
 
             def __repr__(self) -> str:
-                return self.__class__.__name__
+                return "an instance of {}".format(self.__class__.__name__)
 
         some_inst = SomeClass()
 
@@ -620,9 +637,11 @@ class TestProperty(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('not self.toggled:\n'
-                         'self was SomeClass\n'
-                         'self.toggled was True', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                not self.toggled:
+                self was an instance of SomeClass
+                self.toggled was True"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_property_deleter(self) -> None:
         @icontract.invariant(lambda self: not self.toggled)
@@ -639,7 +658,7 @@ class TestProperty(unittest.TestCase):
                 self.toggled = True
 
             def __repr__(self) -> str:
-                return self.__class__.__name__
+                return "an instance of {}".format(self.__class__.__name__)
 
         some_inst = SomeClass()
 
@@ -650,9 +669,11 @@ class TestProperty(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('not self.toggled:\n'
-                         'self was SomeClass\n'
-                         'self.toggled was True', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                not self.toggled:
+                self was an instance of SomeClass
+                self.toggled was True"""), tests.error.wo_mandatory_location(str(violation_error)))
 
 
 class TestError(unittest.TestCase):
@@ -663,7 +684,7 @@ class TestError(unittest.TestCase):
                 self.x = 0
 
             def __repr__(self) -> str:
-                return self.__class__.__name__
+                return "an instance of {}".format(self.__class__.__name__)
 
         value_error = None  # type: Optional[ValueError]
         try:
@@ -673,9 +694,11 @@ class TestError(unittest.TestCase):
 
         self.assertIsNotNone(value_error)
         self.assertIsInstance(value_error, ValueError)
-        self.assertEqual('self.x > 0:\n'
-                         'self was A\n'
-                         'self.x was 0', tests.error.wo_mandatory_location(str(value_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                self.x > 0:
+                self was an instance of A
+                self.x was 0"""), tests.error.wo_mandatory_location(str(value_error)))
 
     def test_as_function(self) -> None:
         @icontract.invariant(
@@ -685,7 +708,7 @@ class TestError(unittest.TestCase):
                 self.x = 0
 
             def __repr__(self) -> str:
-                return self.__class__.__name__
+                return "an instance of {}".format(self.__class__.__name__)
 
         value_error = None  # type: Optional[ValueError]
         try:
@@ -704,7 +727,7 @@ class TestError(unittest.TestCase):
                 self.x = 0
 
             def __repr__(self) -> str:
-                return self.__class__.__name__
+                return "an instance of {}".format(self.__class__.__name__)
 
         value_error = None  # type: Optional[ValueError]
         try:

@@ -40,7 +40,11 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("x > 3: x was 1", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                x > 3:
+                x was 1
+                y was 5"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_with_description(self) -> None:
         @icontract.require(lambda x: x > 3, "x must not be small")
@@ -54,7 +58,11 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("x must not be small: x > 3: x was 1", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                x must not be small: x > 3:
+                x was 1
+                y was 5"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_condition_as_function(self) -> None:
         def some_condition(x: int) -> bool:
@@ -199,7 +207,12 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("c < 10: c was 22", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                c < 10:
+                a was 2
+                b was 21
+                c was 22"""), tests.error.wo_mandatory_location(str(violation_error)))
 
         violation_error = None
         try:
@@ -208,7 +221,12 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("b < 10: b was 21", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                b < 10:
+                a was 2
+                b was 21
+                c was 8"""), tests.error.wo_mandatory_location(str(violation_error)))
 
 
 class TestBenchmark(unittest.TestCase):
@@ -376,7 +394,7 @@ class TestInClass(unittest.TestCase):
                 pass
 
             def __repr__(self) -> str:
-                return self.__class__.__name__
+                return "an instance of {}".format(self.__class__.__name__)
 
         a = A()
 
@@ -388,7 +406,11 @@ class TestInClass(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("x > 3: x was 1", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                x > 3:
+                self was an instance of A
+                x was 1"""), tests.error.wo_mandatory_location(str(violation_error)))
 
         # Test method with self
         violation_error = None
@@ -398,9 +420,11 @@ class TestInClass(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('self.y > 10:\n'
-                         'self was A\n'
-                         'self.y was 5', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                self.y > 10:
+                self was an instance of A
+                self.y was 5"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_unbound_instance_method_with_self_as_kwarg(self) -> None:
         class A:
@@ -412,7 +436,7 @@ class TestInClass(unittest.TestCase):
                 pass
 
             def __repr__(self) -> str:
-                return self.__class__.__name__
+                return "an instance of {}".format(self.__class__.__name__)
 
         a = A()
 
@@ -425,9 +449,11 @@ class TestInClass(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('self.y > 10:\n'
-                         'self was A\n'
-                         'self.y was 5', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                self.y > 10:
+                self was an instance of A
+                self.y was 5"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_getter(self) -> None:
         class SomeClass:
@@ -440,7 +466,7 @@ class TestInClass(unittest.TestCase):
                 return self._some_prop
 
             def __repr__(self) -> str:
-                return self.__class__.__name__
+                return "an instance of {}".format(self.__class__.__name__)
 
         some_inst = SomeClass()
 
@@ -451,9 +477,11 @@ class TestInClass(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('self._some_prop > 0:\n'
-                         'self was SomeClass\n'
-                         'self._some_prop was -1', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                self._some_prop > 0:
+                self was an instance of SomeClass
+                self._some_prop was -1"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_setter(self) -> None:
         class SomeClass:
@@ -466,6 +494,9 @@ class TestInClass(unittest.TestCase):
             def some_prop(self, value: int) -> None:
                 pass
 
+            def __repr__(self) -> str:
+                return "an instance of {}".format(self.__class__.__name__)
+
         some_inst = SomeClass()
 
         violation_error = None  # type: Optional[icontract.ViolationError]
@@ -475,7 +506,11 @@ class TestInClass(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('value > 0: value was -1', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                value > 0:
+                self was an instance of SomeClass
+                value was -1"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_deleter(self) -> None:
         class SomeClass:
@@ -492,7 +527,7 @@ class TestInClass(unittest.TestCase):
                 pass
 
             def __repr__(self) -> str:
-                return self.__class__.__name__
+                return "an instance of {}".format(self.__class__.__name__)
 
         some_inst = SomeClass()
 
@@ -503,8 +538,11 @@ class TestInClass(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('self.some_prop > 0:\nself was SomeClass\nself.some_prop was -1',
-                         tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                self.some_prop > 0:
+                self was an instance of SomeClass
+                self.some_prop was -1"""), tests.error.wo_mandatory_location(str(violation_error)))
 
 
 class TestInvalid(unittest.TestCase):

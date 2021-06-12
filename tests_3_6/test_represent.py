@@ -26,7 +26,11 @@ class TestLiteralStringInterpolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_err)
         self.assertEqual(
-            'f"something" == \'\': f"something" was \'something\'',
+            textwrap.dedent(
+                """\
+                f"something" == '':
+                f"something" was 'something'
+                x was 0"""),
             tests.error.wo_mandatory_location(str(violation_err)))
 
     def test_simple_interpolation(self) -> None:
@@ -42,7 +46,11 @@ class TestLiteralStringInterpolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_err)
         self.assertEqual(
-            'f"{x}" == \'\': f"{x}" was \'0\'',
+            textwrap.dedent(
+                """\
+                f"{x}" == '':
+                f"{x}" was '0'
+                x was 0"""),
             tests.error.wo_mandatory_location(str(violation_err)))
 
     def test_string_formatting(self) -> None:
@@ -58,7 +66,11 @@ class TestLiteralStringInterpolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_err)
         self.assertEqual(
-            'f"{x!s}" == \'\': f"{x!s}" was \'1.984\'',
+            textwrap.dedent(
+                """\
+                f"{x!s}" == '':
+                f"{x!s}" was '1.984'
+                x was 1.984"""),
             tests.error.wo_mandatory_location(str(violation_err)))
 
     def test_repr_formatting(self) -> None:
@@ -74,7 +86,11 @@ class TestLiteralStringInterpolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_err)
         self.assertEqual(
-            'f"{x!r}" == \'\': f"{x!r}" was \'1.984\'',
+            textwrap.dedent(
+                """\
+                f"{x!r}" == '':
+                f"{x!r}" was '1.984'
+                x was 1.984"""),
             tests.error.wo_mandatory_location(str(violation_err)))
 
     def test_ascii_formatting(self) -> None:
@@ -90,7 +106,11 @@ class TestLiteralStringInterpolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_err)
         self.assertEqual(
-            'f"{x!a}" == \'\': f"{x!a}" was \'1.984\'',
+            textwrap.dedent(
+                """\
+                f"{x!a}" == '':
+                f"{x!a}" was '1.984'
+                x was 1.984"""),
             tests.error.wo_mandatory_location(str(violation_err)))
 
     def test_format_spec(self) -> None:
@@ -106,7 +126,11 @@ class TestLiteralStringInterpolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_err)
         self.assertEqual(
-            'f"{x:.3}" == \'\': f"{x:.3}" was \'1.98\'',
+            textwrap.dedent(
+                """\
+                f"{x:.3}" == '':
+                f"{x:.3}" was '1.98'
+                x was 1.984"""),
             tests.error.wo_mandatory_location(str(violation_err)))
 
     def test_conversion_and_format_spec(self) -> None:
@@ -122,7 +146,11 @@ class TestLiteralStringInterpolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_err)
         self.assertEqual(
-            'f"{x!r:.3}" == \'\': f"{x!r:.3}" was \'1.9\'',
+            textwrap.dedent(
+                """\
+                f"{x!r:.3}" == '':
+                f"{x!r:.3}" was '1.9'
+                x was 1.984"""),
             tests.error.wo_mandatory_location(str(violation_err)))
 
 
