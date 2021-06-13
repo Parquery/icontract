@@ -453,7 +453,7 @@ def repr_values(condition: Callable[..., bool], lambda_inspection: Optional[Cond
     else:
         assert lambda_inspection is None, "Expected no lambda inspection in a condition given as a non-lambda function"
 
-    reprs = dict()  # type: MutableMapping[str, Any]
+    reprs = None  # type: Optional[MutableMapping[str, Any]]
 
     if lambda_inspection is not None:
         variable_lookup = collect_variable_lookup(condition=condition, resolved_kwargs=selected_kwargs)
@@ -468,12 +468,24 @@ def repr_values(condition: Callable[..., bool], lambda_inspection: Optional[Cond
         repr_visitor.visit(node=lambda_inspection.node.body)
 
         reprs = repr_visitor.reprs
-    else:
-        for key, val in selected_kwargs.items():
-            if _representable(value=val):
-                reprs[key] = val
+
+    # Add original arguments from the call unless they shadow a variable in the re-computation.
+    #
+    # The condition arguments are often not sufficient to figure out the error. The user usually needs
+    # more context which is captured in the remainder of the call arguments.
+
+    if reprs is None:
+        reprs = dict()
+
+    for key in sorted(selected_kwargs.keys()):
+        val = selected_kwargs[key]
+        if key not in reprs and _representable(value=val):
+            reprs[key] = val
 
     parts = []  # type: List[str]
+
+    # We need to sort in order to present the same violation error on repeated violations.
+    # Otherwise, the order of the reported arguments may be arbitrary.
     for key in sorted(reprs.keys()):
         value = reprs[key]
         if isinstance(value, icontract._recompute.FirstExceptionInAll):
@@ -546,4 +558,5 @@ def generate_message(contract: Contract, resolved_kwargs: Mapping[str, Any]) -> 
         parts.append('\n'.join(repr_vals))
 
     msg = "".join(parts)
+
     return msg

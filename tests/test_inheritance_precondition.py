@@ -55,7 +55,8 @@ class TestViolation(unittest.TestCase):
                 pass
 
         class B(A):
-            pass
+            def __repr__(self) -> str:
+                return "an instance of {}".format(self.__class__.__name__)
 
         b = B()
         violation_error = None  # type: Optional[icontract.ViolationError]
@@ -65,7 +66,11 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("x < 100: x was 1000", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                x < 100:
+                self was an instance of B
+                x was 1000"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_inherited_with_implementation(self) -> None:
         class A(icontract.DBC):
@@ -77,6 +82,9 @@ class TestViolation(unittest.TestCase):
             def func(self, x: int) -> None:
                 pass
 
+            def __repr__(self) -> str:
+                return "an instance of {}".format(self.__class__.__name__)
+
         b = B()
         violation_error = None  # type: Optional[icontract.ViolationError]
         try:
@@ -85,7 +93,11 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("x < 100: x was 1000", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                x < 100:
+                self was an instance of B
+                x was 1000"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_require_else(self) -> None:
         class A(icontract.DBC):
@@ -98,6 +110,9 @@ class TestViolation(unittest.TestCase):
             def func(self, x: int) -> None:
                 pass
 
+            def __repr__(self) -> str:
+                return "an instance of {}".format(self.__class__.__name__)
+
         b = B()
 
         violation_error = None  # type: Optional[icontract.ViolationError]
@@ -107,7 +122,11 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("x % 3 == 0: x was 5", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                x % 3 == 0:
+                self was an instance of B
+                x was 5"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_triple_inheritance_wo_implementation(self) -> None:
         class A(icontract.DBC):
@@ -116,10 +135,12 @@ class TestViolation(unittest.TestCase):
                 pass
 
         class B(A):
-            pass
+            def __repr__(self) -> str:
+                return "an instance of {}".format(self.__class__.__name__)
 
         class C(B):
-            pass
+            def __repr__(self) -> str:
+                return "an instance of {}".format(self.__class__.__name__)
 
         c = C()
         violation_error = None  # type: Optional[icontract.ViolationError]
@@ -129,7 +150,11 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("x < 100: x was 1000", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                x < 100:
+                self was an instance of C
+                x was 1000"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_triple_inheritance_with_implementation(self) -> None:
         class A(icontract.DBC):
@@ -144,6 +169,9 @@ class TestViolation(unittest.TestCase):
             def func(self, x: int) -> None:
                 pass
 
+            def __repr__(self) -> str:
+                return "an instance of {}".format(self.__class__.__name__)
+
         c = C()
         violation_error = None  # type: Optional[icontract.ViolationError]
         try:
@@ -152,7 +180,11 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("x < 100: x was 1000", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                x < 100:
+                self was an instance of C
+                x was 1000"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_triple_inheritance_with_require_else(self) -> None:
         class A(icontract.DBC):
@@ -170,6 +202,9 @@ class TestViolation(unittest.TestCase):
             def func(self, x: int) -> None:
                 pass
 
+            def __repr__(self) -> str:
+                return "an instance of {}".format(self.__class__.__name__)
+
         c = C()
 
         violation_error = None  # type: Optional[icontract.ViolationError]
@@ -179,7 +214,11 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("x % 5 == 0: x was 7", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                x % 5 == 0:
+                self was an instance of C
+                x was 7"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_abstract_method(self) -> None:
         class A(icontract.DBC):
@@ -192,6 +231,9 @@ class TestViolation(unittest.TestCase):
             def func(self, x: int) -> int:
                 return 1000
 
+            def __repr__(self) -> str:
+                return "an instance of {}".format(self.__class__.__name__)
+
         b = B()
         violation_error = None  # type: Optional[icontract.ViolationError]
         try:
@@ -200,7 +242,11 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("x > 0: x was -1", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                x > 0:
+                self was an instance of B
+                x was -1"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_that_base_preconditions_apply_to_init_if_not_defined(self) -> None:
         class A(icontract.DBC):
@@ -209,7 +255,8 @@ class TestViolation(unittest.TestCase):
                 pass
 
         class B(A):
-            pass
+            def __repr__(self) -> str:
+                return "an instance of {}".format(self.__class__.__name__)
 
         violation_error = None  # Optional[icontract.ViolationError]
         try:
@@ -218,7 +265,11 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("x >= 0: x was -1", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                x >= 0:
+                self was an instance of B
+                x was -1"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_that_base_preconditions_dont_apply_to_init_if_overridden(self) -> None:
         class A(icontract.DBC):
@@ -232,6 +283,9 @@ class TestViolation(unittest.TestCase):
             def __init__(self, x: int) -> None:
                 pass
 
+            def __repr__(self) -> str:
+                return "an instance of {}".format(self.__class__.__name__)
+
         # Preconditions of B need to be satisfied, but not from A
         _ = B(x=-100)
 
@@ -242,7 +296,11 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("x < 0: x was 0", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                x < 0:
+                self was an instance of B
+                x was 0"""), tests.error.wo_mandatory_location(str(violation_error)))
 
 
 class TestPropertyOK(unittest.TestCase):
@@ -295,7 +353,7 @@ class TestPropertyViolation(unittest.TestCase):
                 return 0
 
             def __repr__(self) -> str:
-                return self.__class__.__name__
+                return "an instance of {}".format(self.__class__.__name__)
 
         some_inst = SomeClass()
 
@@ -306,9 +364,11 @@ class TestPropertyViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('not self.toggled:\n'
-                         'self was SomeClass\n'
-                         'self.toggled was True', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                not self.toggled:
+                self was an instance of SomeClass
+                self.toggled was True"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_setter(self) -> None:
         class SomeBase(icontract.DBC):
@@ -328,7 +388,7 @@ class TestPropertyViolation(unittest.TestCase):
                 pass
 
             def __repr__(self) -> str:
-                return self.__class__.__name__
+                return "an instance of {}".format(self.__class__.__name__)
 
         some_inst = SomeClass()
 
@@ -339,7 +399,11 @@ class TestPropertyViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('value > 0: value was 0', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                value > 0:
+                self was an instance of SomeClass
+                value was 0"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_deleter(self) -> None:
         class SomeBase(icontract.DBC):
@@ -357,7 +421,7 @@ class TestPropertyViolation(unittest.TestCase):
 
         class SomeClass(SomeBase):
             def __repr__(self) -> str:
-                return self.__class__.__name__
+                return "an instance of {}".format(self.__class__.__name__)
 
             # pylint: disable=no-member
             @SomeBase.some_prop.deleter  # type: ignore
@@ -373,9 +437,11 @@ class TestPropertyViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('not self.toggled:\n'
-                         'self was SomeClass\n'
-                         'self.toggled was True', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                not self.toggled:
+                self was an instance of SomeClass
+                self.toggled was True"""), tests.error.wo_mandatory_location(str(violation_error)))
 
 
 class TestConstructor(unittest.TestCase):
@@ -392,6 +458,9 @@ class TestConstructor(unittest.TestCase):
             def __init__(self, x: int) -> None:
                 super().__init__(x=x)
 
+            def __repr__(self) -> str:
+                return "an instance of {}".format(self.__class__.__name__)
+
         _ = B(3)
 
         violation_error = None  # type: Optional[icontract.ViolationError]
@@ -401,7 +470,11 @@ class TestConstructor(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('x > 0: x was -1', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                x > 0:
+                self was an instance of B
+                x was -1"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_new_tightens_preconditions(self) -> None:
         class A(icontract.DBC):
@@ -415,6 +488,9 @@ class TestConstructor(unittest.TestCase):
             @icontract.require(lambda xs: all(x > 0 for x in xs))
             def __new__(cls, xs: Sequence[int]) -> 'B':
                 return cast(B, xs)
+
+            def __repr__(self) -> str:
+                return "an instance of {}".format(self.__class__.__name__)
 
         _ = B([1, 2, 3])
 

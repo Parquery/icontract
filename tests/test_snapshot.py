@@ -65,11 +65,14 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('OLD.lst + [val] == lst:\n'
-                         'OLD was a bunch of OLD values\n'
-                         'OLD.lst was [1]\n'
-                         'lst was [1, 2, 1984]\n'
-                         'val was 2', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                OLD.lst + [val] == lst:
+                OLD was a bunch of OLD values
+                OLD.lst was [1]
+                lst was [1, 2, 1984]
+                result was None
+                val was 2"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_with_custom_name(self) -> None:
         @icontract.snapshot(lambda lst: len(lst), name="len_lst")
@@ -85,11 +88,15 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('OLD.len_lst + 1 == len(lst):\n'
-                         'OLD was a bunch of OLD values\n'
-                         'OLD.len_lst was 1\n'
-                         'len(lst) was 3\n'
-                         'lst was [1, 2, 1984]', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                OLD.len_lst + 1 == len(lst):
+                OLD was a bunch of OLD values
+                OLD.len_lst was 1
+                len(lst) was 3
+                lst was [1, 2, 1984]
+                result was None
+                val was 2"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_with_multiple_arguments(self) -> None:
         @icontract.snapshot(lambda lst_a, lst_b: set(lst_a).union(lst_b), name="union")
@@ -106,13 +113,15 @@ class TestViolation(unittest.TestCase):
         self.assertIsNotNone(violation_error)
         self.assertEqual(
             textwrap.dedent('''\
-            set(lst_a).union(lst_b) == OLD.union:
-            OLD was a bunch of OLD values
-            OLD.union was {1, 2, 3, 4}
-            lst_a was [1, 2, 1984]
-            lst_b was [3, 4]
-            set(lst_a) was {1, 2, 1984}
-            set(lst_a).union(lst_b) was {1, 2, 3, 4, 1984}'''), tests.error.wo_mandatory_location(str(violation_error)))
+                set(lst_a).union(lst_b) == OLD.union:
+                OLD was a bunch of OLD values
+                OLD.union was {1, 2, 3, 4}
+                lst_a was [1, 2, 1984]
+                lst_b was [3, 4]
+                result was None
+                set(lst_a) was {1, 2, 1984}
+                set(lst_a).union(lst_b) was {1, 2, 3, 4, 1984}'''),
+            tests.error.wo_mandatory_location(str(violation_error)))
 
 
 class TestInvalid(unittest.TestCase):

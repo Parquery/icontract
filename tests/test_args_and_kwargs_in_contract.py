@@ -100,6 +100,7 @@ class TestArgs(unittest.TestCase):
             textwrap.dedent('''\
                 len(_ARGS) > 2:
                 _ARGS was (3,)
+                args was 3
                 len(_ARGS) was 1'''), tests.error.wo_mandatory_location(str(violation_error)))
 
 
@@ -185,8 +186,10 @@ class TestKwargs(unittest.TestCase):
 
         assert violation_error is not None
         self.assertEqual(
-            textwrap.dedent("'x' in _KWARGS: _KWARGS was {'y': 3}"),
-            tests.error.wo_mandatory_location(str(violation_error)))
+            textwrap.dedent("""\
+                'x' in _KWARGS:
+                _KWARGS was {'y': 3}
+                y was 3"""), tests.error.wo_mandatory_location(str(violation_error)))
 
 
 class TestArgsAndKwargs(unittest.TestCase):

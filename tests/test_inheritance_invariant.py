@@ -4,6 +4,7 @@
 # pylint: disable=no-member
 
 import abc
+import textwrap
 import unittest
 from typing import Optional  # pylint: disable=unused-import
 
@@ -237,7 +238,7 @@ class TestProperty(unittest.TestCase):
 
         class SomeClass(SomeBase):
             def __repr__(self) -> str:
-                return self.__class__.__name__
+                return "an instance of {}".format(self.__class__.__name__)
 
         some_inst = SomeClass()
 
@@ -249,7 +250,7 @@ class TestProperty(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual('not self.toggled:\n'
-                         'self was SomeClass\n'
+                         'self was an instance of SomeClass\n'
                          'self.toggled was True', tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_inherited_setter(self) -> None:
@@ -268,7 +269,7 @@ class TestProperty(unittest.TestCase):
 
         class SomeClass(SomeBase):
             def __repr__(self) -> str:
-                return self.__class__.__name__
+                return "an instance of {}".format(self.__class__.__name__)
 
         some_inst = SomeClass()
 
@@ -279,9 +280,11 @@ class TestProperty(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('not self.toggled:\n'
-                         'self was SomeClass\n'
-                         'self.toggled was True', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                not self.toggled:
+                self was an instance of SomeClass
+                self.toggled was True"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_inherited_deleter(self) -> None:
         @icontract.invariant(lambda self: not self.toggled)
@@ -299,7 +302,7 @@ class TestProperty(unittest.TestCase):
 
         class SomeClass(SomeBase):
             def __repr__(self) -> str:
-                return self.__class__.__name__
+                return "an instance of {}".format(self.__class__.__name__)
 
         some_inst = SomeClass()
 
@@ -310,9 +313,11 @@ class TestProperty(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('not self.toggled:\n'
-                         'self was SomeClass\n'
-                         'self.toggled was True', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                not self.toggled:
+                self was an instance of SomeClass
+                self.toggled was True"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_inherited_invariant_on_getter(self) -> None:
         @icontract.invariant(lambda self: not self.toggled)
@@ -327,7 +332,7 @@ class TestProperty(unittest.TestCase):
                 return 0
 
             def __repr__(self) -> str:
-                return self.__class__.__name__
+                return "an instance of {}".format(self.__class__.__name__)
 
         some_inst = SomeClass()
 
@@ -338,9 +343,11 @@ class TestProperty(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('not self.toggled:\n'
-                         'self was SomeClass\n'
-                         'self.toggled was True', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                not self.toggled:
+                self was an instance of SomeClass
+                self.toggled was True"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_inherited_invariant_on_setter(self) -> None:
         @icontract.invariant(lambda self: not self.toggled)
@@ -358,7 +365,7 @@ class TestProperty(unittest.TestCase):
                 self.toggled = True
 
             def __repr__(self) -> str:
-                return self.__class__.__name__
+                return "an instance of {}".format(self.__class__.__name__)
 
         some_inst = SomeClass()
 
@@ -369,9 +376,11 @@ class TestProperty(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('not self.toggled:\n'
-                         'self was SomeClass\n'
-                         'self.toggled was True', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                not self.toggled:
+                self was an instance of SomeClass
+                self.toggled was True"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_inherited_invariant_on_deleter(self) -> None:
         @icontract.invariant(lambda self: not self.toggled)
@@ -389,7 +398,7 @@ class TestProperty(unittest.TestCase):
                 self.toggled = True
 
             def __repr__(self) -> str:
-                return self.__class__.__name__
+                return "an instance of {}".format(self.__class__.__name__)
 
         some_inst = SomeClass()
 
@@ -400,9 +409,11 @@ class TestProperty(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('not self.toggled:\n'
-                         'self was SomeClass\n'
-                         'self.toggled was True', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                not self.toggled:
+                self was an instance of SomeClass
+                self.toggled was True"""), tests.error.wo_mandatory_location(str(violation_error)))
 
 
 if __name__ == '__main__':
