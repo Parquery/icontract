@@ -79,9 +79,11 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("some_condition:\n"
-                         "x was 1\n"
-                         "y was 5", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                some_condition:
+                x was 1
+                y was 5"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_condition_as_function_with_default_argument_value(self) -> None:
         def some_condition(x: int, y: int = 0) -> bool:
@@ -123,9 +125,11 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('some_condition:\n'
-                         'x was -1\n'
-                         'y was 1', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                some_condition:
+                x was -1
+                y was 1"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_with_pathlib(self) -> None:
         @icontract.require(lambda path: path.exists())
@@ -189,9 +193,11 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("x > another_var:\n"
-                         "another_var was 0\n"
-                         "x was 0", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                x > another_var:
+                another_var was 0
+                x was 0"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_with_default_values(self) -> None:
         @icontract.require(lambda a: a < 10)

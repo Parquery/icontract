@@ -115,10 +115,12 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('some_condition:\n'
-                         'result was 1\n'
-                         'x was 1\n'
-                         'y was 3', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                some_condition:
+                result was 1
+                x was 1
+                y was 3"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_with_description(self) -> None:
         @icontract.ensure(lambda result, x: result > x, "expected summation")

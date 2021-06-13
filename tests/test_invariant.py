@@ -278,7 +278,7 @@ class TestViolation(unittest.TestCase):
                 self.x = x
 
             def __repr__(self) -> str:
-                return "some instance"
+                return "an instance of {}".format(self.__class__.__name__)
 
         _ = SomeClass(x=1)
 
@@ -289,9 +289,11 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('self.x > 0:\n'
-                         'self was some instance\n'
-                         'self.x was 0', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                self.x > 0:
+                self was an instance of SomeClass
+                self.x was 0"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_inv_as_precondition(self) -> None:
         @icontract.invariant(lambda self: self.x > 0)
@@ -303,7 +305,7 @@ class TestViolation(unittest.TestCase):
                 self.x = 10
 
             def __repr__(self) -> str:
-                return "some instance"
+                return "an instance of {}".format(self.__class__.__name__)
 
         violation_error = None  # type: Optional[icontract.ViolationError]
         try:
@@ -314,9 +316,11 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("self.x > 0:\n"
-                         "self was some instance\n"
-                         "self.x was -1", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                self.x > 0:
+                self was an instance of SomeClass
+                self.x was -1"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_method(self) -> None:
         @icontract.invariant(lambda self: self.x > 0)
@@ -328,7 +332,7 @@ class TestViolation(unittest.TestCase):
                 self.x = -1
 
             def __repr__(self) -> str:
-                return "some instance"
+                return "an instance of {}".format(self.__class__.__name__)
 
         violation_error = None  # type: Optional[icontract.ViolationError]
         try:
@@ -338,9 +342,11 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("self.x > 0:\n"
-                         "self was some instance\n"
-                         "self.x was -1", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                self.x > 0:
+                self was an instance of SomeClass
+                self.x was -1"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_magic_method(self) -> None:
         @icontract.invariant(lambda self: self.x > 0)
@@ -352,7 +358,7 @@ class TestViolation(unittest.TestCase):
                 self.x = -1
 
             def __repr__(self) -> str:
-                return "some instance"
+                return "an instance of {}".format(self.__class__.__name__)
 
         violation_error = None  # type: Optional[icontract.ViolationError]
         try:
@@ -362,9 +368,11 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("self.x > 0:\n"
-                         "self was some instance\n"
-                         "self.x was -1", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                self.x > 0:
+                self was an instance of SomeClass
+                self.x was -1"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_multiple_invs_first_violated(self) -> None:
         @icontract.invariant(lambda self: self.x > 0)
@@ -374,7 +382,7 @@ class TestViolation(unittest.TestCase):
                 self.x = -1
 
             def __repr__(self) -> str:
-                return "some instance"
+                return "an instance of {}".format(self.__class__.__name__)
 
         violation_error = None  # type: Optional[icontract.ViolationError]
         try:
@@ -383,9 +391,11 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("self.x > 0:\n"
-                         "self was some instance\n"
-                         "self.x was -1", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                self.x > 0:
+                self was an instance of SomeClass
+                self.x was -1"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_multiple_invs_last_violated(self) -> None:
         @icontract.invariant(lambda self: self.x > 0)
@@ -395,7 +405,7 @@ class TestViolation(unittest.TestCase):
                 self.x = 100
 
             def __repr__(self) -> str:
-                return "some instance"
+                return "an instance of {}".format(self.__class__.__name__)
 
         violation_error = None  # type: Optional[icontract.ViolationError]
         try:
@@ -404,9 +414,11 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("self.x < 10:\n"
-                         "self was some instance\n"
-                         "self.x was 100", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                self.x < 10:
+                self was an instance of SomeClass
+                self.x was 100"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_inv_violated_after_pre(self) -> None:
         @icontract.invariant(lambda self: self.x > 0)
@@ -489,7 +501,7 @@ class TestViolation(unittest.TestCase):
                 return 10
 
             def __repr__(self) -> str:
-                return "some instance"
+                return "an instance of {}".format(self.__class__.__name__)
 
         violation_error = None  # type: Optional[icontract.ViolationError]
         try:
@@ -499,9 +511,11 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("self.x > 0:\n"
-                         "self was some instance\n"
-                         "self.x was -1", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                self.x > 0:
+                self was an instance of SomeClass
+                self.x was -1"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_inv_with_empty_arguments(self) -> None:
         z = 42
