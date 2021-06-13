@@ -143,14 +143,14 @@ After the initialization:
         ...         self.x = -1
         ...
         ...     def __repr__(self) -> str:
-        ...         return "some instance"
+        ...         return "an instance of SomeClass"
         ...
         >>> some_instance = SomeClass()
         Traceback (most recent call last):
          ...
         icontract.errors.ViolationError: File <doctest usage.rst[14]>, line 1 in <module>:
         self.x > 0:
-        self was some instance
+        self was an instance of SomeClass
         self.x was -1
 
 
@@ -167,7 +167,7 @@ Before the invocation of a public method:
     ...         self.x = 10
     ...
     ...     def __repr__(self) -> str:
-    ...         return "some instance"
+    ...         return "an instance of SomeClass"
     ...
     >>> some_instance = SomeClass()
     >>> some_instance.x = -1
@@ -176,7 +176,7 @@ Before the invocation of a public method:
      ...
     icontract.errors.ViolationError: File <doctest usage.rst[16]>, line 1 in <module>:
     self.x > 0:
-    self was some instance
+    self was an instance of SomeClass
     self.x was -1
 
 
@@ -193,7 +193,7 @@ After the invocation of a public method:
     ...         self.x = -1
     ...
     ...     def __repr__(self) -> str:
-    ...         return "some instance"
+    ...         return "an instance of SomeClass"
     ...
     >>> some_instance = SomeClass()
     >>> some_instance.some_method()
@@ -201,7 +201,7 @@ After the invocation of a public method:
      ...
     icontract.errors.ViolationError: File <doctest usage.rst[20]>, line 1 in <module>:
     self.x > 0:
-    self was some instance
+    self was an instance of SomeClass
     self.x was -1
 
 
@@ -218,7 +218,7 @@ After the invocation of a magic method:
     ...         self.x = -1
     ...
     ...     def __repr__(self) -> str:
-    ...         return "some instance"
+    ...         return "an instance of SomeClass"
     ...
     >>> some_instance = SomeClass()
     >>> some_instance()
@@ -226,7 +226,7 @@ After the invocation of a magic method:
      ...
     icontract.errors.ViolationError: File <doctest usage.rst[23]>, line 1 in <module>:
     self.x > 0:
-    self was some instance
+    self was an instance of SomeClass
     self.x was -1
 
 Snapshots (a.k.a "old" argument values)

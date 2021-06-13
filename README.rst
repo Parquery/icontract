@@ -204,14 +204,14 @@ The script is also available as a `repl.it post`_.
     ...         self.x = -1
     ...
     ...     def __repr__(self) -> str:
-    ...         return "some instance"
+    ...         return "an instance of SomeClass"
     ...
     >>> some_instance = SomeClass()
     Traceback (most recent call last):
      ...
     icontract.errors.ViolationError: File <doctest README.rst[16]>, line 1 in <module>:
     self.x > 0:
-    self was some instance
+    self was an instance of SomeClass
     self.x was -1
 
 

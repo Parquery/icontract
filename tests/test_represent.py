@@ -86,10 +86,12 @@ class TestReprValues(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('sum([1, y, x]) == 1:\n'
-                         'sum([1, y, x]) was 5\n'
-                         'x was 3\n'
-                         'y was 1', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                sum([1, y, x]) == 1:
+                sum([1, y, x]) was 5
+                x was 3
+                y was 1"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_tuple(self) -> None:
         y = 1
@@ -105,10 +107,12 @@ class TestReprValues(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('sum((1, y, x)) == 1:\n'
-                         'sum((1, y, x)) was 5\n'
-                         'x was 3\n'
-                         'y was 1', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                sum((1, y, x)) == 1:
+                sum((1, y, x)) was 5
+                x was 3
+                y was 1"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_set(self) -> None:
         y = 2
@@ -124,10 +128,12 @@ class TestReprValues(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('sum({1, y, x}) == 1:\n'
-                         'sum({1, y, x}) was 6\n'
-                         'x was 3\n'
-                         'y was 2', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                sum({1, y, x}) == 1:
+                sum({1, y, x}) was 6
+                x was 3
+                y was 2"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_dict(self) -> None:
         y = "someKey"
@@ -143,10 +149,12 @@ class TestReprValues(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("len({y: 3, x: 8}) == 6:\n"
-                         "len({y: 3, x: 8}) was 2\n"
-                         "x was 'oi'\n"
-                         "y was 'someKey'", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                len({y: 3, x: 8}) == 6:
+                len({y: 3, x: 8}) was 2
+                x was 'oi'
+                y was 'someKey'"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_unary_op(self) -> None:
         @icontract.require(lambda x: not -x + 10 > 3)
@@ -240,9 +248,11 @@ class TestReprValues(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('0 < x < 3 and x > 10 and x != 7 and x >= 10 and x <= 11 and x is not None and\n'
-                         '              x in [1, 2, 3] and x not in [1, 2, 3]: x was 1',
-                         tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                0 < x < 3 and x > 10 and x != 7 and x >= 10 and x <= 11 and x is not None and
+                              x in [1, 2, 3] and x not in [1, 2, 3]: x was 1"""),
+            tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_call(self) -> None:
         def y() -> int:
@@ -259,7 +269,11 @@ class TestReprValues(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('x < y():\n' 'x was 1\n' 'y() was 1', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                x < y():
+                x was 1
+                y() was 1"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_if_exp_body(self) -> None:
         y = 5
@@ -275,9 +289,11 @@ class TestReprValues(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('x < (x**2 if y == 5 else x**3):\n'
-                         'x was 1\n'
-                         'y was 5', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                x < (x**2 if y == 5 else x**3):
+                x was 1
+                y was 5"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_if_exp_orelse(self) -> None:
         y = 5
@@ -293,8 +309,11 @@ class TestReprValues(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('x < (x**2 if y != 5 else x**3):\nx was 1\ny was 5',
-                         tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                x < (x**2 if y != 5 else x**3):
+                x was 1
+                y was 5"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_attr(self) -> None:
         class A:
@@ -302,7 +321,7 @@ class TestReprValues(unittest.TestCase):
                 self.y = 3
 
             def __repr__(self) -> str:
-                return "A()"
+                return "an instance of {}".format(self.__class__.__name__)
 
         a = A()
 
@@ -317,10 +336,12 @@ class TestReprValues(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('x > a.y:\n'
-                         'a was A()\n'
-                         'a.y was 3\n'
-                         'x was 1', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                x > a.y:
+                a was an instance of A
+                a.y was 3
+                x was 1"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_index(self) -> None:
         lst = [1, 2, 3]
@@ -336,9 +357,11 @@ class TestReprValues(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('x > lst[1]:\n'
-                         'lst was [1, 2, 3]\n'
-                         'x was 1', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                x > lst[1]:
+                lst was [1, 2, 3]
+                x was 1"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_slice(self) -> None:
         lst = [1, 2, 3]
@@ -354,10 +377,12 @@ class TestReprValues(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('x > sum(lst[1:2:1]):\n'
-                         'lst was [1, 2, 3]\n'
-                         'sum(lst[1:2:1]) was 2\n'
-                         'x was 1', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                x > sum(lst[1:2:1]):
+                lst was [1, 2, 3]
+                sum(lst[1:2:1]) was 2
+                x was 1"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_lambda(self) -> None:
         @icontract.require(lambda x: x > (lambda y: y + 4).__call__(y=7))  # type: ignore
@@ -718,7 +743,11 @@ class TestConditionAsText(unittest.TestCase):
             violation_err = err
 
         self.assertIsNotNone(violation_err)
-        self.assertEqual('x\n    >\n    3: x was 0', tests.error.wo_mandatory_location(str(violation_err)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                x
+                    >
+                    3: x was 0"""), tests.error.wo_mandatory_location(str(violation_err)))
 
     def test_with_multiple_lambdas_on_a_line(self) -> None:
         # pylint: disable=unnecessary-lambda
@@ -770,9 +799,11 @@ class TestRepr(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("len(x) < 10:\n"
-                         "len(x) was 10000\n"
-                         "x was [0, 1, 2, ...]", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                len(x) < 10:
+                len(x) was 10000
+                x was [0, 1, 2, ...]"""), tests.error.wo_mandatory_location(str(violation_error)))
 
 
 class TestClass(unittest.TestCase):
@@ -807,10 +838,12 @@ class TestClass(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("self.b.x > 0:\n"
-                         "self was A()\n"
-                         "self.b was B(x=0)\n"
-                         "self.b.x was 0", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                self.b.x > 0:
+                self was A()
+                self.b was B(x=0)
+                self.b.x was 0"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_nested_method(self) -> None:
         z = 10
@@ -888,10 +921,12 @@ class TestClosures(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("x < y + z:\n"
-                         "x was 100\n"
-                         "y was 4\n"
-                         "z was 5", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                x < y + z:
+                x was 100
+                y was 4
+                z was 5"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_global(self) -> None:
         @icontract.require(lambda x: x < SOME_GLOBAL_CONSTANT)
@@ -905,9 +940,11 @@ class TestClosures(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("x < SOME_GLOBAL_CONSTANT:\n"
-                         "SOME_GLOBAL_CONSTANT was 10\n"
-                         "x was 100", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                x < SOME_GLOBAL_CONSTANT:
+                SOME_GLOBAL_CONSTANT was 10
+                x was 100"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_closure_and_global(self) -> None:
         y = 4
@@ -923,10 +960,12 @@ class TestClosures(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("x < y + SOME_GLOBAL_CONSTANT:\n"
-                         "SOME_GLOBAL_CONSTANT was 10\n"
-                         "x was 100\n"
-                         "y was 4", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                x < y + SOME_GLOBAL_CONSTANT:
+                SOME_GLOBAL_CONSTANT was 10
+                x was 100
+                y was 4"""), tests.error.wo_mandatory_location(str(violation_error)))
 
 
 class TestWithNumpyMock(unittest.TestCase):
@@ -954,9 +993,11 @@ class TestWithNumpyMock(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('(arr > 0).all():\n'
-                         '(arr > 0).all() was False\n'
-                         'arr was NumpyArray([-3, 3])', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            textwrap.dedent("""\
+                (arr > 0).all():
+                (arr > 0).all() was False
+                arr was NumpyArray([-3, 3])"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_that_multiple_comparators_fail(self) -> None:
         """
