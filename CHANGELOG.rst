@@ -1,3 +1,9 @@
+2.5.3
+=====
+* Fixed reporting all arguments on violation (#219)
+* Propagated placeholders in re-computation (#218)
+* Fixed docstring for ``collect_variable_lookup`` (#217)
+
 2.5.2
 =====
 * Fixed handling of ``self`` when passed as kwarg (#213)
