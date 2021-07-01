@@ -9,6 +9,7 @@ Welcome to icontract's documentation!
    usage
    checking_types_at_runtime
    async
+   recipes
    implementation_details
    known_issues
    benchmarks
