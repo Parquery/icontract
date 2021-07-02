@@ -41,7 +41,8 @@ It also gives a base for a flourishing of a wider ecosystem:
   * together with IDE integrations such as
     `crosshair-pycharm`_ and `crosshair-vscode`_, and
 * An integration with `FastAPI`_ through `fastapi-icontract`_ to enforce contracts on your HTTP API and display them
-  in OpenAPI 3 schema and Swagger UI.
+  in OpenAPI 3 schema and Swagger UI, and
+* An extensive corpus, `Python-by-contract corpus`_, of Python programs annotated with contracts for educational, testing and research purposes.
 
 .. _pyicontract-lint: https://pypi.org/project/pyicontract-lint
 .. _sphinx-icontract: https://pypi.org/project/sphinx-icontract
@@ -55,7 +56,7 @@ It also gives a base for a flourishing of a wider ecosystem:
 .. _crosshair-vscode: https://github.com/mristin/crosshair-vscode/
 .. _FastAPI: https://github.com/tiangolo/fastapi/issues/1996
 .. _fastapi-icontract: https://pypi.org/project/fastapi-icontract/
-
+.. _Python-by-contract corpus: https://github.com/mristin/python-by-contract-corpus
 
 Related Projects
 ----------------

@@ -45,7 +45,7 @@ async, as most dunder methods need to be synchronous methods, and wrapping them 
 break that constraint.
 You can, of course, use synchronous invariants on *async* method functions without problems.
 
-.. _no-async-lambda limitation:
+.. _no_async_lambda_limitation:
 
 **No async lambda**.
 Another practical limitation is that Python does not support async lambda (see `this Python issue`_),
@@ -61,7 +61,7 @@ Please consider asking for async lambdas on `python-ideas mailing list`_ to give
 **Coroutine as condition result**.
 If the condition returns a `coroutine`_, the `coroutine`_ will be awaited before it is evaluated for truthiness.
 
-This means in practice that you can work around :ref:`no-async-lambda limitation` applying coroutine functions
+This means in practice that you can work around :ref:`no-async lambda limitation <no_async_lambda_limitation>` applying coroutine functions
 on your condition arguments (which in turn makes the condition result in a `coroutine`_).
 
 .. _coroutine: https://docs.python.org/3/glossary.html#term-coroutine
