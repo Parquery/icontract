@@ -444,3 +444,13 @@ From `ethz_eprog_2019/exercise_02/problem_03.py#L53`_:
     The walrus operator assigns the computed value to a variable *and* evaluates the value back.
     Hence we use a tuple to make the code "procedural" and re-use the assigned variable in the second element of the tuple.
 
+.. note::
+
+    The introduction of the walrus operator (`PEP 572`_) did spark some controversy and even lead to resigning of Guido van Rossum as Benevolent Dictator For Life (see `this article about PEP 572 on lwn.net`_).
+    With that said, you have to be careful not to abuse the feature.
+
+    For example, if the condition becomes *too* complex, it may be worth considering refactoring the code into a separate function (and testing it independently as well).
+    Putting contract condition in a separate function has a disadvantage, though, that you do not get as informative violation messages (see Section :ref:`Usage`) and they hinder the tools like `icontract-hypothesis`_.
+
+.. _PEP 572: https://www.python.org/dev/peps/pep-0572/
+.. _this article about PEP 572 on lwn.net: https://lwn.net/Articles/759558/
