@@ -9,8 +9,8 @@ from typing import List, MutableMapping, Any, Callable, Optional, cast, Set, Typ
 from icontract._types import Contract, Snapshot
 import icontract._checkers
 
-# Pylint can't deal with multiple Python versions.
-# pylint: disable=arguments-differ
+# Pylint can't deal with multiple Python versions and breaks on ``if``'s on method definitions.
+# pylint: skip-file
 
 
 def _collapse_invariants(bases: List[type], namespace: MutableMapping[str, Any]) -> None:
@@ -226,9 +226,9 @@ def _decorate_namespace_property(bases: List[type], namespace: MutableMapping[st
 
         contract_checker = icontract._checkers.find_checker(func=func)
         if contract_checker is not None:
-            preconditions = contract_checker.__preconditions__
-            snapshots = contract_checker.__postcondition_snapshots__
-            postconditions = contract_checker.__postconditions__
+            preconditions = contract_checker.__preconditions__  # type: ignore
+            snapshots = contract_checker.__postcondition_snapshots__  # type: ignore
+            postconditions = contract_checker.__postconditions__  # type: ignore
 
         preconditions = _collapse_preconditions(
             base_preconditions=base_preconditions,
@@ -256,9 +256,9 @@ def _decorate_namespace_property(bases: List[type], namespace: MutableMapping[st
                     raise NotImplementedError("Unhandled case: func neither fget, fset nor fdel")
 
             # Override the preconditions and postconditions
-            contract_checker.__preconditions__ = preconditions
-            contract_checker.__postcondition_snapshots__ = snapshots
-            contract_checker.__postconditions__ = postconditions
+            contract_checker.__preconditions__ = preconditions  # type: ignore
+            contract_checker.__postcondition_snapshots__ = snapshots  # type: ignore
+            contract_checker.__postconditions__ = postconditions  # type: ignore
 
     if fget != value.fget or fset != value.fset or fdel != value.fdel:
         namespace[key] = property(fget=fget, fset=fset, fdel=fdel)
@@ -335,7 +335,7 @@ class DBCMeta(abc.ABCMeta):
             # This usually works since icontract-hypothesis does not use DBCMeta,
             # but blows up since icontract creates DBC with DBCMeta meta-class at the import time.
             if cls.__module__ != __name__:
-                _register_for_hypothesis(cls)
+                _register_for_hypothesis(cls)  # type: ignore
 
             return cls
     else:
@@ -344,7 +344,7 @@ class DBCMeta(abc.ABCMeta):
             """Create a class with inherited preconditions, postconditions and invariants."""
             _dbc_decorate_namespace(bases, namespace)
 
-            cls = super().__new__(mlcs, name, bases, namespace, **kwargs)  # type: ignore
+            cls = super().__new__(mlcs, name, bases, namespace, **kwargs)
 
             if hasattr(cls, "__invariants__"):
                 icontract._checkers.add_invariant_checks(cls=cls)
@@ -354,7 +354,7 @@ class DBCMeta(abc.ABCMeta):
             # This usually works since icontract-hypothesis does not use DBCMeta,
             # but blows up since icontract creates DBC with DBCMeta meta-class at the import time.
             if cls.__module__ != __name__:
-                _register_for_hypothesis(cls)
+                _register_for_hypothesis(cls)  # type: ignore
 
             return cls
 

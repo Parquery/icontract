@@ -996,8 +996,8 @@ def add_invariant_checks(cls: type) -> None:
 
     for name, prop in names_properties:
         new_prop = property(
-            fget=_decorate_with_invariants(func=prop.fget, is_init=False) if prop.fget else None,  # type: ignore
-            fset=_decorate_with_invariants(func=prop.fset, is_init=False) if prop.fset else None,  # type: ignore
-            fdel=_decorate_with_invariants(func=prop.fdel, is_init=False) if prop.fdel else None,  # type: ignore
+            fget=_decorate_with_invariants(func=prop.fget, is_init=False) if prop.fget else None,
+            fset=_decorate_with_invariants(func=prop.fset, is_init=False) if prop.fset else None,
+            fdel=_decorate_with_invariants(func=prop.fdel, is_init=False) if prop.fdel else None,
             doc=prop.__doc__)
         setattr(cls, name, new_prop)

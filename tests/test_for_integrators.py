@@ -1,7 +1,7 @@
 """Test logic that can be potentially used by the integrators such as third-party libraries."""
 
 # pylint: disable=no-self-use,missing-docstring
-# pylint: disable=invalid-name,unnecessary-lambda,no-member
+# pylint: disable=invalid-name,unnecessary-lambda
 
 import ast
 import unittest

@@ -239,7 +239,6 @@ class Visitor(ast.NodeVisitor):
         # value assigned to each visited node
         self.recomputed_values = dict()  # type: Dict[ast.AST, Any]
 
-    # pylint: disable=no-member
     if sys.version_info < (3, 8):
 
         def visit_Num(self, node: ast.Num) -> Union[int, float]:
@@ -327,8 +326,6 @@ class Visitor(ast.NodeVisitor):
 
             self.recomputed_values[node] = joined_str
             return joined_str
-
-    # pylint: enable=no-member
 
     def visit_List(self, node: ast.List) -> Union[List[Any], Placeholder]:
         """Visit the elements and assemble the results into a list."""
@@ -644,7 +641,7 @@ class Visitor(ast.NodeVisitor):
         return result
 
     if sys.version_info >= (3, 8):
-        # pylint: disable=no-member
+
         def visit_NamedExpr(self, node: ast.NamedExpr) -> Any:
             """Visit the node's ``value`` and assign it to both this node and the target."""
             value = self.visit(node=node.value)

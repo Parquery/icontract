@@ -161,7 +161,7 @@ class TestInvariant(unittest.TestCase):
     def test_ok(self) -> None:
         order = []  # type: List[str]
 
-        @icontract.invariant(lambda self: self.some_func())  # pylint: disable=no-member
+        @icontract.invariant(lambda self: self.some_func())
         class SomeClass(icontract.DBC):
             def __init__(self) -> None:
                 order.append('__init__')
@@ -190,7 +190,7 @@ class TestInvariant(unittest.TestCase):
         class CustomError(Exception):
             pass
 
-        @icontract.invariant(lambda self: self.some_func())  # pylint: disable=no-member
+        @icontract.invariant(lambda self: self.some_func())
         class SomeClass(icontract.DBC):
             def __init__(self) -> None:
                 order.append('__init__')
@@ -230,7 +230,7 @@ class TestInvariant(unittest.TestCase):
     def test_member_function_call_in_constructor(self) -> None:
         order = []  # type: List[str]
 
-        @icontract.invariant(lambda self: self.some_attribute > 0)  # pylint: disable=no-member
+        @icontract.invariant(lambda self: self.some_attribute > 0)
         class SomeClass(icontract.DBC):
             def __init__(self) -> None:
                 order.append('__init__ enters')

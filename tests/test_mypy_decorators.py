@@ -33,18 +33,19 @@ class TestMypyDecorators(unittest.TestCase):
             pth = pathlib.Path(tmpdir) / "source.py"
             pth.write_text(content)
 
-            proc = subprocess.Popen(['mypy', '--strict', str(pth)], universal_newlines=True, stdout=subprocess.PIPE)
-            out, err = proc.communicate()
+            with subprocess.Popen(
+                ['mypy', '--strict', str(pth)], universal_newlines=True, stdout=subprocess.PIPE) as proc:
+                out, err = proc.communicate()
 
-            self.assertIsNone(err)
-            self.assertEqual(
-                textwrap.dedent('''\
-                    {path}:8: error: Argument 1 to "f1" has incompatible type "str"; expected "int"
-                    {path}:13: error: Argument 1 to "f2" has incompatible type "str"; expected "int"
-                    {path}:18: error: Argument 1 to "f3" has incompatible type "str"; expected "int"
-                    Found 3 errors in 1 file (checked 1 source file)
-                    '''.format(path=pth)),
-                out)
+                self.assertIsNone(err)
+                self.assertEqual(
+                    textwrap.dedent('''\
+                        {path}:8: error: Argument 1 to "f1" has incompatible type "str"; expected "int"
+                        {path}:13: error: Argument 1 to "f2" has incompatible type "str"; expected "int"
+                        {path}:18: error: Argument 1 to "f3" has incompatible type "str"; expected "int"
+                        Found 3 errors in 1 file (checked 1 source file)
+                        '''.format(path=pth)),
+                    out)
 
 
 if __name__ == '__main__':

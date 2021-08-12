@@ -1,7 +1,7 @@
 # pylint: disable=missing-docstring
 # pylint: disable=invalid-name
 # pylint: disable=unused-argument
-# pylint: disable=no-member
+
 import textwrap
 import unittest
 from typing import NamedTuple, Optional  # pylint: disable=unused-import

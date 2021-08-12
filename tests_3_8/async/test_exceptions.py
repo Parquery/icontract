@@ -1,7 +1,7 @@
 # The module ``unittest`` supports async only from 3.8 on.
 # That is why we had to move this test to 3.8 specific tests.
 
-# pylint: disable=missing-docstring, invalid-name, no-member, unnecessary-lambda
+# pylint: disable=missing-docstring, invalid-name, unnecessary-lambda
 import unittest
 from typing import Optional, List
 
