@@ -28,4 +28,5 @@ aRepr.maxother = 256
 # Contracts marked with SLOW are also disabled if the interpreter is run in optimized mode (``-O`` or ``-OO``).
 SLOW = __debug__ and os.environ.get("ICONTRACT_SLOW", "") != ""
 CallableT = TypeVar('CallableT', bound=Callable[..., Any])
+ClassT = TypeVar('ClassT', bound=type)
 ExceptionT = TypeVar('ExceptionT', bound=BaseException)

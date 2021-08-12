@@ -6,7 +6,7 @@ from typing import Callable, Any, Iterable, Optional, Tuple, List, Mapping, \
     MutableMapping, Dict, cast
 
 import icontract._represent
-from icontract._globals import CallableT
+from icontract._globals import CallableT, ClassT
 from icontract._types import Contract, Snapshot
 from icontract.errors import ViolationError
 
@@ -924,7 +924,7 @@ def _already_decorated_with_invariants(func: CallableT) -> bool:
     return already_decorated
 
 
-def add_invariant_checks(cls: type) -> None:
+def add_invariant_checks(cls: ClassT) -> None:
     """Decorate each of the class functions with invariant checks if not already decorated."""
     # Candidates for the decoration as list of (name, dir() value)
     init_name_func = None  # type: Optional[Tuple[str, Callable[..., None]]]
