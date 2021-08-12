@@ -7,7 +7,7 @@ import unittest
 
 
 class TestMypyDecorators(unittest.TestCase):
-    def test_mypy_me(self) -> None:
+    def test_functions(self) -> None:
         with tempfile.TemporaryDirectory(prefix="mypy_fail_case_") as tmpdir:
             content = textwrap.dedent('''\
                 """Implement a fail case for mypy to test that the types are preserved with the decorators."""
@@ -44,6 +44,41 @@ class TestMypyDecorators(unittest.TestCase):
                         {path}:13: error: Argument 1 to "f2" has incompatible type "str"; expected "int"
                         {path}:18: error: Argument 1 to "f3" has incompatible type "str"; expected "int"
                         Found 3 errors in 1 file (checked 1 source file)
+                        '''.format(path=pth)),
+                    out)
+
+    def test_class_type_when_decorated_with_invariant(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="mypy_fail_case_") as tmpdir:
+            content = textwrap.dedent('''\
+                """Implement a fail case for mypy to test that the type of class is preserved."""
+
+                import icontract
+
+                class SomeClass:
+                    pass
+                
+                reveal_type(SomeClass)
+                    
+                @icontract.invariant(lambda self: self.x > 0)
+                class Decorated:
+                    def __init__(self) -> None:
+                        self.x = 1
+
+                reveal_type(Decorated)
+                ''')
+
+            pth = pathlib.Path(tmpdir) / "source.py"
+            pth.write_text(content)
+
+            with subprocess.Popen(
+                ['mypy', '--strict', str(pth)], universal_newlines=True, stdout=subprocess.PIPE) as proc:
+                out, err = proc.communicate()
+
+                self.assertIsNone(err)
+                self.assertEqual(
+                    textwrap.dedent('''\
+                        {path}:8: note: Revealed type is "def () -> source.SomeClass"
+                        {path}:15: note: Revealed type is "def () -> source.Decorated"
                         '''.format(path=pth)),
                     out)
 
