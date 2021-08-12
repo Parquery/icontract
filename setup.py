@@ -52,7 +52,7 @@ setup(
     # yapf: disable
     extras_require={
         'dev': [
-            'mypy==0.812', 'pylint==2.3.1', 'yapf==0.20.2', 'tox>=3.0.0', 'pydocstyle>=2.1.1,<3', 'coverage>=4.5.1,<5',
+            'mypy==0.910', 'pylint==2.9.6', 'yapf==0.20.2', 'tox>=3.0.0', 'pydocstyle>=2.1.1,<3', 'coverage>=4.5.1,<5',
             'docutils>=0.14,<1', 'pygments>=2.2.0,<3', 'dpcontracts==0.6.0', 'tabulate>=0.8.7,<1',
             'py-cpuinfo>=5.0.0,<6', 'typeguard>=2,<3', 'astor==0.8.1'
         ] + (['deal==4.1.0'] if sys.version_info >= (3, 8) else []) + (['asyncstdlib==3.9.1']

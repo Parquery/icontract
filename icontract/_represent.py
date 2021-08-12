@@ -55,7 +55,7 @@ class Visitor(ast.NodeVisitor):
         self._atok = atok
 
     if sys.version_info >= (3, 6):
-        # pylint: disable=no-member
+
         def visit_JoinedStr(self, node: ast.JoinedStr) -> None:
             """Show the whole joined strings without descending into the values."""
             if node in self._recomputed_values:
@@ -100,7 +100,7 @@ class Visitor(ast.NodeVisitor):
         self.generic_visit(node=node)
 
     if sys.version_info >= (3, 8):
-        # pylint: disable=no-member
+
         def visit_NamedExpr(self, node: ast.NamedExpr) -> Any:
             """Represent the target with the value of the node."""
             if node in self._recomputed_values:

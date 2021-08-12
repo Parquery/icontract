@@ -2,7 +2,6 @@
 # pylint: disable=no-self-use
 # pylint: disable=invalid-name
 # pylint: disable=unused-argument
-# pylint: disable=no-member
 # pylint: disable=unnecessary-lambda
 import copy
 import textwrap

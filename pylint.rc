@@ -7,5 +7,5 @@ generated-members=bottle\.request\.forms\.decode,bottle\.request\.query\.decode
 max-line-length=120
 
 [MESSAGES CONTROL]
-disable=too-few-public-methods,abstract-class-little-used,len-as-condition,bad-continuation,bad-whitespace,duplicate-code,no-else-raise,too-many-locals,too-many-branches,too-many-lines,too-many-arguments,too-many-statements,too-many-nested-blocks,too-many-function-args,too-many-instance-attributes,too-many-public-methods,protected-access,consider-using-in
+disable=too-few-public-methods,abstract-class-little-used,len-as-condition,bad-continuation,bad-whitespace,duplicate-code,no-else-raise,too-many-locals,too-many-branches,too-many-lines,too-many-arguments,too-many-statements,too-many-nested-blocks,too-many-function-args,too-many-instance-attributes,too-many-public-methods,protected-access,consider-using-in,no-member
 

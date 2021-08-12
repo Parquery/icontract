@@ -1,6 +1,5 @@
 # pylint: disable=missing-docstring
 # pylint: disable=invalid-name
-# pylint: disable=no-member
 
 import unittest
 from typing import Optional

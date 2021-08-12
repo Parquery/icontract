@@ -382,7 +382,6 @@ class TestPropertyViolation(unittest.TestCase):
                 pass
 
         class SomeClass(SomeBase):
-            # pylint: disable=no-member
             @SomeBase.some_prop.setter  # type: ignore
             def some_prop(self, value: int) -> None:
                 pass
@@ -423,7 +422,6 @@ class TestPropertyViolation(unittest.TestCase):
             def __repr__(self) -> str:
                 return "an instance of {}".format(self.__class__.__name__)
 
-            # pylint: disable=no-member
             @SomeBase.some_prop.deleter  # type: ignore
             def some_prop(self) -> None:
                 pass
