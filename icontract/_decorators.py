@@ -2,10 +2,10 @@
 import inspect
 import reprlib
 import traceback
-from typing import Callable, Optional, Union, Any, List, Type  # pylint: disable=unused-import
+from typing import Callable, Optional, Union, Any, List, Type, TypeVar  # pylint: disable=unused-import
 
 import icontract._checkers
-from icontract._globals import CallableT, ExceptionT
+from icontract._globals import CallableT, ExceptionT, ClassT
 from icontract._types import Contract, Snapshot
 
 
@@ -353,7 +353,7 @@ class invariant:  # pylint: disable=invalid-name
             raise ValueError("Expected an invariant condition with at most an argument 'self', but got: {}".format(
                 self._contract.condition_args))
 
-    def __call__(self, cls: type) -> type:
+    def __call__(self, cls: ClassT) -> ClassT:
         """
         Decorate each of the public methods with the invariant.
 

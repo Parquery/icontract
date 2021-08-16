@@ -50,7 +50,7 @@ class TestMypyDecorators(unittest.TestCase):
     def test_class_type_when_decorated_with_invariant(self) -> None:
         with tempfile.TemporaryDirectory(prefix="mypy_fail_case_") as tmpdir:
             content = textwrap.dedent('''\
-                """Implement a fail case for mypy to test that the type of class is preserved."""
+                """Implement a passing case for mypy to test that the type of class is preserved."""
 
                 import icontract
 
@@ -80,6 +80,33 @@ class TestMypyDecorators(unittest.TestCase):
                         {path}:8: note: Revealed type is "def () -> source.SomeClass"
                         {path}:15: note: Revealed type is "def () -> source.Decorated"
                         '''.format(path=pth)),
+                    out)
+
+    def test_that_mypy_complains_when_decorating_non_type_with_invariant(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="mypy_fail_case_") as tmpdir:
+            content = textwrap.dedent('''\
+                """Provide a fail case to test that mypy complains when we decorate a non-type with invariant."""
+
+                import icontract
+
+                @icontract.invariant(lambda: True)
+                def some_func() -> None:
+                    pass
+                ''')
+
+            pth = pathlib.Path(tmpdir) / "source.py"
+            pth.write_text(content)
+
+            with subprocess.Popen(
+                ['mypy', '--strict', str(pth)], universal_newlines=True, stdout=subprocess.PIPE) as proc:
+                out, err = proc.communicate()
+
+                self.assertIsNone(err)
+                self.assertEqual(
+                    textwrap.dedent('''\
+        {path}:5: error: Value of type variable "ClassT" of "__call__" of "invariant" cannot be "Callable[[], None]"
+        Found 1 error in 1 file (checked 1 source file)
+        '''.format(path=pth)),
                     out)
 
 
