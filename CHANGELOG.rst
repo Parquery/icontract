@@ -1,3 +1,7 @@
+2.5.4
+=====
+* Made type annotation for ``invariant`` decorator more specific (#227)
+
 2.5.3
 =====
 * Fixed reporting all arguments on violation (#219)
