@@ -8,7 +8,9 @@ import re
 import reprlib
 import textwrap
 import unittest
-from typing import Optional, List, Tuple  # pylint: disable=unused-import
+from typing import Optional, List, Tuple, Any  # pylint: disable=unused-import
+
+import numpy
 
 import icontract._represent
 import tests.error
@@ -1031,6 +1033,53 @@ class TestWithNumpyMock(unittest.TestCase):
 
         self.assertIsNotNone(value_err)
         self.assertEqual('The truth value of an array with more than one element is ambiguous.', str(value_err))
+
+
+class TestNumpyArrays(unittest.TestCase):
+    def test_arange_in_args(self) -> None:
+        # This test case addresses ``visit_Call` in the Visitor.
+        # See: https://github.com/Parquery/icontract/issues/229
+
+        @icontract.require(lambda arr: len(arr) > 2)
+        def some_func(arr: Any) -> None:
+            return
+
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            some_func(arr=numpy.arange(2))
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual(
+            textwrap.dedent("""\
+                len(arr) > 2:
+                arr was array([0, 1])
+                len(arr) was 2"""), tests.error.wo_mandatory_location(str(violation_error)))
+
+    def test_arange_in_kwargs_values(self) -> None:
+        # This test case addresses ``visit_Call` in the Visitor.
+        # See: https://github.com/Parquery/icontract/issues/229
+
+        def custom_len(arr: Any) -> int:
+            return len(arr)
+
+        @icontract.require(lambda arr: custom_len(arr=arr) > 2)
+        def some_func(arr: Any) -> None:
+            return
+
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            some_func(arr=numpy.arange(2))
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual(
+            textwrap.dedent("""\
+                custom_len(arr=arr) > 2:
+                arr was array([0, 1])
+                custom_len(arr=arr) was 2"""), tests.error.wo_mandatory_location(str(violation_error)))
 
 
 class TestRecomputationFailure(unittest.TestCase):
