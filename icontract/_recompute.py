@@ -10,8 +10,6 @@ import sys
 import uuid
 from typing import (Any, Mapping, Dict, List, Optional, Union, Tuple, Set, Callable, cast, Iterable, TypeVar)  # pylint: disable=unused-import
 
-from _ast import If
-
 
 class Placeholder:
     """Represent a placeholder for variables local to the lambda such as targets in generator expressions."""
@@ -134,8 +132,7 @@ def _translate_all_expression_to_a_module(generator_exp: ast.GeneratorExp, gener
         ast.Tuple(elts=[ast.Name(id=result_id, ctx=ast.Load()),
                         ast.Constant(value=None, kind=None)], ctx=ast.Load()))
 
-    critical_if: If = ast.If(
-        test=ast.Name(id=result_id, ctx=ast.Load()), body=[ast.Pass()], orelse=[exceptional_return])
+    critical_if = ast.If(test=ast.Name(id=result_id, ctx=ast.Load()), body=[ast.Pass()], orelse=[exceptional_return])
 
     # Previous inner block to be added as body to the next outer block
     block = None  # type: Optional[List[ast.stmt]]
