@@ -335,7 +335,7 @@ class Visitor(ast.NodeVisitor):
         recomputed_elts = [self.visit(node=elt) for elt in node.elts]
 
         # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
-        if PLACEHOLDER in recomputed_elts:
+        if any(recomputed_elt is PLACEHOLDER for recomputed_elt in recomputed_elts):
             return PLACEHOLDER
 
         self.recomputed_values[node] = recomputed_elts
@@ -348,7 +348,7 @@ class Visitor(ast.NodeVisitor):
 
         recomputed_elts = tuple(self.visit(node=elt) for elt in node.elts)
         # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
-        if PLACEHOLDER in recomputed_elts:
+        if any(recomputed_elt is PLACEHOLDER for recomputed_elt in recomputed_elts):
             return PLACEHOLDER
 
         self.recomputed_values[node] = recomputed_elts
@@ -358,7 +358,7 @@ class Visitor(ast.NodeVisitor):
         """Visit the elements and assemble the results into a set."""
         recomputed_elts = set(self.visit(node=elt) for elt in node.elts)
         # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
-        if PLACEHOLDER in recomputed_elts:
+        if any(recomputed_elt is PLACEHOLDER for recomputed_elt in recomputed_elts):
             return PLACEHOLDER
 
         self.recomputed_values[node] = recomputed_elts
@@ -374,7 +374,7 @@ class Visitor(ast.NodeVisitor):
             recomputed_dict[self.visit(node=key)] = self.visit(node=val)
 
         # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
-        if PLACEHOLDER in recomputed_dict or PLACEHOLDER in recomputed_dict.values():
+        if any(key is PLACEHOLDER or value is PLACEHOLDER for key, value in recomputed_dict.items()):
             return PLACEHOLDER
 
         self.recomputed_values[node] = recomputed_dict
@@ -441,7 +441,7 @@ class Visitor(ast.NodeVisitor):
         right = self.visit(node=node.right)
 
         # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
-        if left == PLACEHOLDER or right == PLACEHOLDER:
+        if left is PLACEHOLDER or right is PLACEHOLDER:
             return PLACEHOLDER
 
         if isinstance(node.op, ast.Add):
@@ -481,7 +481,7 @@ class Visitor(ast.NodeVisitor):
         values = [self.visit(value_node) for value_node in node.values]
 
         # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
-        if PLACEHOLDER in values:
+        if any(value is PLACEHOLDER for value in values):
             return PLACEHOLDER
 
         if isinstance(node.op, ast.And):
@@ -501,7 +501,7 @@ class Visitor(ast.NodeVisitor):
         comparators = [self.visit(node=comparator) for comparator in node.comparators]
 
         # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
-        if left is PLACEHOLDER or PLACEHOLDER in comparators:
+        if left is PLACEHOLDER or any(comparator is PLACEHOLDER for comparator in comparators):
             return PLACEHOLDER
 
         result = None  # type: Optional[Any]
@@ -544,7 +544,7 @@ class Visitor(ast.NodeVisitor):
         func = self.visit(node=node.func)
 
         # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
-        if func == PLACEHOLDER:
+        if func is PLACEHOLDER:
             return PLACEHOLDER
 
         if not callable(func):
@@ -587,7 +587,8 @@ class Visitor(ast.NodeVisitor):
                     kwargs[keyword.arg] = self.visit(node=keyword.value)
 
             # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
-            if PLACEHOLDER in args or PLACEHOLDER in kwargs or PLACEHOLDER in kwargs.values():
+            if (any(arg is PLACEHOLDER for arg in args)
+                    or any(key is PLACEHOLDER or value is PLACEHOLDER for key, value in kwargs.items())):
                 return PLACEHOLDER
 
             result = func(*args, **kwargs)
@@ -701,7 +702,7 @@ class Visitor(ast.NodeVisitor):
         """Visit each dimension of the advanced slicing and assemble the dimensions in a tuple."""
         result = tuple(self.visit(node=dim) for dim in node.dims)
 
-        if PLACEHOLDER in result:
+        if any(value is PLACEHOLDER for value in result):
             return PLACEHOLDER
 
         self.recomputed_values[node] = result
@@ -775,7 +776,7 @@ class Visitor(ast.NodeVisitor):
     def _execute_comprehension(self, node: Union[ast.ListComp, ast.SetComp, ast.GeneratorExp, ast.DictComp]) -> Any:
         """Compile the generator or comprehension from the node and execute the compiled code."""
         # Please see "NOTE ABOUT NAME 🠒 VALUE STACKING".
-        if PLACEHOLDER in self._name_to_value.values():
+        if any(value is PLACEHOLDER for value in self._name_to_value.values()):
             return PLACEHOLDER
 
         args = [ast.arg(arg=name, annotation=None) for name in sorted(self._name_to_value.keys())]
