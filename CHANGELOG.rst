@@ -1,3 +1,8 @@
+2.5.5
+=====
+* Fixed representation of numpy arrays (#232)
+* Removed tag for Python 3.5 (#231)
+
 2.5.4
 =====
 * Made type annotation for ``invariant`` decorator more specific (#227)
