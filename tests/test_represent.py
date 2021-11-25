@@ -363,6 +363,7 @@ class TestReprValues(unittest.TestCase):
             textwrap.dedent("""\
                 x > lst[1]:
                 lst was [1, 2, 3]
+                lst[1] was 2
                 x was 1"""), tests.error.wo_mandatory_location(str(violation_error)))
 
     def test_slice(self) -> None:
@@ -383,8 +384,35 @@ class TestReprValues(unittest.TestCase):
             textwrap.dedent("""\
                 x > sum(lst[1:2:1]):
                 lst was [1, 2, 3]
+                lst[1:2:1] was [2]
                 sum(lst[1:2:1]) was 2
                 x was 1"""), tests.error.wo_mandatory_location(str(violation_error)))
+
+    def test_ext_slice(self) -> None:
+        class SomeClass:
+            def __getitem__(self, item: Any) -> Any:
+                return item
+
+            def __repr__(self) -> str:
+                return "<instance of SomeClass>"
+
+        @icontract.require(lambda something: something[1, 2:3] is None)
+        def func(something: SomeClass) -> None:
+            pass
+
+        violation_err = None  # type: Optional[icontract.ViolationError]
+        try:
+            an_instance = SomeClass()
+            func(something=an_instance)
+        except icontract.ViolationError as err:
+            violation_err = err
+
+        self.assertIsNotNone(violation_err)
+        self.assertEqual(
+            textwrap.dedent('''\
+                something[1, 2:3] is None:
+                something was <instance of SomeClass>
+                something[1, 2:3] was (1, slice(2, 3, None))'''), tests.error.wo_mandatory_location(str(violation_err)))
 
     def test_lambda(self) -> None:
         @icontract.require(lambda x: x > (lambda y: y + 4).__call__(y=7))  # type: ignore
@@ -507,6 +535,7 @@ class TestGeneratorExpr(unittest.TestCase):
                   result_cell = ''
                 layout was [['L', '.', '#'], ['.', '#', '#']]
                 result was ([['', '', ''], ['', '', '']], 0)
+                result[0] was [['', '', ''], ['', '', '']]
                 zip(layout, result[0]) was <zip object at some address>'''), text)
 
 

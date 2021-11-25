@@ -718,7 +718,6 @@ class Visitor(ast.NodeVisitor):
             return PLACEHOLDER
 
         result = value[a_slice]
-
         self.recomputed_values[node] = result
         return result
 
