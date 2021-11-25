@@ -5,7 +5,6 @@ import builtins
 import copy
 import functools
 import inspect
-import platform
 import sys
 import uuid
 from typing import (Any, Mapping, Dict, List, Optional, Union, Tuple, Set, Callable, cast, Iterable, TypeVar)  # pylint: disable=unused-import
@@ -163,11 +162,11 @@ def _translate_all_expression_to_a_module(generator_exp: ast.GeneratorExp, gener
 
     args = [ast.arg(arg=name, annotation=None) for name in sorted(name_to_value.keys())]
 
-    if platform.python_version_tuple() < ('3', '5'):
-        raise NotImplementedError("Python versions below 3.5 not supported, got: {}".format(platform.python_version()))
+    if sys.version_info < (3, 5):
+        raise NotImplementedError("Python versions below 3.5 not supported, got: {}".format(sys.version_info))
 
     if not is_async:
-        if platform.python_version_tuple() < ('3', '8'):
+        if sys.version_info < (3, 8):
             func_def_node = ast.FunctionDef(
                 name=generated_function_name,
                 args=ast.arguments(args=args, kwonlyargs=[], kw_defaults=[], defaults=[], vararg=None, kwarg=None),
@@ -185,23 +184,23 @@ def _translate_all_expression_to_a_module(generator_exp: ast.GeneratorExp, gener
 
             module_node = ast.Module(body=[func_def_node], type_ignores=[])
     else:
-        if platform.python_version_tuple() < ('3', '8'):
-            func_def_node = ast.AsyncFunctionDef(
+        if sys.version_info < (3, 8):
+            async_func_def_node = ast.AsyncFunctionDef(
                 name=generated_function_name,
                 args=ast.arguments(args=args, kwonlyargs=[], kw_defaults=[], defaults=[], vararg=None, kwarg=None),
                 decorator_list=[],
                 body=block)
 
-            module_node = ast.Module(body=[func_def_node])
+            module_node = ast.Module(body=[async_func_def_node])
         else:
-            func_def_node = ast.AsyncFunctionDef(
+            async_func_def_node = ast.AsyncFunctionDef(
                 name=generated_function_name,
                 args=ast.arguments(
                     args=args, posonlyargs=[], kwonlyargs=[], kw_defaults=[], defaults=[], vararg=None, kwarg=None),
                 decorator_list=[],
                 body=block)
 
-            module_node = ast.Module(body=[func_def_node], type_ignores=[])
+            module_node = ast.Module(body=[async_func_def_node], type_ignores=[])
 
     ast.fix_missing_locations(module_node)
 
@@ -664,16 +663,18 @@ class Visitor(ast.NodeVisitor):
 
             return value
 
-    def visit_Index(self, node: ast.Index) -> Any:
-        """Visit the node's ``value``."""
-        result = self.visit(node=node.value)
+    if sys.version_info < (3, 9):
 
-        # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
-        if result is PLACEHOLDER:
-            return PLACEHOLDER
+        def visit_Index(self, node: ast.Index) -> Any:
+            """Visit the node's ``value``."""
+            result = self.visit(node=node.value)
 
-        self.recomputed_values[node] = result
-        return result
+            # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
+            if result is PLACEHOLDER:
+                return PLACEHOLDER
+
+            self.recomputed_values[node] = result
+            return result
 
     def visit_Slice(self, node: ast.Slice) -> Union[slice, Placeholder]:
         """Visit ``lower``, ``upper`` and ``step`` and recompute the node as a ``slice``."""
@@ -698,15 +699,17 @@ class Visitor(ast.NodeVisitor):
         self.recomputed_values[node] = result
         return result
 
-    def visit_ExtSlice(self, node: ast.ExtSlice) -> Union[Tuple[Any, ...], Placeholder]:
-        """Visit each dimension of the advanced slicing and assemble the dimensions in a tuple."""
-        result = tuple(self.visit(node=dim) for dim in node.dims)
+    if sys.version_info < (3, 9):
 
-        if any(value is PLACEHOLDER for value in result):
-            return PLACEHOLDER
+        def visit_ExtSlice(self, node: ast.ExtSlice) -> Union[Tuple[Any, ...], Placeholder]:
+            """Visit each dimension of the advanced slicing and assemble the dimensions in a tuple."""
+            result = tuple(self.visit(node=dim) for dim in node.dims)
 
-        self.recomputed_values[node] = result
-        return result
+            if any(value is PLACEHOLDER for value in result):
+                return PLACEHOLDER
+
+            self.recomputed_values[node] = result
+            return result
 
     def visit_Subscript(self, node: ast.Subscript) -> Any:
         """Visit the ``slice`` and a ``value`` and get the element."""
@@ -780,11 +783,10 @@ class Visitor(ast.NodeVisitor):
 
         args = [ast.arg(arg=name, annotation=None) for name in sorted(self._name_to_value.keys())]
 
-        if platform.python_version_tuple() < ('3', ):
-            raise NotImplementedError("Python versions below 3 not supported, got: {}".format(
-                platform.python_version()))
+        if sys.version_info < (3, ):
+            raise NotImplementedError("Python versions below 3 not supported, got: {}".format(sys.version_info))
 
-        if platform.python_version_tuple() < ('3', '8'):
+        if sys.version_info < (3, 8):
             func_def_node = ast.FunctionDef(
                 name="generator_expr",
                 args=ast.arguments(args=args, kwonlyargs=[], kw_defaults=[], defaults=[]),

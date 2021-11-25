@@ -1,7 +1,7 @@
 """Define the metaclass necessary to inherit the contracts from the base classes."""
 import abc
 import inspect
-import platform
+import sys
 import weakref
 from typing import List, MutableMapping, Any, Callable, Optional, cast, Set, Type, \
     TypeVar  # pylint: disable=unused-import
@@ -316,12 +316,12 @@ class DBCMeta(abc.ABCMeta):
     # instead of ``mcs``.
     # pylint: disable=bad-mcs-classmethod-argument
 
-    if platform.python_version_tuple() < ('3', ):
-        raise NotImplementedError("Python versions below not supported, got: {}".format(platform.python_version()))
+    if sys.version_info < (3, ):
+        raise NotImplementedError("Python versions below not supported, got: {}".format(sys.version_info))
 
-    if platform.python_version_tuple() <= ('3', '5'):
+    if sys.version_info < (3, 6):
         # pylint: disable=arguments-differ
-        def __new__(mlcs, name, bases, namespace):  # type: ignore
+        def __new__(mlcs, name, bases, namespace):
             """Create a class with inherited preconditions, postconditions and invariants."""
             _dbc_decorate_namespace(bases, namespace)
 
@@ -335,7 +335,7 @@ class DBCMeta(abc.ABCMeta):
             # This usually works since icontract-hypothesis does not use DBCMeta,
             # but blows up since icontract creates DBC with DBCMeta meta-class at the import time.
             if cls.__module__ != __name__:
-                _register_for_hypothesis(cls)  # type: ignore
+                _register_for_hypothesis(cls)
 
             return cls
     else:

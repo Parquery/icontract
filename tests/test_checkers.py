@@ -66,7 +66,8 @@ class TestResolveKwargs(unittest.TestCase):
             type_error = error
 
         assert type_error is not None
-        self.assertEqual("some_func() takes 2 positional arguments but 3 were given", str(type_error))
+        self.assertRegex(
+            str(type_error), r"^([a-zA-Z_0-9<>.]+\.)?some_func\(\) takes 2 positional arguments but 3 were given$")
 
     def test_that_result_in_kwargs_raises_an_error(self) -> None:
         @icontract.ensure(lambda result: result > 0)
