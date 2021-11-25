@@ -154,6 +154,16 @@ class Visitor(ast.NodeVisitor):
 
         self.generic_visit(node=node)
 
+    def visit_Subscript(self, node: ast.Subscript) -> None:
+        """Represent the subscript with its source code."""
+        if node in self._recomputed_values:
+            value = self._recomputed_values[node]
+            text = self._atok.get_text(node)
+
+            self.reprs[text] = value
+
+        self.generic_visit(node=node)
+
 
 def is_lambda(a_function: CallableT) -> bool:
     """

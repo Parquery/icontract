@@ -31,6 +31,7 @@ class TestNoneSpecified(unittest.TestCase):
         self.assertEqual(
             textwrap.dedent("""\
                 (y := x + 3, x > 0)[1]:
+                (y := x + 3, x > 0)[1] was False
                 x was -1
                 y was 2"""), tests.error.wo_mandatory_location(str(violation_error)))
 
