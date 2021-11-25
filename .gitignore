@@ -1,5 +1,4 @@
-venv3/
-venv/
+venv*/
 .mypy_cache/
 .idea/
 *.pyc

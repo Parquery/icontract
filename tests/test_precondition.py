@@ -9,7 +9,7 @@ import pathlib
 import textwrap
 import time
 import unittest
-from typing import Optional, Callable, Any  # pylint: disable=unused-import
+from typing import Optional  # pylint: disable=unused-import
 
 import icontract
 from icontract._globals import CallableT
@@ -611,7 +611,8 @@ class TestInvalid(unittest.TestCase):
             type_error = err
 
         self.assertIsNotNone(type_error)
-        self.assertEqual('some_func() takes 0 positional arguments but 1 was given', str(type_error))
+        self.assertRegex(
+            str(type_error), r'^([a-zA-Z_0-9<>.]+\.)?some_func\(\) takes 0 positional arguments but 1 was given$')
 
     def test_unexpected_keyword_argument(self) -> None:
         @icontract.require(lambda: True)
@@ -626,7 +627,8 @@ class TestInvalid(unittest.TestCase):
             type_error = err
 
         self.assertIsNotNone(type_error)
-        self.assertEqual("some_func() got an unexpected keyword argument 'x'", str(type_error))
+        self.assertRegex(
+            str(type_error), r"^([a-zA-Z_0-9<>.]+\.)?some_func\(\) got an unexpected keyword argument 'x'$")
 
 
 if __name__ == '__main__':

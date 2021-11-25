@@ -3,6 +3,7 @@
 # pylint: disable=no-self-use
 
 import abc
+import sys
 import textwrap
 import unittest
 from typing import Optional  # pylint: disable=unused-import
@@ -478,7 +479,10 @@ class TestInvalid(unittest.TestCase):
             type_err = err
 
         self.assertIsNotNone(type_err)
-        self.assertEqual("Can't instantiate abstract class B with abstract methods func", str(type_err))
+        if sys.version_info < (3, 9):
+            self.assertEqual("Can't instantiate abstract class B with abstract methods func", str(type_err))
+        else:
+            self.assertEqual("Can't instantiate abstract class B with abstract method func", str(type_err))
 
 
 if __name__ == '__main__':
