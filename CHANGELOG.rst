@@ -1,3 +1,8 @@
+2.6.0
+=====
+* Added support for Python 3.9 and 3.10 (#236)
+* Added representation of subscripts (#237)
+
 2.5.5
 =====
 * Fixed representation of numpy arrays (#232)
