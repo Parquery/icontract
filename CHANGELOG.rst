@@ -1,3 +1,7 @@
+2.6.1
+=====
+*  Excluded all tests from package (#240)
+
 2.6.0
 =====
 * Added support for Python 3.9 and 3.10 (#236)
