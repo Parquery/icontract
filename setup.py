@@ -48,7 +48,7 @@ setup(
     ],
     license='License :: OSI Approved :: MIT License',
     keywords='design-by-contract precondition postcondition validation',
-    packages=find_packages(exclude=['tests']),
+    packages=find_packages(exclude=['tests*']),
     install_requires=install_requires,
     extras_require={
         'dev': [
