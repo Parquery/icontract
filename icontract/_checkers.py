@@ -754,7 +754,7 @@ def _decorate_new_with_invariants(new_func: CallableT) -> CallableT:
     if _already_decorated_with_invariants(func=new_func):
         return new_func
 
-    # __new__ can not be async in Python, so we don't neet to check whether it is sync or async here
+    # __new__ can not be async in Python, so we don't need to check whether it is sync or async here
     # (as opposed to the function `_decorate_with_invariants`).
     # See this StackOverflow answer: https://stackoverflow.com/a/33134213/1600678.
 
