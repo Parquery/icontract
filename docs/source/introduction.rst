@@ -57,8 +57,8 @@ contract condition as well as variable values at the time of the breach. This pr
 (`DRY <https://en.wikipedia.org/wiki/Don%27t_repeat_yourself>`_) and spare the programmer the tedious task of repeating
 the message that was already written in code.
 
-Second, icontract allows inheritance of the contracts and supports weakining of the preconditions
-as well as strengthening of the postconditions and invariants. Notably, weakining and strengthening of the contracts
+Second, icontract allows inheritance of the contracts and supports weakening of the preconditions
+as well as strengthening of the postconditions and invariants. Notably, weakening and strengthening of the contracts
 is a feature indispensable for modeling many non-trivial class hierarchies. Please see Section :ref:`Inheritance`.
 To the best of our knowledge, there is currently no other Python library that supports inheritance of the contracts in a
 correct way.
