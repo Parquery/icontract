@@ -76,7 +76,7 @@ Note that neither the `dpcontracts` nor the `deal` library support recursion and
 This allows them to use faster enforcement mechanisms and thus gain a speed-up.
 
 We also ran a much more extensive battery of benchmarks on icontract 2.0.7. Unfortunately,
-it would cost us too much effort to integrate the results in the continous integration.
+it would cost us too much effort to integrate the results in the continuous integration.
 The report is available at:
 `benchmarks/benchmark_2.0.7.rst <https://github.com/Parquery/icontract/tree/master/benchmarks/benchmark_2.0.7.rst>`_.
 
