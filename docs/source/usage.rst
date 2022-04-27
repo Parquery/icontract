@@ -127,7 +127,7 @@ since they are not associated with an instance of the class.
 We exempt ``__getattribute__``, ``__setattr__`` and ``__delattr__`` methods from observing the invariant since
 these functions alter the state of the instance and thus can not be considered "public".
 
-We also excempt ``__repr__`` method to prevent endless loops when generating error messages.
+We also exempt ``__repr__`` method to prevent endless loops when generating error messages.
 
 The icontract invariants are implemented as class decorators.
 
@@ -242,7 +242,7 @@ which are then supplied as ``OLD`` argument to the postcondition function.
 
 :class:`snapshot` takes a capture function which accepts none, one or more arguments of the function.
 You set the name of the property in ``OLD`` as ``name`` argument to :class:`snapshot`. If there is a single
-argument passed to the the capture function, the name of the ``OLD`` property can be omitted and equals the name
+argument passed to the capture function, the name of the ``OLD`` property can be omitted and equals the name
 of the argument.
 
 Here is an example that uses snapshots to check that a value was appended to the list:
@@ -498,7 +498,7 @@ The example below illustrates how snapshots are inherited:
 
 Toggling Contracts
 ------------------
-By default, the contract checks (including the snapshots) are always perfromed at run-time. To disable them, run the
+By default, the contract checks (including the snapshots) are always performed at run-time. To disable them, run the
 interpreter in optimized mode (``-O`` or ``-OO``, see
 `Python command-line options <https://docs.python.org/3/using/cmdline.html#cmdoption-o>`_).
 
