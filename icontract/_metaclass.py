@@ -134,7 +134,7 @@ def _decorate_namespace_function(bases: List[type], namespace: MutableMapping[st
                     base_snapshots.extend(base_contract_checker.__postcondition_snapshots__)
                     base_postconditions.extend(base_contract_checker.__postconditions__)
 
-        # Collapse preconditions and postconditions from the bases with the the function's own ones
+        # Collapse preconditions and postconditions from the bases with the function's own ones
         preconditions = _collapse_preconditions(
             base_preconditions=base_preconditions,
             bases_have_func=bases_have_func,

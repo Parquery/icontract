@@ -258,7 +258,7 @@ def inspect_decorator(lines: List[str], lineno: int, filename: str) -> Decorator
 
     decorator_lines = lines[decorator_lineno:decorator_end_lineno]
 
-    # We need to dedent the decorator and add a dummy decoratee so that we can parse its text as valid source code.
+    # We need to dedent the decorator and add a dummy decorate so that we can parse its text as valid source code.
     decorator_text = textwrap.dedent("".join(decorator_lines)) + "def dummy_{}(): pass".format(uuid.uuid4().hex)
 
     atok = asttokens.ASTTokens(decorator_text, parse=True)
