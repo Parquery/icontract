@@ -28,6 +28,9 @@ def main() -> int:
     if sys.version_info >= (3, 8, 5):
         yapf_targets.append('tests_3_8')
 
+    if sys.version_info >= (3, 10):
+        yapf_targets.append('tests_3_10')
+
     if overwrite:
         subprocess.check_call(
             ["yapf", "--in-place", "--style=style.yapf", "--recursive"] + yapf_targets, cwd=str(repo_root))
@@ -40,6 +43,9 @@ def main() -> int:
     if sys.version_info >= (3, 8):
         mypy_targets.append('tests_3_8')
 
+    if sys.version_info >= (3, 10):
+        mypy_targets.append('tests_3_10')
+
     subprocess.check_call(["mypy", "--strict"] + mypy_targets, cwd=str(repo_root))
 
     print("Pylint'ing...")
@@ -47,6 +53,10 @@ def main() -> int:
 
     if sys.version_info >= (3, 8):
         pylint_targets.append('tests_3_8')
+
+    if sys.version_info >= (3, 10):
+        pylint_targets.append('tests_3_10')
+
     subprocess.check_call(["pylint", "--rcfile=pylint.rc"] + pylint_targets, cwd=str(repo_root))
 
     print("Pydocstyle'ing...")
