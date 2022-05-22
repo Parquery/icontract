@@ -31,7 +31,7 @@ class TestMypyDecorators(unittest.TestCase):
                 ''')
 
             pth = pathlib.Path(tmpdir) / "source.py"
-            pth.write_text(content)
+            pth.write_text(content, encoding='utf-8')
 
             with subprocess.Popen(
                 ['mypy', '--strict', str(pth)], universal_newlines=True, stdout=subprocess.PIPE) as proc:
@@ -68,7 +68,7 @@ class TestMypyDecorators(unittest.TestCase):
                 ''')
 
             pth = pathlib.Path(tmpdir) / "source.py"
-            pth.write_text(content)
+            pth.write_text(content, encoding='utf-8')
 
             with subprocess.Popen(
                 ['mypy', '--strict', str(pth)], universal_newlines=True, stdout=subprocess.PIPE) as proc:
@@ -79,6 +79,7 @@ class TestMypyDecorators(unittest.TestCase):
                     textwrap.dedent('''\
                         {path}:8: note: Revealed type is "def () -> source.SomeClass"
                         {path}:15: note: Revealed type is "def () -> source.Decorated"
+                        Success: no issues found in 1 source file
                         '''.format(path=pth)),
                     out)
 
@@ -95,7 +96,7 @@ class TestMypyDecorators(unittest.TestCase):
                 ''')
 
             pth = pathlib.Path(tmpdir) / "source.py"
-            pth.write_text(content)
+            pth.write_text(content, encoding='utf-8')
 
             with subprocess.Popen(
                 ['mypy', '--strict', str(pth)], universal_newlines=True, stdout=subprocess.PIPE) as proc:

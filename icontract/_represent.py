@@ -401,8 +401,8 @@ def collect_variable_lookup(
 
     closure_dict = dict()  # type: Dict[str, Any]
 
-    if condition.__closure__ is not None:  # type: ignore
-        closure_cells = condition.__closure__  # type: ignore
+    if condition.__closure__ is not None:
+        closure_cells = condition.__closure__
         freevars = condition.__code__.co_freevars
 
         assert len(closure_cells) == len(freevars), \
@@ -418,8 +418,8 @@ def collect_variable_lookup(
     # Add globals to the lookup
     ##
 
-    if condition.__globals__ is not None:  # type: ignore
-        variable_lookup.append(condition.__globals__)  # type: ignore
+    if condition.__globals__ is not None:
+        variable_lookup.append(condition.__globals__)
 
     return variable_lookup
 

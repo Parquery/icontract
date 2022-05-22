@@ -94,7 +94,7 @@ def _decorate_namespace_function(bases: List[type], namespace: MutableMapping[st
     if inspect.isfunction(value):
         func = value
     elif isinstance(value, (staticmethod, classmethod)):
-        func = value.__func__
+        func = value.__func__  # type: ignore
     else:
         raise NotImplementedError("Unexpected value for a function: {}".format(value))
 
@@ -105,9 +105,9 @@ def _decorate_namespace_function(bases: List[type], namespace: MutableMapping[st
 
     contract_checker = icontract._checkers.find_checker(func=func)
     if contract_checker is not None:
-        preconditions = contract_checker.__preconditions__
-        snapshots = contract_checker.__postcondition_snapshots__
-        postconditions = contract_checker.__postconditions__
+        preconditions = contract_checker.__preconditions__  # type: ignore
+        snapshots = contract_checker.__postcondition_snapshots__  # type: ignore
+        postconditions = contract_checker.__postconditions__  # type: ignore
 
     # Collect the preconditions and postconditions from bases.
     #
@@ -163,9 +163,9 @@ def _decorate_namespace_function(bases: List[type], namespace: MutableMapping[st
                 raise NotImplementedError("Unexpected value for a function: {}".format(value))
 
         # Override the preconditions and postconditions
-        contract_checker.__preconditions__ = preconditions
-        contract_checker.__postcondition_snapshots__ = snapshots
-        contract_checker.__postconditions__ = postconditions
+        contract_checker.__preconditions__ = preconditions  # type: ignore
+        contract_checker.__postcondition_snapshots__ = snapshots  # type: ignore
+        contract_checker.__postconditions__ = postconditions  # type: ignore
 
 
 def _decorate_namespace_property(bases: List[type], namespace: MutableMapping[str, Any], key: str) -> None:
