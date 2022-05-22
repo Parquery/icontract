@@ -30,9 +30,9 @@ def benchmark_against_others(repo_root: pathlib.Path, overwrite: bool) -> None:
         out.append('\n')
 
         out.append(('The benchmarks were executed on {}.\nWe used Python {}, '
-                    'icontract {}, deal 4.1.0 and dpcontracts 0.6.0.\n\n').format(cpuinfo.get_cpu_info()['brand'],
-                                                                                  platform.python_version(),
-                                                                                  icontract.__version__))
+                    'icontract {}, deal 4.23.3 and dpcontracts 0.6.0.\n\n').format(cpuinfo.get_cpu_info()['brand'],
+                                                                                   platform.python_version(),
+                                                                                   icontract.__version__))
 
         out.append('The following tables summarize the results.\n\n')
         stdouts = []  # type: List[str]
