@@ -221,7 +221,7 @@ class TestOK(unittest.TestCase):
             def __new__(cls, *args, **kwargs) -> 'Foo':  # type: ignore
                 nonlocal new_call_counter
                 new_call_counter += 1
-                return super(Foo, cls).__new__(cls)  # type: ignore
+                return super(Foo, cls).__new__(cls)
 
             def __init__(self) -> None:
                 nonlocal init_call_counter
