@@ -5,7 +5,7 @@ import deal
 
 
 class TestDeal(unittest.TestCase):
-    def test_recursion_unhandled_in_preconditions(self) -> None:
+    def test_recursion_handled_in_preconditions(self) -> None:
         @deal.pre(lambda _: another_func())
         @deal.pre(lambda _: yet_another_func())
         def some_func() -> bool:
@@ -28,8 +28,7 @@ class TestDeal(unittest.TestCase):
         except Exception as err:
             cause_err = err.__cause__
 
-        self.assertIsNotNone(cause_err)
-        self.assertIsInstance(cause_err, RecursionError)
+        self.assertIsNone(cause_err, "Deal can deal with the recursive contracts.")
 
     def test_inheritance_of_postconditions_incorrect(self) -> None:
         class A:
