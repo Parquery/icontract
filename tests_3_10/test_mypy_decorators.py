@@ -1,6 +1,7 @@
 # pylint: disable=missing-docstring
 import pathlib
 import subprocess
+import sys
 import tempfile
 import textwrap
 import unittest
@@ -17,7 +18,6 @@ from typing import Callable, ParamSpec, TypeVar
 ParametersT = ParamSpec("ParametersT")
 ResultT = TypeVar("ResultT")
 
-
 class some_decorator:
     def __init__(self, x: int) -> None:
         self.x = x
@@ -33,6 +33,32 @@ class some_decorator:
 def custom_add(a: int, b: int) -> int:
     return a + b
 '''
+
+            pth = pathlib.Path(tmpdir) / "source.py"
+            pth.write_text(content)
+
+            with subprocess.Popen(
+                    ['mypy', '--strict', str(pth)], universal_newlines=True, stdout=subprocess.PIPE) as proc:
+                out, err = proc.communicate()
+
+                self.assertEqual(0, proc.returncode, f"{out=}, {err=}")
+
+    def test_that_ensure_decorator_works_with_mypy(self) -> None:
+        # See the issue: https://github.com/Parquery/icontract/issues/243
+        with tempfile.TemporaryDirectory(prefix="mypy_ok_case_") as tmpdir:
+            content = (
+                          '''\
+import icontract
+
+@icontract.ensure(
+    lambda a, b, result: 
+    result == myadd(b, a),  # type: ignore 
+    "Commutativity violated!"
+)
+def myadd(a: int, b: int) -> int:
+    return a + b
+'''
+            )
 
             pth = pathlib.Path(tmpdir) / "source.py"
             pth.write_text(content)

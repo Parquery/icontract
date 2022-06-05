@@ -1,8 +1,14 @@
 """Define public decorators."""
 import inspect
 import reprlib
+import sys
 import traceback
 from typing import Callable, Optional, Union, Any, List, Type, TypeVar  # pylint: disable=unused-import
+
+
+from typing import ParamSpec, TypeVar
+ParametersT = ParamSpec("ParametersT")
+ResultT = TypeVar("ResultT")
 
 import icontract._checkers
 from icontract._globals import CallableT, ExceptionT, ClassT
@@ -239,6 +245,10 @@ class ensure:  # pylint: disable=invalid-name
         self._contract = Contract(
             condition=condition, description=description, a_repr=a_repr, error=error, location=location)
 
+    # NOTE (mristin, 2022-06-05):
+    # As of mypy 0.960 and Python 3.10, the type aliasing with ``ParamSpec`` does not seem to work. Hence, we need
+    # to duplicate the implementation for the ``__call__`` method.
+
     def __call__(self, func: CallableT) -> CallableT:
         """
         Add the postcondition to the list of postconditions of the function ``func``.
@@ -265,6 +275,7 @@ class ensure:  # pylint: disable=invalid-name
         icontract._checkers.add_postcondition_to_checker(checker=contract_checker, contract=self._contract)
 
         return result
+
 
 
 class invariant:  # pylint: disable=invalid-name

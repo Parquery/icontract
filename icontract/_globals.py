@@ -2,6 +2,7 @@
 
 import os
 import reprlib
+import sys
 from typing import TypeVar, Callable, Any  # pylint: disable=unused-import
 
 # Default representation instance.
@@ -27,6 +28,17 @@ aRepr.maxother = 256
 #
 # Contracts marked with SLOW are also disabled if the interpreter is run in optimized mode (``-O`` or ``-OO``).
 SLOW = __debug__ and os.environ.get("ICONTRACT_SLOW", "") != ""
-CallableT = TypeVar('CallableT', bound=Callable[..., Any])
+
+if sys.version_info < (3, 10):
+    CallableT = TypeVar('CallableT', bound=Callable[..., Any])
+else:
+    from typing import Callable, ParamSpec, TypeVar
+
+    ParametersT = ParamSpec("ParametersT")
+    ResultT = TypeVar("ResultT")
+
+    CallableT = Callable[ParametersT, ResultT]
+
+
 ClassT = TypeVar('ClassT', bound=type)
 ExceptionT = TypeVar('ExceptionT', bound=BaseException)
