@@ -9,3 +9,4 @@ dist/
 .coverage
 htmlcov
 README.html
+build/
