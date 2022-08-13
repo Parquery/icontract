@@ -8,7 +8,7 @@ import textwrap
 import uuid
 from typing import (Any, Mapping, MutableMapping, Callable, List, Dict, cast, Optional)  # pylint: disable=unused-import
 
-import asttokens
+import asttokens.asttokens
 
 import icontract._recompute
 from icontract._types import Contract
@@ -38,7 +38,7 @@ class Visitor(ast.NodeVisitor):
     # pylint: disable=missing-docstring
 
     def __init__(self, recomputed_values: Mapping[ast.AST, Any], variable_lookup: List[Mapping[str, Any]],
-                 atok: asttokens.ASTTokens) -> None:
+                 atok: asttokens.asttokens.ASTTokens) -> None:
         """
         Initialize.
 
@@ -185,7 +185,7 @@ def is_lambda(a_function: CallableT) -> bool:
 class ConditionLambdaInspection:
     """Represent the inspection of the condition function given as a lambda."""
 
-    def __init__(self, atok: asttokens.ASTTokens, node: ast.Lambda) -> None:
+    def __init__(self, atok: asttokens.asttokens.ASTTokens, node: ast.Lambda) -> None:
         """
         Initialize.
 
@@ -207,7 +207,7 @@ _DEF_CLASS_RE = re.compile(r'^\s*(async\s+def|def |class )')
 class DecoratorInspection:
     """Represent the inspection of a decorator extracted from a source file and embedded in a dummy dynamic module."""
 
-    def __init__(self, atok: asttokens.ASTTokens, node: ast.Call) -> None:
+    def __init__(self, atok: asttokens.asttokens.ASTTokens, node: ast.Call) -> None:
         """
         Initialize.
 
@@ -261,7 +261,7 @@ def inspect_decorator(lines: List[str], lineno: int, filename: str) -> Decorator
     # We need to dedent the decorator and add a dummy decorate so that we can parse its text as valid source code.
     decorator_text = textwrap.dedent("".join(decorator_lines)) + "def dummy_{}(): pass".format(uuid.uuid4().hex)
 
-    atok = asttokens.ASTTokens(decorator_text, parse=True)
+    atok = asttokens.asttokens.ASTTokens(decorator_text, parse=True)
 
     if not isinstance(atok.tree, ast.Module):
         raise ValueError(("Expected the parsed decorator text to live in an AST module. "
