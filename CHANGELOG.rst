@@ -1,3 +1,8 @@
+2.6.2
+=====
+* Added wheels to releases (#251)
+* Fixed mypy error on missing ``asttokens.ASTTokens`` (#252)
+
 2.6.1
 =====
 *  Excluded all tests from package (#240)
