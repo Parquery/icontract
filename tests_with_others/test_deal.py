@@ -1,3 +1,7 @@
+# pylint: disable=missing-docstring
+# pylint: disable=broad-except
+# pylint: disable=invalid-name
+
 import unittest
 from typing import Optional
 
@@ -6,7 +10,7 @@ import deal
 
 class TestDeal(unittest.TestCase):
     def test_recursion_handled_in_preconditions(self) -> None:
-        @deal.pre(lambda _: another_func())
+        @deal.pre(lambda _: another_func())  # type: ignore
         @deal.pre(lambda _: yet_another_func())
         def some_func() -> bool:
             return True
