@@ -25,6 +25,12 @@ def main() -> int:
     print("YAPF'ing...")
     yapf_targets = ["tests", "icontract", "setup.py", "precommit.py", "benchmark.py", "benchmarks", "tests_with_others"]
 
+    if sys.version_info >= (3, 6):
+        yapf_targets.append('tests_3_6')
+
+    if sys.version_info >= (3, 7):
+        yapf_targets.append('tests_3_7')
+
     if sys.version_info >= (3, 8, 5):
         yapf_targets.append('tests_3_8')
 
@@ -37,16 +43,31 @@ def main() -> int:
 
     print("Mypy'ing...")
     mypy_targets = ["icontract", "tests"]
+    if sys.version_info >= (3, 6):
+        mypy_targets.append('tests_3_6')
+
+    if sys.version_info >= (3, 7):
+        mypy_targets.append('tests_3_7')
+
     if sys.version_info >= (3, 8):
         mypy_targets.append('tests_3_8')
+        mypy_targets.append('tests_with_others')
 
     subprocess.check_call(["mypy", "--strict"] + mypy_targets, cwd=str(repo_root))
 
     print("Pylint'ing...")
     pylint_targets = ['icontract', 'tests']
 
+    if sys.version_info >= (3, 6):
+        pylint_targets.append('tests_3_6')
+
+    if sys.version_info >= (3, 7):
+        pylint_targets.append('tests_3_7')
+
     if sys.version_info >= (3, 8):
         pylint_targets.append('tests_3_8')
+        pylint_targets.append('tests_with_others')
+
     subprocess.check_call(["pylint", "--rcfile=pylint.rc"] + pylint_targets, cwd=str(repo_root))
 
     print("Pydocstyle'ing...")
