@@ -198,7 +198,7 @@ def _create_violation_error(contract: Contract, resolved_kwargs: Mapping[str, An
 
         error_kwargs = select_error_kwargs(contract=contract, resolved_kwargs=resolved_kwargs)
 
-        exception = cast(BaseException, contract.error(**error_kwargs))  # type: ignore
+        exception = cast(BaseException, contract.error(**error_kwargs))
 
         if not isinstance(exception, BaseException):
             raise TypeError(

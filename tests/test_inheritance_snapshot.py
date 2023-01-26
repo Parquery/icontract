@@ -110,21 +110,21 @@ class TestPropertyOK(unittest.TestCase):
                 self.sets = 0
                 self.dels = 0
 
-            @property  # type: ignore
+            @property
             @icontract.snapshot(lambda self: self.gets, name="gets")
             @icontract.ensure(lambda OLD, self: self.gets == OLD.gets + 1)
             def some_prop(self) -> int:
                 self.gets += 1
                 return 0
 
-            @some_prop.setter  # type: ignore
+            @some_prop.setter
             @icontract.snapshot(lambda self: self.sets, name="sets")
             @icontract.ensure(lambda OLD, self: self.sets == OLD.sets + 1)
             def some_prop(self, value: int) -> None:
                 # pylint: disable=unused-argument
                 self.sets += 1
 
-            @some_prop.deleter  # type: ignore
+            @some_prop.deleter
             @icontract.snapshot(lambda self: self.dels, name="dels")
             @icontract.ensure(lambda OLD, self: self.dels == OLD.dels + 1)
             def some_prop(self) -> None:
@@ -135,7 +135,7 @@ class TestPropertyOK(unittest.TestCase):
 
         some_inst = SomeClass()
         _ = some_inst.some_prop
-        some_inst.some_prop = 3  # type: ignore
+        some_inst.some_prop = 3
         del some_inst.some_prop
 
         self.assertEqual(1, some_inst.gets)
@@ -151,14 +151,14 @@ class TestPropertyViolation(unittest.TestCase):
                 self.sets = 0
                 self.dels = 0
 
-            @property  # type: ignore
+            @property
             @icontract.snapshot(lambda self: self.gets, name="gets")
             @icontract.ensure(lambda OLD, self: self.gets == OLD.gets + 1)
             def some_prop(self) -> int:
                 # no self.gets increment
                 return 0
 
-            @some_prop.setter  # type: ignore
+            @some_prop.setter
             @icontract.snapshot(lambda self: self.sets, name="sets")
             @icontract.ensure(lambda OLD, self: self.sets == OLD.sets + 1)
             def some_prop(self, value: int) -> None:
@@ -166,7 +166,7 @@ class TestPropertyViolation(unittest.TestCase):
                 # no self.sets increment
                 return
 
-            @some_prop.deleter  # type: ignore
+            @some_prop.deleter
             @icontract.snapshot(lambda self: self.dels, name="dels")
             @icontract.ensure(lambda OLD, self: self.dels == OLD.dels + 1)
             def some_prop(self) -> None:
@@ -199,7 +199,7 @@ class TestPropertyViolation(unittest.TestCase):
         # setter fails
         violation_error = None
         try:
-            some_inst.some_prop = 1  # type: ignore
+            some_inst.some_prop = 1
         except icontract.ViolationError as err:
             violation_error = err
 
@@ -270,7 +270,7 @@ class TestPropertyInvalid(unittest.TestCase):
             def __init__(self) -> None:
                 self.gets = 0
 
-            @property  # type: ignore
+            @property
             @icontract.snapshot(lambda self: self.gets, name="gets")
             @icontract.ensure(lambda OLD, self: self.gets == OLD.gets + 1)
             def some_prop(self) -> int:
@@ -282,7 +282,7 @@ class TestPropertyInvalid(unittest.TestCase):
             # pylint: disable=unused-variable
 
             class SomeClass(SomeBase):
-                @property  # type: ignore
+                @property
                 @icontract.snapshot(lambda self: self.gets, name="gets")
                 @icontract.ensure(lambda OLD, self: self.gets == OLD.gets + 1)
                 def some_prop(self) -> int:
@@ -305,7 +305,7 @@ class TestPropertyInvalid(unittest.TestCase):
             def some_prop(self) -> int:
                 return 0
 
-            @some_prop.setter  # type: ignore
+            @some_prop.setter
             @icontract.snapshot(lambda self: self.sets, name="sets")
             @icontract.ensure(lambda OLD, self: self.sets == OLD.sets + 1)
             def some_prop(self, value: int) -> None:
@@ -321,7 +321,7 @@ class TestPropertyInvalid(unittest.TestCase):
                 def some_prop(self) -> int:
                     return 0
 
-                @some_prop.setter  # type: ignore
+                @some_prop.setter
                 @icontract.snapshot(lambda self: self.sets, name="sets")
                 @icontract.ensure(lambda OLD, self: self.sets == OLD.sets + 1)
                 def some_prop(self, value: int) -> None:
@@ -345,7 +345,7 @@ class TestPropertyInvalid(unittest.TestCase):
             def some_prop(self) -> int:
                 return 0
 
-            @some_prop.deleter  # type: ignore
+            @some_prop.deleter
             @icontract.snapshot(lambda self: self.dels, name="dels")
             @icontract.ensure(lambda OLD, self: self.dels == OLD.dels + 1)
             def some_prop(self) -> None:
@@ -360,7 +360,7 @@ class TestPropertyInvalid(unittest.TestCase):
                 def some_prop(self) -> int:
                     return 0
 
-                @some_prop.deleter  # type: ignore
+                @some_prop.deleter
                 @icontract.snapshot(lambda self: self.dels, name="dels")
                 @icontract.ensure(lambda OLD, self: self.dels == OLD.dels + 1)
                 def some_prop(self) -> None:

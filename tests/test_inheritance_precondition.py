@@ -311,17 +311,17 @@ class TestPropertyOK(unittest.TestCase):
                 self.deleted = False
                 self._some_prop = 1
 
-            @property  # type: ignore
+            @property
             @icontract.require(lambda self: self._some_prop > 0)
             def some_prop(self) -> int:
                 return self._some_prop
 
-            @some_prop.setter  # type: ignore
+            @some_prop.setter
             @icontract.require(lambda value: value > 0)
             def some_prop(self, value: int) -> None:
                 self._some_prop = value
 
-            @some_prop.deleter  # type: ignore
+            @some_prop.deleter
             @icontract.require(lambda self: not self.deleted)
             def some_prop(self) -> None:
                 self.deleted = True
@@ -330,7 +330,7 @@ class TestPropertyOK(unittest.TestCase):
             pass
 
         some_inst = SomeClass()
-        some_inst.some_prop = 3  # type: ignore
+        some_inst.some_prop = 3
         self.assertEqual(3, some_inst.some_prop)
 
         del some_inst.some_prop
@@ -343,7 +343,7 @@ class TestPropertyViolation(unittest.TestCase):
             def __init__(self) -> None:
                 self.toggled = True
 
-            @property  # type: ignore
+            @property
             @icontract.require(lambda self: not self.toggled)
             def some_prop(self) -> int:
                 return 0
@@ -377,7 +377,7 @@ class TestPropertyViolation(unittest.TestCase):
             def some_prop(self) -> int:
                 return 0
 
-            @some_prop.setter  # type: ignore
+            @some_prop.setter
             @icontract.require(lambda value: value > 0)
             def some_prop(self, value: int) -> None:
                 pass
@@ -414,7 +414,7 @@ class TestPropertyViolation(unittest.TestCase):
             def some_prop(self) -> int:
                 return 0
 
-            @some_prop.deleter  # type: ignore
+            @some_prop.deleter
             @icontract.require(lambda self: not self.toggled)
             def some_prop(self) -> None:
                 pass
@@ -534,8 +534,9 @@ class TestInvalid(unittest.TestCase):
 
     def test_cant_weaken_base_function_without_preconditions(self) -> None:
         class A(icontract.DBC):
+            @abc.abstractmethod
             def func(self, x: int) -> int:
-                pass
+                raise NotImplementedError()
 
         type_error = None  # type: Optional[TypeError]
         try:
