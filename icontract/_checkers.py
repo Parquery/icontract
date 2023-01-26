@@ -1,9 +1,9 @@
 """Provide functions to add/find contract checkers."""
+import contextvars
 import functools
 import inspect
-import threading
 from typing import Callable, Any, Iterable, Optional, Tuple, List, Mapping, \
-    MutableMapping, Dict, cast
+    MutableMapping, Dict, cast, Set
 
 import icontract._represent
 from icontract._globals import CallableT, ClassT
@@ -502,7 +502,7 @@ def resolve_kwdefaults(sign: inspect.Signature) -> Dict[str, Any]:
 # contract checking is already in progress.
 #
 # The key refers to the id() of the function (preconditions and postconditions) or instance (invariants).
-_IN_PROGRESS = threading.local()
+_IN_PROGRESS = contextvars.ContextVar("_IN_PROGRESS", default=None)  # type: contextvars.ContextVar[Optional[Set[int]]]
 
 
 def decorate_with_checker(func: CallableT) -> CallableT:
@@ -533,7 +533,7 @@ def decorate_with_checker(func: CallableT) -> CallableT:
     # Determine the default argument values
     kwdefaults = resolve_kwdefaults(sign=sign)
 
-    id_func = str(id(func))
+    id_func = id(func)
 
     # (mristin, 2021-02-16)
     # Admittedly, this branching on sync/async is absolutely monstrous.
@@ -553,14 +553,23 @@ def decorate_with_checker(func: CallableT) -> CallableT:
             if kwargs_error:
                 raise kwargs_error
 
+            # We need to create a new in-progress set if it is None as the ``ContextVar`` does not accept
+            # a factory function for the default argument. If we didn't do this, and simply set an empty
+            # set as the default, ``ContextVar`` would always point to the same set by copying the default
+            # by reference.
+            in_progress = _IN_PROGRESS.get()
+            if in_progress is None:
+                in_progress = set()
+                _IN_PROGRESS.set(in_progress)
+
             # Use try-finally instead of ExitStack for performance.
             try:
                 # If the wrapper is already checking the contracts for the wrapped function, avoid a recursive loop
                 # by skipping any subsequent contract checks for the same function.
-                if hasattr(_IN_PROGRESS, id_func):
+                if id_func in in_progress:
                     return await func(*args, **kwargs)
 
-                setattr(_IN_PROGRESS, id_func, True)
+                in_progress.add(id_func)
 
                 (preconditions, snapshots, postconditions) = _unpack_pre_snap_posts(wrapper)
 
@@ -596,8 +605,7 @@ def decorate_with_checker(func: CallableT) -> CallableT:
 
                 return result
             finally:
-                if hasattr(_IN_PROGRESS, id_func):
-                    delattr(_IN_PROGRESS, id_func)
+                in_progress.discard(id_func)
     else:
 
         def wrapper(*args, **kwargs):  # type: ignore
@@ -606,14 +614,23 @@ def decorate_with_checker(func: CallableT) -> CallableT:
             if kwargs_error:
                 raise kwargs_error
 
+            # We need to create a new in-progress set if it is None as the ``ContextVar`` does not accept
+            # a factory function for the default argument. If we didn't do this, and simply set an empty
+            # set as the default, ``ContextVar`` would always point to the same set by copying the default
+            # by reference.
+            in_progress = _IN_PROGRESS.get()
+            if in_progress is None:
+                in_progress = set()
+                _IN_PROGRESS.set(in_progress)
+
             # Use try-finally instead of ExitStack for performance.
             try:
                 # If the wrapper is already checking the contracts for the wrapped function, avoid a recursive loop
                 # by skipping any subsequent contract checks for the same function.
-                if hasattr(_IN_PROGRESS, id_func):
+                if id_func in in_progress:
                     return func(*args, **kwargs)
 
-                setattr(_IN_PROGRESS, id_func, True)
+                in_progress.add(id_func)
 
                 (preconditions, snapshots, postconditions) = _unpack_pre_snap_posts(wrapper)
 
@@ -650,8 +667,7 @@ def decorate_with_checker(func: CallableT) -> CallableT:
 
                 return result
             finally:
-                if hasattr(_IN_PROGRESS, id_func):
-                    delattr(_IN_PROGRESS, id_func)
+                in_progress.discard(id_func)
 
     # Copy __doc__ and other properties so that doctests can run
     functools.update_wrapper(wrapper=wrapper, wrapped=func)
@@ -802,8 +818,18 @@ def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
                                     func, param_names, args, kwargs)) from err
 
             # We need to disable the invariants check during the constructor.
-            id_instance = str(id(instance))
-            setattr(_IN_PROGRESS, id_instance, True)
+
+            # We need to create a new in-progress set if it is None as the ``ContextVar`` does not accept
+            # a factory function for the default argument. If we didn't do this, and simply set an empty
+            # set as the default, ``ContextVar`` would always point to the same set by copying the default
+            # by reference.
+            in_progress = _IN_PROGRESS.get()
+            if in_progress is None:
+                in_progress = set()
+                _IN_PROGRESS.set(in_progress)
+
+            id_instance = id(instance)
+            in_progress.add(id_instance)
 
             # ExitStack is not used here due to performance.
             try:
@@ -814,8 +840,7 @@ def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
 
                 return result
             finally:
-                if hasattr(_IN_PROGRESS, id_instance):
-                    delattr(_IN_PROGRESS, id_instance)
+                in_progress.discard(id_instance)
 
     else:
         # (mristin, 2021-02-16)
@@ -840,11 +865,20 @@ def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
                                     "the param names were {!r}, the args were {!r} and kwargs were {!r}").format(
                                         func, param_names, args, kwargs)) from err
 
+                # We need to create a new in-progress set if it is None as the ``ContextVar`` does not accept
+                # a factory function for the default argument. If we didn't do this, and simply set an empty
+                # set as the default, ``ContextVar`` would always point to the same set by copying the default
+                # by reference.
+                in_progress = _IN_PROGRESS.get()
+                if in_progress is None:
+                    in_progress = set()
+                    _IN_PROGRESS.set(in_progress)
+
                 # The following dunder indicates whether another invariant is currently being checked. If so,
                 # we need to suspend any further invariant check to avoid endless recursion.
-                id_instance = str(id(instance))
-                if not hasattr(_IN_PROGRESS, id_instance):
-                    setattr(_IN_PROGRESS, id_instance, True)
+                id_instance = id(instance)
+                if id_instance not in in_progress:
+                    in_progress.add(id_instance)
                 else:
                     # Do not check any invariants to avoid endless recursion.
                     return await func(*args, **kwargs)
@@ -861,8 +895,7 @@ def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
 
                     return result
                 finally:
-                    if hasattr(_IN_PROGRESS, id_instance):
-                        delattr(_IN_PROGRESS, id_instance)
+                    in_progress.discard(id_instance)
 
         else:
 
@@ -877,9 +910,19 @@ def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
 
                 # The following dunder indicates whether another invariant is currently being checked. If so,
                 # we need to suspend any further invariant check to avoid endless recursion.
-                id_instance = str(id(instance))
-                if not hasattr(_IN_PROGRESS, id_instance):
-                    setattr(_IN_PROGRESS, id_instance, True)
+
+                # We need to create a new in-progress set if it is None as the ``ContextVar`` does not accept
+                # a factory function for the default argument. If we didn't do this, and simply set an empty
+                # set as the default, ``ContextVar`` would always point to the same set by copying the default
+                # by reference.
+                in_progress = _IN_PROGRESS.get()
+                if in_progress is None:
+                    in_progress = set()
+                    _IN_PROGRESS.set(in_progress)
+
+                id_instance = id(instance)
+                if id_instance not in in_progress:
+                    in_progress.add(id_instance)
                 else:
                     # Do not check any invariants to avoid endless recursion.
                     return func(*args, **kwargs)
@@ -896,8 +939,7 @@ def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
 
                     return result
                 finally:
-                    if hasattr(_IN_PROGRESS, id_instance):
-                        delattr(_IN_PROGRESS, id_instance)
+                    in_progress.discard(id_instance)
 
     functools.update_wrapper(wrapper=wrapper, wrapped=func)
 

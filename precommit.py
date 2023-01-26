@@ -86,6 +86,15 @@ def main() -> int:
         env=env)
     # yapf: enable
 
+    # yapf: disable
+    subprocess.check_call(
+        ["coverage", "run",
+         "--source", "icontract",
+         "-a", "-m", "tests_3_8.async.separately_test_concurrent"],
+        cwd=str(repo_root),
+        env=env)
+    # yapf: enable
+
     subprocess.check_call(["coverage", "report"])
 
     print("Doctesting...")
