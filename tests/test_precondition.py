@@ -466,7 +466,7 @@ class TestInClass(unittest.TestCase):
             def __init__(self) -> None:
                 self._some_prop = -1
 
-            @property  # type: ignore
+            @property
             @icontract.require(lambda self: self._some_prop > 0)
             def some_prop(self) -> int:
                 return self._some_prop
@@ -495,7 +495,7 @@ class TestInClass(unittest.TestCase):
             def some_prop(self) -> int:
                 return 0
 
-            @some_prop.setter  # type: ignore
+            @some_prop.setter
             @icontract.require(lambda value: value > 0)
             def some_prop(self, value: int) -> None:
                 pass
@@ -507,7 +507,7 @@ class TestInClass(unittest.TestCase):
 
         violation_error = None  # type: Optional[icontract.ViolationError]
         try:
-            some_inst.some_prop = -1  # type: ignore
+            some_inst.some_prop = -1
         except icontract.ViolationError as err:
             violation_error = err
 
@@ -527,7 +527,7 @@ class TestInClass(unittest.TestCase):
             def some_prop(self) -> int:
                 return self._some_prop
 
-            @some_prop.deleter  # type: ignore
+            @some_prop.deleter
             @icontract.require(lambda self: self.some_prop > 0)
             def some_prop(self) -> None:
                 pass

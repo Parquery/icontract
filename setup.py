@@ -51,7 +51,7 @@ setup(
     install_requires=install_requires,
     extras_require={
         'dev': [
-            'mypy==0.971', 'pylint==2.13.9', 'yapf==0.20.2', 'tox>=3.0.0', 'pydocstyle>=6.1.1,<7', 'coverage>=4.5.1,<5',
+            'mypy==0.991', 'pylint==2.13.9', 'yapf==0.20.2', 'tox>=3.0.0', 'pydocstyle>=6.1.1,<7', 'coverage>=4.5.1,<5',
             'docutils>=0.14,<1', 'pygments>=2.2.0,<3', 'dpcontracts==0.6.0', 'tabulate>=0.8.7,<1',
             'py-cpuinfo>=5.0.0,<6', 'typeguard>=2,<3', 'astor==0.8.1', 'numpy>=1,<2'
         ] + (['deal==4.23.3'] if sys.version_info >= (3, 8) else []) + (['asyncstdlib==3.9.1']
