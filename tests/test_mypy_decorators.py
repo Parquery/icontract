@@ -1,8 +1,13 @@
 # pylint: disable=missing-docstring
 import pathlib
 import subprocess
+import sys
 import tempfile
 import unittest
+
+if sys.version_info < (3, 8):
+    raise unittest.SkipTest(("Mypy since 1.5 dropped support for Python 3.7 and "
+                             "you are running Python {}, so skipping.").format(sys.version_info))
 
 
 class TestMypyDecorators(unittest.TestCase):
