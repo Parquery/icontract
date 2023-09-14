@@ -106,8 +106,7 @@ class Visitor(ast.NodeVisitor):
             if node in self._recomputed_values:
                 value = self._recomputed_values[node]
 
-                # This is necessary in order to make mypy happy.
-                target = cast(ast.Name, node.target)
+                target = node.target
 
                 if _representable(value=value):
                     self.reprs[target.id] = value

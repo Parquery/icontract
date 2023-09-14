@@ -41,19 +41,23 @@ def main() -> int:
         subprocess.check_call(
             ["yapf", "--diff", "--style=style.yapf", "--recursive"] + yapf_targets, cwd=str(repo_root))
 
-    print("Mypy'ing...")
-    mypy_targets = ["icontract", "tests"]
-    if sys.version_info >= (3, 6):
-        mypy_targets.append('tests_3_6')
+    if sys.version_info < (3, 8):
+        print("Mypy since 1.5 dropped support for Python 3.7 and "
+              "you are running Python {}, so skipping.".format(sys.version_info))
+    else:
+        print("Mypy'ing...")
+        mypy_targets = ["icontract", "tests"]
+        if sys.version_info >= (3, 6):
+            mypy_targets.append('tests_3_6')
 
-    if sys.version_info >= (3, 7):
-        mypy_targets.append('tests_3_7')
+        if sys.version_info >= (3, 7):
+            mypy_targets.append('tests_3_7')
 
-    if sys.version_info >= (3, 8):
-        mypy_targets.append('tests_3_8')
-        mypy_targets.append('tests_with_others')
+        if sys.version_info >= (3, 8):
+            mypy_targets.append('tests_3_8')
+            mypy_targets.append('tests_with_others')
 
-    subprocess.check_call(["mypy", "--strict"] + mypy_targets, cwd=str(repo_root))
+        subprocess.check_call(["mypy", "--strict"] + mypy_targets, cwd=str(repo_root))
 
     print("Pylint'ing...")
     pylint_targets = ['icontract', 'tests']

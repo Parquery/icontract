@@ -652,8 +652,7 @@ class Visitor(ast.NodeVisitor):
 
             self.recomputed_values[node] = value
 
-            # This assignment is needed to make mypy happy.
-            target = cast(ast.Name, node.target)
+            target = node.target
 
             if not isinstance(target.ctx, ast.Store):
                 raise NotImplementedError(
