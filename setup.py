@@ -53,7 +53,7 @@ setup(
         "dev": [
             "pylint==2.17.5",
             "tox>=3.0.0",
-            "pydocstyle>=6.1.1,<7",
+            "pydocstyle>=6.3.0,<7",
             "coverage>=4.5.1,<5",
             "docutils>=0.14,<1",
             "pygments>=2.2.0,<3",
