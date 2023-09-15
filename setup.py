@@ -52,7 +52,6 @@ setup(
     extras_require={
         "dev": [
             "pylint==2.13.9",
-            "black==23.9.1",
             "tox>=3.0.0",
             "pydocstyle>=6.1.1,<7",
             "coverage>=4.5.1,<5",
@@ -66,6 +65,7 @@ setup(
             "numpy>=1,<2",
         ]
         + (["mypy==1.5.1"] if sys.version_info >= (3, 8) else [])
+        + (["black==23.9.1"] if sys.version_info >= (3, 8) else [])
         + (["deal==4.23.3"] if sys.version_info >= (3, 8) else [])
         + (["asyncstdlib==3.9.1"] if sys.version_info >= (3, 8) else []),
     },
