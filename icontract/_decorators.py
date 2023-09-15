@@ -2,7 +2,14 @@
 import inspect
 import reprlib
 import traceback
-from typing import Callable, Optional, Union, Any, List, Type, TypeVar  # pylint: disable=unused-import
+from typing import (
+    Callable,
+    Optional,
+    Union,
+    Any,
+    List,
+    Type,
+)  # pylint: disable=unused-import
 
 import icontract._checkers
 from icontract._globals import CallableT, ExceptionT, ClassT
@@ -16,12 +23,16 @@ class require:  # pylint: disable=invalid-name
     The arguments of the precondition are expected to be a subset of the arguments of the wrapped function.
     """
 
-    def __init__(self,
-                 condition: Callable[..., Any],
-                 description: Optional[str] = None,
-                 a_repr: reprlib.Repr = icontract._globals.aRepr,
-                 enabled: bool = __debug__,
-                 error: Optional[Union[Callable[..., ExceptionT], Type[ExceptionT], BaseException]] = None) -> None:
+    def __init__(
+        self,
+        condition: Callable[..., Any],
+        description: Optional[str] = None,
+        a_repr: reprlib.Repr = icontract._globals.aRepr,
+        enabled: bool = __debug__,
+        error: Optional[
+            Union[Callable[..., ExceptionT], Type[ExceptionT], BaseException]
+        ] = None,
+    ) -> None:
         """
         Initialize.
 
@@ -58,22 +69,40 @@ class require:  # pylint: disable=invalid-name
             pass
         elif isinstance(error, type):
             if not issubclass(error, BaseException):
-                raise ValueError(("The error of the contract is given as a type, "
-                                  "but the type does not inherit from BaseException: {}").format(error))
-        else:
-            if not inspect.isfunction(error) and not inspect.ismethod(error) and not isinstance(error, BaseException):
                 raise ValueError(
-                    ("The error of the contract must be either a callable (a function or a method), "
-                     "a class (subclass of BaseException) or an instance of BaseException, but got: {}").format(error))
+                    (
+                        "The error of the contract is given as a type, "
+                        "but the type does not inherit from BaseException: {}"
+                    ).format(error)
+                )
+        else:
+            if (
+                not inspect.isfunction(error)
+                and not inspect.ismethod(error)
+                and not isinstance(error, BaseException)
+            ):
+                raise ValueError(
+                    (
+                        "The error of the contract must be either a callable (a function or a method), "
+                        "a class (subclass of BaseException) or an instance of BaseException, but got: {}"
+                    ).format(error)
+                )
 
         location = None  # type: Optional[str]
         tb_stack = traceback.extract_stack(limit=2)[:1]
         if len(tb_stack) > 0:
             frame = tb_stack[0]
-            location = 'File {}, line {} in {}'.format(frame.filename, frame.lineno, frame.name)
+            location = "File {}, line {} in {}".format(
+                frame.filename, frame.lineno, frame.name
+            )
 
         self._contract = Contract(
-            condition=condition, description=description, a_repr=a_repr, error=error, location=location)
+            condition=condition,
+            description=description,
+            a_repr=a_repr,
+            error=error,
+            location=location,
+        )
 
     def __call__(self, func: CallableT) -> CallableT:
         """
@@ -98,7 +127,9 @@ class require:  # pylint: disable=invalid-name
         result = contract_checker
 
         assert self._contract is not None
-        icontract._checkers.add_precondition_to_checker(checker=contract_checker, contract=self._contract)
+        icontract._checkers.add_precondition_to_checker(
+            checker=contract_checker, contract=self._contract
+        )
 
         return result
 
@@ -115,7 +146,12 @@ class snapshot:  # pylint: disable=invalid-name
     Snapshots are inherited from the base classes and must not have conflicting names in the class hierarchy.
     """
 
-    def __init__(self, capture: Callable[..., Any], name: Optional[str] = None, enabled: bool = __debug__) -> None:
+    def __init__(
+        self,
+        capture: Callable[..., Any],
+        name: Optional[str] = None,
+        enabled: bool = __debug__,
+    ) -> None:
         """
         Initialize.
 
@@ -141,7 +177,9 @@ class snapshot:  # pylint: disable=invalid-name
             tb_stack = traceback.extract_stack(limit=2)[:1]
             if len(tb_stack) > 0:
                 frame = tb_stack[0]
-                location = 'File {}, line {} in {}'.format(frame.filename, frame.lineno, frame.name)
+                location = "File {}, line {} in {}".format(
+                    frame.filename, frame.lineno, frame.name
+                )
 
             self._snapshot = Snapshot(capture=capture, name=name, location=location)
 
@@ -161,12 +199,18 @@ class snapshot:  # pylint: disable=invalid-name
         contract_checker = icontract._checkers.find_checker(func=func)
 
         if contract_checker is None:
-            raise ValueError("You are decorating a function with a snapshot, but no postcondition was defined "
-                             "on the function before.")
+            raise ValueError(
+                "You are decorating a function with a snapshot, but no postcondition was defined "
+                "on the function before."
+            )
 
-        assert self._snapshot is not None, "Expected the enabled snapshot to have the property ``snapshot`` set."
+        assert (
+            self._snapshot is not None
+        ), "Expected the enabled snapshot to have the property ``snapshot`` set."
 
-        icontract._checkers.add_snapshot_to_checker(checker=contract_checker, snapshot=self._snapshot)
+        icontract._checkers.add_snapshot_to_checker(
+            checker=contract_checker, snapshot=self._snapshot
+        )
 
         return func
 
@@ -180,12 +224,16 @@ class ensure:  # pylint: disable=invalid-name
     not have "result" among its arguments.
     """
 
-    def __init__(self,
-                 condition: Callable[..., Any],
-                 description: Optional[str] = None,
-                 a_repr: reprlib.Repr = icontract._globals.aRepr,
-                 enabled: bool = __debug__,
-                 error: Optional[Union[Callable[..., ExceptionT], Type[ExceptionT], BaseException]] = None) -> None:
+    def __init__(
+        self,
+        condition: Callable[..., Any],
+        description: Optional[str] = None,
+        a_repr: reprlib.Repr = icontract._globals.aRepr,
+        enabled: bool = __debug__,
+        error: Optional[
+            Union[Callable[..., ExceptionT], Type[ExceptionT], BaseException]
+        ] = None,
+    ) -> None:
         """
         Initialize.
 
@@ -222,22 +270,40 @@ class ensure:  # pylint: disable=invalid-name
             pass
         elif isinstance(error, type):
             if not issubclass(error, BaseException):
-                raise ValueError(("The error of the contract is given as a type, "
-                                  "but the type does not inherit from BaseException: {}").format(error))
-        else:
-            if not inspect.isfunction(error) and not inspect.ismethod(error) and not isinstance(error, BaseException):
                 raise ValueError(
-                    ("The error of the contract must be either a callable (a function or a method), "
-                     "a class (subclass of BaseException) or an instance of BaseException, but got: {}").format(error))
+                    (
+                        "The error of the contract is given as a type, "
+                        "but the type does not inherit from BaseException: {}"
+                    ).format(error)
+                )
+        else:
+            if (
+                not inspect.isfunction(error)
+                and not inspect.ismethod(error)
+                and not isinstance(error, BaseException)
+            ):
+                raise ValueError(
+                    (
+                        "The error of the contract must be either a callable (a function or a method), "
+                        "a class (subclass of BaseException) or an instance of BaseException, but got: {}"
+                    ).format(error)
+                )
 
         location = None  # type: Optional[str]
         tb_stack = traceback.extract_stack(limit=2)[:1]
         if len(tb_stack) > 0:
             frame = tb_stack[0]
-            location = 'File {}, line {} in {}'.format(frame.filename, frame.lineno, frame.name)
+            location = "File {}, line {} in {}".format(
+                frame.filename, frame.lineno, frame.name
+            )
 
         self._contract = Contract(
-            condition=condition, description=description, a_repr=a_repr, error=error, location=location)
+            condition=condition,
+            description=description,
+            a_repr=a_repr,
+            error=error,
+            location=location,
+        )
 
     def __call__(self, func: CallableT) -> CallableT:
         """
@@ -262,7 +328,9 @@ class ensure:  # pylint: disable=invalid-name
         result = contract_checker
 
         assert self._contract is not None
-        icontract._checkers.add_postcondition_to_checker(checker=contract_checker, contract=self._contract)
+        icontract._checkers.add_postcondition_to_checker(
+            checker=contract_checker, contract=self._contract
+        )
 
         return result
 
@@ -284,12 +352,16 @@ class invariant:  # pylint: disable=invalid-name
 
     """
 
-    def __init__(self,
-                 condition: Callable[..., Any],
-                 description: Optional[str] = None,
-                 a_repr: reprlib.Repr = icontract._globals.aRepr,
-                 enabled: bool = __debug__,
-                 error: Optional[Union[Callable[..., ExceptionT], Type[ExceptionT], BaseException]] = None) -> None:
+    def __init__(
+        self,
+        condition: Callable[..., Any],
+        description: Optional[str] = None,
+        a_repr: reprlib.Repr = icontract._globals.aRepr,
+        enabled: bool = __debug__,
+        error: Optional[
+            Union[Callable[..., ExceptionT], Type[ExceptionT], BaseException]
+        ] = None,
+    ) -> None:
         """
         Initialize a class decorator to establish the invariant on all the public methods.
 
@@ -328,30 +400,52 @@ class invariant:  # pylint: disable=invalid-name
             pass
         elif isinstance(error, type):
             if not issubclass(error, BaseException):
-                raise ValueError(("The error of the contract is given as a type, "
-                                  "but the type does not inherit from BaseException: {}").format(error))
-        else:
-            if not inspect.isfunction(error) and not inspect.ismethod(error) and not isinstance(error, BaseException):
                 raise ValueError(
-                    ("The error of the contract must be either a callable (a function or a method), "
-                     "a class (subclass of BaseException) or an instance of BaseException, but got: {}").format(error))
+                    (
+                        "The error of the contract is given as a type, "
+                        "but the type does not inherit from BaseException: {}"
+                    ).format(error)
+                )
+        else:
+            if (
+                not inspect.isfunction(error)
+                and not inspect.ismethod(error)
+                and not isinstance(error, BaseException)
+            ):
+                raise ValueError(
+                    (
+                        "The error of the contract must be either a callable (a function or a method), "
+                        "a class (subclass of BaseException) or an instance of BaseException, but got: {}"
+                    ).format(error)
+                )
 
         location = None  # type: Optional[str]
         tb_stack = traceback.extract_stack(limit=2)[:1]
         if len(tb_stack) > 0:
             frame = tb_stack[0]
-            location = 'File {}, line {} in {}'.format(frame.filename, frame.lineno, frame.name)
+            location = "File {}, line {} in {}".format(
+                frame.filename, frame.lineno, frame.name
+            )
 
         if inspect.iscoroutinefunction(condition):
             raise ValueError(
-                "Async conditions are not possible in invariants as sync methods such as __init__ have to be wrapped.")
+                "Async conditions are not possible in invariants as sync methods such as __init__ have to be wrapped."
+            )
 
         self._contract = Contract(
-            condition=condition, description=description, a_repr=a_repr, error=error, location=location)
+            condition=condition,
+            description=description,
+            a_repr=a_repr,
+            error=error,
+            location=location,
+        )
 
-        if self._contract.mandatory_args and self._contract.mandatory_args != ['self']:
-            raise ValueError("Expected an invariant condition with at most an argument 'self', but got: {}".format(
-                self._contract.condition_args))
+        if self._contract.mandatory_args and self._contract.mandatory_args != ["self"]:
+            raise ValueError(
+                "Expected an invariant condition with at most an argument 'self', but got: {}".format(
+                    self._contract.condition_args
+                )
+            )
 
     def __call__(self, cls: ClassT) -> ClassT:
         """
@@ -364,15 +458,20 @@ class invariant:  # pylint: disable=invalid-name
         if not self.enabled:
             return cls
 
-        assert self._contract is not None, "self._contract must be set if the contract was enabled."
+        assert (
+            self._contract is not None
+        ), "self._contract must be set if the contract was enabled."
 
         if not hasattr(cls, "__invariants__"):
             invariants = []  # type: List[Contract]
             setattr(cls, "__invariants__", invariants)
         else:
             invariants = getattr(cls, "__invariants__")
-            assert isinstance(invariants, list), \
-                "Expected invariants of class {} to be a list, but got: {}".format(cls, type(invariants))
+            assert isinstance(
+                invariants, list
+            ), "Expected invariants of class {} to be a list, but got: {}".format(
+                cls, type(invariants)
+            )
 
         invariants.append(self._contract)
 

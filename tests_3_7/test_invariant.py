@@ -21,8 +21,10 @@ class TestOK(unittest.TestCase):
 
         _ = RightHalfPlanePoint(1, 0)
 
-        self.assertEqual('Create and return a new object.  See help(type) for accurate signature.',
-                         RightHalfPlanePoint.__new__.__doc__)
+        self.assertEqual(
+            "Create and return a new object.  See help(type) for accurate signature.",
+            RightHalfPlanePoint.__new__.__doc__,
+        )
 
 
 class TestViolation(unittest.TestCase):
@@ -42,11 +44,15 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent('''\
+            textwrap.dedent(
+                """\
             self.second > 0:
             self was TestViolation.test_on_dataclass.<locals>.RightHalfPlanePoint(first=1, second=-1)
-            self.second was -1'''), tests.error.wo_mandatory_location(str(violation_error)))
+            self.second was -1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

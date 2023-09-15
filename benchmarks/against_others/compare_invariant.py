@@ -22,7 +22,7 @@ class ClassWithIcontract:
         self.parts = identifier.split(".")
 
     def some_func(self) -> str:
-        return '.'.join(self.parts)
+        return ".".join(self.parts)
 
 
 @dpcontracts.invariant("some dummy invariant", lambda self: len(self.parts) > 0)
@@ -31,7 +31,7 @@ class ClassWithDpcontracts:
         self.parts = identifier.split(".")
 
     def some_func(self) -> str:
-        return '.'.join(self.parts)
+        return ".".join(self.parts)
 
 
 @deal.inv(validator=lambda self: len(self.parts) > 0, message="some dummy invariant")
@@ -40,7 +40,7 @@ class ClassWithDeal:
         self.parts = identifier.split(".")
 
     def some_func(self) -> str:
-        return '.'.join(self.parts)
+        return ".".join(self.parts)
 
 
 class ClassWithInlineContract:
@@ -50,7 +50,7 @@ class ClassWithInlineContract:
 
     def some_func(self) -> str:
         assert len(self.parts) > 0
-        result = '.'.join(self.parts)
+        result = ".".join(self.parts)
         assert len(self.parts) > 0
         return result
 
@@ -58,10 +58,10 @@ class ClassWithInlineContract:
 # dpcontracts change __name__ attribute of the class, so we can not use
 # ClassWithDpcontractsInvariant.__name__ for a more maintainable list.
 clses = [
-    'ClassWithIcontract',
-    'ClassWithDpcontracts',
-    'ClassWithDeal',
-    'ClassWithInlineContract',
+    "ClassWithIcontract",
+    "ClassWithDpcontracts",
+    "ClassWithDeal",
+    "ClassWithInlineContract",
 ]
 
 
@@ -72,8 +72,8 @@ def writeln_utf8(text: str) -> None:
     We can not use ``print()`` as we can not rely on the correct encoding in Windows.
     See: https://stackoverflow.com/questions/31469707/changing-the-locale-preferred-encoding-in-python-3-in-windows
     """
-    sys.stdout.buffer.write(text.encode('utf-8'))
-    sys.stdout.buffer.write(os.linesep.encode('utf-8'))
+    sys.stdout.buffer.write(text.encode("utf-8"))
+    sys.stdout.buffer.write(os.linesep.encode("utf-8"))
 
 
 def measure_invariant_at_init() -> None:
@@ -82,7 +82,11 @@ def measure_invariant_at_init() -> None:
     number = 1 * 1000 * 1000
 
     for i, cls in enumerate(clses):
-        duration = timeit.timeit("{}('X.Y')".format(cls), setup="from __main__ import {}".format(cls), number=number)
+        duration = timeit.timeit(
+            "{}('X.Y')".format(cls),
+            setup="from __main__ import {}".format(cls),
+            number=number,
+        )
         durations[i] = duration
 
     writeln_utf8("Benchmarking invariant at __init__:\n")
@@ -116,7 +120,10 @@ def measure_invariant_at_function() -> None:
 
     for i, cls in enumerate(clses):
         duration = timeit.timeit(
-            "a.some_func()", setup="from __main__ import {0}; a = {0}('X.Y')".format(cls), number=number)
+            "a.some_func()",
+            setup="from __main__ import {0}; a = {0}('X.Y')".format(cls),
+            number=number,
+        )
         durations[i] = duration
 
     writeln_utf8("Benchmarking invariant at a function:\n")
@@ -145,5 +152,5 @@ def measure_invariant_at_function() -> None:
 
 if __name__ == "__main__":
     measure_invariant_at_init()
-    writeln_utf8('')
+    writeln_utf8("")
     measure_invariant_at_function()

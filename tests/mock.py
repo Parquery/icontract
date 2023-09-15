@@ -9,17 +9,19 @@ class NumpyArray:
         """Initialize with the given values."""
         self.values = values
 
-    def __lt__(self, other: int) -> 'NumpyArray':
+    def __lt__(self, other: int) -> "NumpyArray":
         """Map the value to each comparison with ``other``."""
         return NumpyArray(values=[value < other for value in self.values])
 
-    def __gt__(self, other: int) -> 'NumpyArray':
+    def __gt__(self, other: int) -> "NumpyArray":
         """Map the value to each comparison with ``other``."""
         return NumpyArray(values=[value > other for value in self.values])
 
     def __bool__(self) -> bool:
         """Raise a ValueError."""
-        raise ValueError("The truth value of an array with more than one element is ambiguous.")
+        raise ValueError(
+            "The truth value of an array with more than one element is ambiguous."
+        )
 
     def all(self) -> bool:
         """Return True if all values are True."""
@@ -27,4 +29,4 @@ class NumpyArray:
 
     def __repr__(self) -> str:
         """Represent with the constructor."""
-        return 'NumpyArray({!r})'.format(self.values)
+        return "NumpyArray({!r})".format(self.values)

@@ -36,12 +36,12 @@ class TestDpcontracts(unittest.TestCase):
 
     def test_inheritance_of_postconditions_incorrect(self) -> None:
         class A:
-            @dpcontracts.ensure('dummy contract', lambda args, result: result % 2 == 0)  # type: ignore
+            @dpcontracts.ensure("dummy contract", lambda args, result: result % 2 == 0)  # type: ignore
             def some_func(self) -> int:
                 return 2
 
         class B(A):
-            @dpcontracts.ensure('dummy contract', lambda args, result: result % 3 == 0)  # type: ignore
+            @dpcontracts.ensure("dummy contract", lambda args, result: result % 3 == 0)  # type: ignore
             def some_func(self) -> int:
                 # The result 9 satisfies the postcondition of B.some_func, but not A.some_func.
                 return 9
@@ -51,5 +51,5 @@ class TestDpcontracts(unittest.TestCase):
         b.some_func()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

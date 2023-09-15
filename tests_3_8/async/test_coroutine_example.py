@@ -29,18 +29,33 @@ class TestCoroutines(unittest.IsolatedAsyncioTestCase):
             author: str
 
         @icontract.require(lambda categories: a.map(has_category, categories))
-        @icontract.ensure(lambda result: a.all(a.await_each(has_author(book.author) for book in result)))
+        @icontract.ensure(
+            lambda result: a.all(
+                a.await_each(has_author(book.author) for book in result)
+            )
+        )
         async def list_books(categories: List[str]) -> List[Book]:
             result = []  # type: List[Book]
             for category in categories:
                 if category == "sci-fi":
-                    result.extend([Book(identifier="The Blazing World", author="Margaret Cavendish")])
+                    result.extend(
+                        [
+                            Book(
+                                identifier="The Blazing World",
+                                author="Margaret Cavendish",
+                            )
+                        ]
+                    )
                 elif category == "romance":
-                    result.extend([Book(identifier="Pride and Prejudice", author="Jane Austen")])
+                    result.extend(
+                        [Book(identifier="Pride and Prejudice", author="Jane Austen")]
+                    )
                 else:
                     raise AssertionError(category)
 
             return result
 
-        sci_fi_books = await list_books(categories=['sci-fi'])
-        self.assertListEqual(['The Blazing World'], [book.identifier for book in sci_fi_books])
+        sci_fi_books = await list_books(categories=["sci-fi"])
+        self.assertListEqual(
+            ["The Blazing World"], [book.identifier for book in sci_fi_books]
+        )

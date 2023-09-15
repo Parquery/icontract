@@ -2,7 +2,10 @@
 """Manipulate the error text."""
 import re
 
-_LOCATION_RE = re.compile(r'\AFile [^\n]+, line [0-9]+ in [a-zA-Z_0-9]+:\n(.*)\Z', flags=re.MULTILINE | re.DOTALL)
+_LOCATION_RE = re.compile(
+    r"\AFile [^\n]+, line [0-9]+ in [a-zA-Z_0-9]+:\n(.*)\Z",
+    flags=re.MULTILINE | re.DOTALL,
+)
 
 
 def wo_mandatory_location(text: str) -> str:
@@ -23,6 +26,10 @@ def wo_mandatory_location(text: str) -> str:
     """
     mtch = _LOCATION_RE.match(text)
     if not mtch:
-        raise AssertionError("Expected the text to match {}, but got: {!r}".format(_LOCATION_RE.pattern, text))
+        raise AssertionError(
+            "Expected the text to match {}, but got: {!r}".format(
+                _LOCATION_RE.pattern, text
+            )
+        )
 
     return mtch.group(1)

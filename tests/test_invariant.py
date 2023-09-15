@@ -4,7 +4,13 @@
 import textwrap
 import time
 import unittest
-from typing import Dict, Iterator, Mapping, Optional, Any, NamedTuple  # pylint: disable=unused-import
+from typing import (
+    Dict,
+    Iterator,
+    Mapping,
+    Optional,
+    Any,
+)  # pylint: disable=unused-import
 
 import icontract
 import tests.error
@@ -218,7 +224,7 @@ class TestOK(unittest.TestCase):
 
         @icontract.invariant(lambda self: True)
         class Foo:
-            def __new__(cls, *args, **kwargs) -> 'Foo':  # type: ignore
+            def __new__(cls, *args, **kwargs) -> "Foo":  # type: ignore
                 nonlocal new_call_counter
                 new_call_counter += 1
                 return super(Foo, cls).__new__(cls)
@@ -255,10 +261,10 @@ class TestOK(unittest.TestCase):
                 return len(self._table)
 
             def __str__(self) -> str:
-                return '{}({})'.format(self.__class__.__name__, self._table)
+                return "{}({})".format(self.__class__.__name__, self._table)
 
-        f = Foo({'a': 1})  # test the constructor
-        _ = f['a']  # test __getitem__
+        f = Foo({"a": 1})  # test the constructor
+        _ = f["a"]  # test __getitem__
         _ = iter(f)  # test __iter__
         _ = len(f)  # test __len__
         _ = str(f)  # test __str__
@@ -289,10 +295,14 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 self.x > 0:
                 self was an instance of SomeClass
-                self.x was 0"""), tests.error.wo_mandatory_location(str(violation_error)))
+                self.x was 0"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_inv_as_precondition(self) -> None:
         @icontract.invariant(lambda self: self.x > 0)
@@ -316,10 +326,14 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 self.x > 0:
                 self was an instance of SomeClass
-                self.x was -1"""), tests.error.wo_mandatory_location(str(violation_error)))
+                self.x was -1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_method(self) -> None:
         @icontract.invariant(lambda self: self.x > 0)
@@ -342,10 +356,14 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 self.x > 0:
                 self was an instance of SomeClass
-                self.x was -1"""), tests.error.wo_mandatory_location(str(violation_error)))
+                self.x was -1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_magic_method(self) -> None:
         @icontract.invariant(lambda self: self.x > 0)
@@ -368,10 +386,14 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 self.x > 0:
                 self was an instance of SomeClass
-                self.x was -1"""), tests.error.wo_mandatory_location(str(violation_error)))
+                self.x was -1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_multiple_invs_first_violated(self) -> None:
         @icontract.invariant(lambda self: self.x > 0)
@@ -391,10 +413,14 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 self.x > 0:
                 self was an instance of SomeClass
-                self.x was -1"""), tests.error.wo_mandatory_location(str(violation_error)))
+                self.x was -1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_multiple_invs_last_violated(self) -> None:
         @icontract.invariant(lambda self: self.x > 0)
@@ -414,10 +440,14 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 self.x < 10:
                 self was an instance of SomeClass
-                self.x was 100"""), tests.error.wo_mandatory_location(str(violation_error)))
+                self.x was 100"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_inv_violated_after_pre(self) -> None:
         @icontract.invariant(lambda self: self.x > 0)
@@ -441,10 +471,14 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 y > 0:
                 self was an instance of SomeClass
-                y was -1"""), tests.error.wo_mandatory_location(str(violation_error)))
+                y was -1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
         violation_error = None
         try:
@@ -455,10 +489,14 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 self.x > 0:
                 self was an instance of SomeClass
-                self.x was -1"""), tests.error.wo_mandatory_location(str(violation_error)))
+                self.x was -1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_inv_ok_but_post_violated(self) -> None:
         @icontract.invariant(lambda self: self.x > 0)
@@ -483,10 +521,14 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 result > 0:
                 result was -1
-                self was an instance of SomeClass"""), tests.error.wo_mandatory_location(str(violation_error)))
+                self was an instance of SomeClass"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_inv_violated_but_post_ok(self) -> None:
         @icontract.invariant(lambda self: self.x > 0)
@@ -511,10 +553,14 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 self.x > 0:
                 self was an instance of SomeClass
-                self.x was -1"""), tests.error.wo_mandatory_location(str(violation_error)))
+                self.x was -1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_inv_with_empty_arguments(self) -> None:
         z = 42
@@ -532,13 +578,17 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 z != 42:
                 self was an instance of A
-                z was 42"""), tests.error.wo_mandatory_location(str(violation_error)))
+                z was 42"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_condition_as_function(self) -> None:
-        def some_condition(self: 'A') -> bool:
+        def some_condition(self: "A") -> bool:
             return self.x > 0
 
         @icontract.invariant(some_condition)
@@ -563,10 +613,13 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('some_condition: self was A(x=-1)', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            "some_condition: self was A(x=-1)",
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_condition_as_function_with_default_argument_value(self) -> None:
-        def some_condition(self: 'A', y: int = 0) -> bool:
+        def some_condition(self: "A", y: int = 0) -> bool:
             return self.x > y
 
         @icontract.invariant(some_condition)
@@ -591,7 +644,10 @@ class TestViolation(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('some_condition: self was A(x=-1)', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            "some_condition: self was A(x=-1)",
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
 
 class TestProperty(unittest.TestCase):
@@ -619,10 +675,14 @@ class TestProperty(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 not self.toggled:
                 self was an instance of SomeClass
-                self.toggled was True"""), tests.error.wo_mandatory_location(str(violation_error)))
+                self.toggled was True"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_property_setter(self) -> None:
         @icontract.invariant(lambda self: not self.toggled)
@@ -651,10 +711,14 @@ class TestProperty(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 not self.toggled:
                 self was an instance of SomeClass
-                self.toggled was True"""), tests.error.wo_mandatory_location(str(violation_error)))
+                self.toggled was True"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_property_deleter(self) -> None:
         @icontract.invariant(lambda self: not self.toggled)
@@ -683,10 +747,14 @@ class TestProperty(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 not self.toggled:
                 self was an instance of SomeClass
-                self.toggled was True"""), tests.error.wo_mandatory_location(str(violation_error)))
+                self.toggled was True"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
 
 class TestError(unittest.TestCase):
@@ -708,14 +776,22 @@ class TestError(unittest.TestCase):
         self.assertIsNotNone(value_error)
         self.assertIsInstance(value_error, ValueError)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 self.x > 0:
                 self was an instance of A
-                self.x was 0"""), tests.error.wo_mandatory_location(str(value_error)))
+                self.x was 0"""
+            ),
+            tests.error.wo_mandatory_location(str(value_error)),
+        )
 
     def test_as_function(self) -> None:
         @icontract.invariant(
-            lambda self: self.x > 0, error=lambda self: ValueError("x must be positive, but got: {}".format(self.x)))
+            lambda self: self.x > 0,
+            error=lambda self: ValueError(
+                "x must be positive, but got: {}".format(self.x)
+            ),
+        )
         class A:
             def __init__(self) -> None:
                 self.x = 0
@@ -731,10 +807,12 @@ class TestError(unittest.TestCase):
 
         self.assertIsNotNone(value_error)
         self.assertIsInstance(value_error, ValueError)
-        self.assertEqual('x must be positive, but got: 0', str(value_error))
+        self.assertEqual("x must be positive, but got: 0", str(value_error))
 
     def test_as_function_with_empty_args(self) -> None:
-        @icontract.invariant(lambda self: self.x > 0, error=lambda: ValueError("x must be positive"))
+        @icontract.invariant(
+            lambda self: self.x > 0, error=lambda: ValueError("x must be positive")
+        )
         class A:
             def __init__(self) -> None:
                 self.x = 0
@@ -750,7 +828,7 @@ class TestError(unittest.TestCase):
 
         self.assertIsNotNone(value_error)
         self.assertIsInstance(value_error, ValueError)
-        self.assertEqual('x must be positive', str(value_error))
+        self.assertEqual("x must be positive", str(value_error))
 
 
 class TestToggling(unittest.TestCase):
@@ -765,7 +843,9 @@ class TestToggling(unittest.TestCase):
 
 
 class TestBenchmark(unittest.TestCase):
-    @unittest.skip("Skipped the benchmark, execute manually on a prepared benchmark machine.")
+    @unittest.skip(
+        "Skipped the benchmark, execute manually on a prepared benchmark machine."
+    )
     def test_benchmark_when_disabled(self) -> None:
         def some_long_condition() -> bool:
             time.sleep(5)
@@ -805,8 +885,10 @@ class TestInvalid(unittest.TestCase):
             val_err = err
 
         self.assertIsNotNone(val_err)
-        self.assertEqual("Expected an invariant condition with at most an argument 'self', but got: ['self', 'z']",
-                         str(val_err))
+        self.assertEqual(
+            "Expected an invariant condition with at most an argument 'self', but got: ['self', 'z']",
+            str(val_err),
+        )
 
     def test_no_boolyness(self) -> None:
         @icontract.invariant(lambda self: tests.mock.NumpyArray([True, False]))
@@ -821,9 +903,11 @@ class TestInvalid(unittest.TestCase):
             value_error = err
 
         self.assertIsNotNone(value_error)
-        self.assertEqual('Failed to negate the evaluation of the condition.',
-                         tests.error.wo_mandatory_location(str(value_error)))
+        self.assertEqual(
+            "Failed to negate the evaluation of the condition.",
+            tests.error.wo_mandatory_location(str(value_error)),
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

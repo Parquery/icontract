@@ -43,7 +43,10 @@ class TestAsyncFunctionSyncCondition(unittest.IsolatedAsyncioTestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("result > 0: result was -100", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            "result > 0: result was -100",
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
 
 class TestAsyncFunctionAsyncCondition(unittest.IsolatedAsyncioTestCase):
@@ -86,8 +89,10 @@ class TestAsyncFunctionAsyncCondition(unittest.IsolatedAsyncioTestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("result_greater_zero: result was -100", tests.error.wo_mandatory_location(
-            str(violation_error)))
+        self.assertEqual(
+            "result_greater_zero: result was -100",
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
 
 class TestCoroutine(unittest.IsolatedAsyncioTestCase):
@@ -105,7 +110,9 @@ class TestCoroutine(unittest.IsolatedAsyncioTestCase):
         async def some_condition() -> bool:
             return False
 
-        @icontract.ensure(lambda: some_condition(), error=lambda: icontract.ViolationError("hihi"))
+        @icontract.ensure(
+            lambda: some_condition(), error=lambda: icontract.ViolationError("hihi")
+        )
         async def some_func() -> None:
             pass
 
@@ -118,7 +125,9 @@ class TestCoroutine(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(violation_error)
         self.assertEqual("hihi", str(violation_error))
 
-    async def test_reported_if_no_error_is_specified_as_we_can_not_recompute_coroutine_functions(self) -> None:
+    async def test_reported_if_no_error_is_specified_as_we_can_not_recompute_coroutine_functions(
+        self,
+    ) -> None:
         async def some_condition() -> bool:
             return False
 
@@ -139,8 +148,10 @@ class TestCoroutine(unittest.IsolatedAsyncioTestCase):
         value_error = runtime_error.__cause__
 
         self.assertRegex(
-            str(value_error), r"^Unexpected coroutine function <function .*> as a condition of a contract\. "
-            r"You must specify your own error if the condition of your contract is a coroutine function\.")
+            str(value_error),
+            r"^Unexpected coroutine function <function .*> as a condition of a contract\. "
+            r"You must specify your own error if the condition of your contract is a coroutine function\.",
+        )
 
     async def test_snapshot(self) -> None:
         async def some_capture() -> int:
@@ -167,13 +178,17 @@ class TestInvalid(unittest.IsolatedAsyncioTestCase):
             type_err = err
 
         self.assertIsNotNone(type_err)
-        self.assertEqual("The argument(s) of the contract condition have not been set: ['b']. "
-                         "Does the original function define them? Did you supply them in the call?",
-                         tests.error.wo_mandatory_location(str(type_err)))
+        self.assertEqual(
+            "The argument(s) of the contract condition have not been set: ['b']. "
+            "Does the original function define them? Did you supply them in the call?",
+            tests.error.wo_mandatory_location(str(type_err)),
+        )
 
     async def test_conflicting_result_argument(self) -> None:
         @icontract.ensure(lambda a, result: a > result)
-        async def some_function(a: int, result: int) -> None:  # pylint: disable=unused-variable
+        async def some_function(
+            a: int, result: int
+        ) -> None:  # pylint: disable=unused-variable
             pass
 
         type_err = None  # type: Optional[TypeError]
@@ -183,12 +198,17 @@ class TestInvalid(unittest.IsolatedAsyncioTestCase):
             type_err = err
 
         self.assertIsNotNone(type_err)
-        self.assertEqual("Unexpected argument 'result' in a function decorated with postconditions.", str(type_err))
+        self.assertEqual(
+            "Unexpected argument 'result' in a function decorated with postconditions.",
+            str(type_err),
+        )
 
     async def test_conflicting_OLD_argument(self) -> None:
         @icontract.snapshot(lambda a: a[:])
         @icontract.ensure(lambda OLD, a: a == OLD.a)
-        async def some_function(a: List[int], OLD: int) -> None:  # pylint: disable=unused-variable
+        async def some_function(
+            a: List[int], OLD: int
+        ) -> None:  # pylint: disable=unused-variable
             pass
 
         type_err = None  # type: Optional[TypeError]
@@ -198,11 +218,18 @@ class TestInvalid(unittest.IsolatedAsyncioTestCase):
             type_err = err
 
         self.assertIsNotNone(type_err)
-        self.assertEqual("Unexpected argument 'OLD' in a function decorated with postconditions.", str(type_err))
+        self.assertEqual(
+            "Unexpected argument 'OLD' in a function decorated with postconditions.",
+            str(type_err),
+        )
 
     async def test_error_with_invalid_arguments(self) -> None:
         @icontract.ensure(
-            lambda result: result > 0, error=lambda z, result: ValueError("x is {}, result is {}".format(z, result)))
+            lambda result: result > 0,
+            error=lambda z, result: ValueError(
+                "x is {}, result is {}".format(z, result)
+            ),
+        )
         async def some_func(x: int) -> int:
             return x
 
@@ -213,9 +240,11 @@ class TestInvalid(unittest.IsolatedAsyncioTestCase):
             type_error = err
 
         self.assertIsNotNone(type_error)
-        self.assertEqual("The argument(s) of the contract error have not been set: ['z']. "
-                         "Does the original function define them? Did you supply them in the call?",
-                         tests.error.wo_mandatory_location(str(type_error)))
+        self.assertEqual(
+            "The argument(s) of the contract error have not been set: ['z']. "
+            "Does the original function define them? Did you supply them in the call?",
+            tests.error.wo_mandatory_location(str(type_error)),
+        )
 
     async def test_no_boolyness(self) -> None:
         @icontract.ensure(lambda: tests.mock.NumpyArray([True, False]))
@@ -229,9 +258,11 @@ class TestInvalid(unittest.IsolatedAsyncioTestCase):
             value_error = err
 
         self.assertIsNotNone(value_error)
-        self.assertEqual('Failed to negate the evaluation of the condition.',
-                         tests.error.wo_mandatory_location(str(value_error)))
+        self.assertEqual(
+            "Failed to negate the evaluation of the condition.",
+            tests.error.wo_mandatory_location(str(value_error)),
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

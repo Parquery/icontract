@@ -12,11 +12,17 @@ import icontract._represent
 
 
 @icontract.require(lambda x: x > 0)
-@icontract.snapshot(lambda cumulative: None if len(cumulative) == 0 else cumulative[-1], "last")
+@icontract.snapshot(
+    lambda cumulative: None if len(cumulative) == 0 else cumulative[-1], "last"
+)
 @icontract.snapshot(lambda cumulative: len(cumulative), "len_cumulative")
 @icontract.ensure(lambda cumulative, OLD: len(cumulative) == OLD.len_cumulative + 1)
-@icontract.ensure(lambda x, cumulative, OLD: OLD.last is None or OLD.last + x == cumulative[-1])
-@icontract.ensure(lambda x, cumulative, OLD: OLD.last is not None or x == cumulative[-1])
+@icontract.ensure(
+    lambda x, cumulative, OLD: OLD.last is None or OLD.last + x == cumulative[-1]
+)
+@icontract.ensure(
+    lambda x, cumulative, OLD: OLD.last is not None or x == cumulative[-1]
+)
 def func_with_contracts(x: int, cumulative: List[int]) -> None:
     if len(cumulative) == 0:
         cumulative.append(x)
@@ -48,13 +54,17 @@ class TestPreconditions(unittest.TestCase):
         preconditions = checker.__preconditions__  # type: ignore
         assert isinstance(preconditions, list)
         assert all(isinstance(group, list) for group in preconditions)
-        assert all(isinstance(contract, icontract._types.Contract) for group in preconditions for contract in group)
+        assert all(
+            isinstance(contract, icontract._types.Contract)
+            for group in preconditions
+            for contract in group
+        )
 
         ##
         # Evaluate manually preconditions
         ##
 
-        kwargs = {'x': 4, 'cumulative': [2]}
+        kwargs = {"x": 4, "cumulative": [2]}
 
         success = True
         # We have to check preconditions in groups in case they are weakened
@@ -62,7 +72,8 @@ class TestPreconditions(unittest.TestCase):
             success = True
             for contract in group:
                 condition_kwargs = icontract._checkers.select_condition_kwargs(
-                    contract=contract, resolved_kwargs=kwargs)
+                    contract=contract, resolved_kwargs=kwargs
+                )
 
                 success = contract.condition(**condition_kwargs)
                 if not success:
@@ -88,7 +99,11 @@ class TestPreconditions(unittest.TestCase):
             checker=checker,
             contract=icontract._types.Contract(
                 condition=lambda x: x > 0,
-                error=lambda x: icontract.ViolationError("x must be positive, but got: {}".format(x))))
+                error=lambda x: icontract.ViolationError(
+                    "x must be positive, but got: {}".format(x)
+                ),
+            ),
+        )
 
         violation_error = None  # type: Optional[icontract.ViolationError]
         try:
@@ -98,7 +113,7 @@ class TestPreconditions(unittest.TestCase):
 
         assert violation_error is not None
 
-        self.assertEqual('x must be positive, but got: -1', str(violation_error))
+        self.assertEqual("x must be positive, but got: -1", str(violation_error))
 
 
 class TestPostconditions(unittest.TestCase):
@@ -109,24 +124,31 @@ class TestPostconditions(unittest.TestCase):
         # Retrieve postconditions
         postconditions = checker.__postconditions__  # type: ignore
         assert isinstance(postconditions, list)
-        assert all(isinstance(contract, icontract._types.Contract) for contract in postconditions)
+        assert all(
+            isinstance(contract, icontract._types.Contract)
+            for contract in postconditions
+        )
 
         # Retrieve snapshots
         snapshots = checker.__postcondition_snapshots__  # type: ignore
         assert isinstance(snapshots, list)
-        assert all(isinstance(snapshot, icontract._types.Snapshot) for snapshot in snapshots)
+        assert all(
+            isinstance(snapshot, icontract._types.Snapshot) for snapshot in snapshots
+        )
 
         ##
         # Evaluate manually postconditions
         ##
 
         cumulative = [2]
-        kwargs = {'x': 4, 'cumulative': cumulative}  # kwargs **before** the call
+        kwargs = {"x": 4, "cumulative": cumulative}  # kwargs **before** the call
 
         # Capture OLD
         old_as_mapping = dict()  # type: MutableMapping[str, Any]
         for snap in snapshots:
-            snap_kwargs = icontract._checkers.select_capture_kwargs(a_snapshot=snap, resolved_kwargs=kwargs)
+            snap_kwargs = icontract._checkers.select_capture_kwargs(
+                a_snapshot=snap, resolved_kwargs=kwargs
+            )
 
             old_as_mapping[snap.name] = snap.capture(**snap_kwargs)
 
@@ -136,11 +158,13 @@ class TestPostconditions(unittest.TestCase):
         cumulative.append(6)
 
         # Evaluate the postconditions
-        kwargs['OLD'] = old
+        kwargs["OLD"] = old
 
         success = True
         for contract in postconditions:
-            condition_kwargs = icontract._checkers.select_condition_kwargs(contract=contract, resolved_kwargs=kwargs)
+            condition_kwargs = icontract._checkers.select_condition_kwargs(
+                contract=contract, resolved_kwargs=kwargs
+            )
 
             success = contract.condition(**condition_kwargs)
 
@@ -165,10 +189,16 @@ class TestPostconditions(unittest.TestCase):
             checker=checker,
             contract=icontract._types.Contract(
                 condition=lambda OLD, lst: OLD.len_lst == len(lst),
-                error=icontract.ViolationError("The size of lst must not change.")))
+                error=icontract.ViolationError("The size of lst must not change."),
+            ),
+        )
 
         icontract._checkers.add_snapshot_to_checker(
-            checker=checker, snapshot=icontract._types.Snapshot(capture=lambda lst: len(lst), name="len_lst"))
+            checker=checker,
+            snapshot=icontract._types.Snapshot(
+                capture=lambda lst: len(lst), name="len_lst"
+            ),
+        )
 
         violation_error = None  # type: Optional[icontract.ViolationError]
         try:
@@ -179,7 +209,7 @@ class TestPostconditions(unittest.TestCase):
 
         assert violation_error is not None
 
-        self.assertEqual('The size of lst must not change.', str(violation_error))
+        self.assertEqual("The size of lst must not change.", str(violation_error))
 
 
 class TestInvariants(unittest.TestCase):
@@ -189,11 +219,15 @@ class TestInvariants(unittest.TestCase):
 
         invariants = ClassWithInvariants.__invariants__  # type: ignore
         assert isinstance(invariants, list)
-        assert all(isinstance(invariant, icontract._types.Contract) for invariant in invariants)
+        assert all(
+            isinstance(invariant, icontract._types.Contract) for invariant in invariants
+        )
 
         invariants = instance.__invariants__  # type: ignore
         assert isinstance(invariants, list)
-        assert all(isinstance(invariant, icontract._types.Contract) for invariant in invariants)
+        assert all(
+            isinstance(invariant, icontract._types.Contract) for invariant in invariants
+        )
 
         success = True
         for contract in invariants:
@@ -216,11 +250,15 @@ class TestRepresentation(unittest.TestCase):
 
         assert icontract._represent.is_lambda(a_function=contract.condition)
 
-        lambda_inspection = icontract._represent.inspect_lambda_condition(condition=contract.condition)
+        lambda_inspection = icontract._represent.inspect_lambda_condition(
+            condition=contract.condition
+        )
 
         assert lambda_inspection is not None
 
-        self.assertEqual('OLD.last is not None or x == cumulative[-1]', lambda_inspection.text)
+        self.assertEqual(
+            "OLD.last is not None or x == cumulative[-1]", lambda_inspection.text
+        )
 
         assert isinstance(lambda_inspection.node, ast.Lambda)
 
@@ -233,7 +271,10 @@ class TestRepresentation(unittest.TestCase):
         assert isinstance(contract, icontract._types.Contract)
 
         text = icontract._represent.represent_condition(contract.condition)
-        self.assertEqual('lambda x, cumulative, OLD: OLD.last is not None or x == cumulative[-1]', text)
+        self.assertEqual(
+            "lambda x, cumulative, OLD: OLD.last is not None or x == cumulative[-1]",
+            text,
+        )
 
 
 if __name__ == "__main__":

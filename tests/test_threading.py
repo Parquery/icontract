@@ -39,5 +39,5 @@ class TestThreading(unittest.TestCase):
         another_worker.join()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

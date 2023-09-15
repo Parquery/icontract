@@ -30,7 +30,7 @@ class TestArgs(unittest.TestCase):
         some_func(3)
 
         assert recorded_args is not None
-        self.assertTupleEqual((3, ), recorded_args)
+        self.assertTupleEqual((3,), recorded_args)
 
     def test_args_with_named_and_variable_positional_arguments(self) -> None:
         recorded_args = None  # type: Optional[Tuple[Any, ...]]
@@ -96,11 +96,15 @@ class TestArgs(unittest.TestCase):
 
         assert violation_error is not None
         self.assertEqual(
-            textwrap.dedent('''\
+            textwrap.dedent(
+                """\
                 len(_ARGS) > 2:
                 _ARGS was (3,)
                 args was 3
-                len(_ARGS) was 1'''), tests.error.wo_mandatory_location(str(violation_error)))
+                len(_ARGS) was 1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
 
 class TestKwargs(unittest.TestCase):
@@ -155,7 +159,9 @@ class TestKwargs(unittest.TestCase):
         assert recorded_kwargs is not None
         self.assertDictEqual({"x": 3, "y": 2, "z": 1}, recorded_kwargs)
 
-    def test_kwargs_with_uncommon_argument_name_for_variable_keyword_arguments(self) -> None:
+    def test_kwargs_with_uncommon_argument_name_for_variable_keyword_arguments(
+        self,
+    ) -> None:
         recorded_kwargs = None  # type: Optional[Dict[str, Any]]
 
         def set_kwargs(kwargs: Dict[str, Any]) -> bool:
@@ -173,7 +179,7 @@ class TestKwargs(unittest.TestCase):
         self.assertDictEqual({"x": 3, "y": 2, "z": 1, "a": 0}, recorded_kwargs)
 
     def test_fail(self) -> None:
-        @icontract.require(lambda _KWARGS: 'x' in _KWARGS)
+        @icontract.require(lambda _KWARGS: "x" in _KWARGS)
         def some_func(**kwargs: Any) -> None:
             pass
 
@@ -185,10 +191,14 @@ class TestKwargs(unittest.TestCase):
 
         assert violation_error is not None
         self.assertEqual(
-            textwrap.dedent("""\
-                'x' in _KWARGS:
+            textwrap.dedent(
+                """\
+                "x" in _KWARGS:
                 _KWARGS was {'y': 3}
-                y was 3"""), tests.error.wo_mandatory_location(str(violation_error)))
+                y was 3"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
 
 class TestArgsAndKwargs(unittest.TestCase):
@@ -210,7 +220,7 @@ class TestArgsAndKwargs(unittest.TestCase):
         some_func(5, x=10, y=20, z=30)
 
         assert recorded_args is not None
-        self.assertTupleEqual((5, ), recorded_args)
+        self.assertTupleEqual((5,), recorded_args)
 
         assert recorded_kwargs is not None
         self.assertDictEqual({"x": 10, "y": 20, "z": 30}, recorded_kwargs)
@@ -247,12 +257,16 @@ class TestConflictOnARGSReported(unittest.TestCase):
             @icontract.require(lambda _ARGS: True)
             def some_func(_ARGS: Any) -> None:
                 pass
+
         except TypeError as error:
             type_error = error
 
         assert type_error is not None
-        self.assertEqual('The arguments of the function to be decorated with a contract checker include "_ARGS" '
-                         'which is a reserved placeholder for positional arguments in the condition.', str(type_error))
+        self.assertEqual(
+            'The arguments of the function to be decorated with a contract checker include "_ARGS" '
+            "which is a reserved placeholder for positional arguments in the condition.",
+            str(type_error),
+        )
 
     def test_in_kwargs_in_call(self) -> None:
         @icontract.require(lambda _ARGS: True)
@@ -266,8 +280,11 @@ class TestConflictOnARGSReported(unittest.TestCase):
             type_error = error
 
         assert type_error is not None
-        self.assertEqual('The arguments of the function call include "_ARGS" '
-                         'which is a placeholder for positional arguments in a condition.', str(type_error))
+        self.assertEqual(
+            'The arguments of the function call include "_ARGS" '
+            "which is a placeholder for positional arguments in a condition.",
+            str(type_error),
+        )
 
 
 class TestConflictOnKWARGSReported(unittest.TestCase):
@@ -278,12 +295,16 @@ class TestConflictOnKWARGSReported(unittest.TestCase):
             @icontract.require(lambda _ARGS: True)
             def some_func(_KWARGS: Any) -> None:
                 pass
+
         except TypeError as error:
             type_error = error
 
         assert type_error is not None
-        self.assertEqual('The arguments of the function to be decorated with a contract checker include "_KWARGS" '
-                         'which is a reserved placeholder for keyword arguments in the condition.', str(type_error))
+        self.assertEqual(
+            'The arguments of the function to be decorated with a contract checker include "_KWARGS" '
+            "which is a reserved placeholder for keyword arguments in the condition.",
+            str(type_error),
+        )
 
     def test_in_kwargs_in_call(self) -> None:
         @icontract.require(lambda _ARGS: True)
@@ -297,9 +318,12 @@ class TestConflictOnKWARGSReported(unittest.TestCase):
             type_error = error
 
         assert type_error is not None
-        self.assertEqual('The arguments of the function call include "_KWARGS" '
-                         'which is a placeholder for keyword arguments in a condition.', str(type_error))
+        self.assertEqual(
+            'The arguments of the function call include "_KWARGS" '
+            "which is a placeholder for keyword arguments in a condition.",
+            str(type_error),
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -31,7 +31,9 @@ class TestAsyncFunctionSyncCondition(unittest.IsolatedAsyncioTestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("x > 0: x was -1", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            "x > 0: x was -1", tests.error.wo_mandatory_location(str(violation_error))
+        )
 
 
 class TestAsyncFunctionAsyncCondition(unittest.IsolatedAsyncioTestCase):
@@ -61,7 +63,10 @@ class TestAsyncFunctionAsyncCondition(unittest.IsolatedAsyncioTestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("x_greater_zero: x was -1", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            "x_greater_zero: x was -1",
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
 
 class TestCoroutine(unittest.IsolatedAsyncioTestCase):
@@ -79,7 +84,9 @@ class TestCoroutine(unittest.IsolatedAsyncioTestCase):
         async def some_condition() -> bool:
             return False
 
-        @icontract.require(lambda: some_condition(), error=lambda: icontract.ViolationError("hihi"))
+        @icontract.require(
+            lambda: some_condition(), error=lambda: icontract.ViolationError("hihi")
+        )
         async def some_func() -> None:
             pass
 
@@ -92,7 +99,9 @@ class TestCoroutine(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(violation_error)
         self.assertEqual("hihi", str(violation_error))
 
-    async def test_reported_if_no_error_is_specified_as_we_can_not_recompute_coroutine_functions(self) -> None:
+    async def test_reported_if_no_error_is_specified_as_we_can_not_recompute_coroutine_functions(
+        self,
+    ) -> None:
         async def some_condition() -> bool:
             return False
 
@@ -113,8 +122,10 @@ class TestCoroutine(unittest.IsolatedAsyncioTestCase):
         value_error = runtime_error.__cause__
 
         self.assertRegex(
-            str(value_error), r"^Unexpected coroutine function <function .*> as a condition of a contract\. "
-            r"You must specify your own error if the condition of your contract is a coroutine function\.")
+            str(value_error),
+            r"^Unexpected coroutine function <function .*> as a condition of a contract\. "
+            r"You must specify your own error if the condition of your contract is a coroutine function\.",
+        )
 
 
 if __name__ == "__main__":

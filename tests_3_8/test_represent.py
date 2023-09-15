@@ -13,7 +13,9 @@ import tests.mock
 
 class TestReprValues(unittest.TestCase):
     def test_named_expression(self) -> None:
-        @icontract.require(lambda x: (t := x + 1) and t > 1)  # pylint: disable=undefined-variable
+        @icontract.require(
+            lambda x: (t := x + 1) and t > 1
+        )  # pylint: disable=undefined-variable
         def func(x: int) -> int:
             return x
 
@@ -25,11 +27,15 @@ class TestReprValues(unittest.TestCase):
 
         self.assertIsNotNone(violation_err)
         self.assertEqual(
-            textwrap.dedent('''\
+            textwrap.dedent(
+                """\
                 (t := x + 1) and t > 1:
                 t was 1
-                x was 0'''), tests.error.wo_mandatory_location(str(violation_err)))
+                x was 0"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_err)),
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

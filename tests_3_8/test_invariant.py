@@ -23,8 +23,10 @@ class TestOK(unittest.TestCase):
 
         _ = RightHalfPlanePoint(1, 0)
 
-        self.assertEqual('Create new instance of RightHalfPlanePoint(first, second)',
-                         RightHalfPlanePoint.__new__.__doc__)
+        self.assertEqual(
+            "Create new instance of RightHalfPlanePoint(first, second)",
+            RightHalfPlanePoint.__new__.__doc__,
+        )
 
 
 class TestViolation(unittest.TestCase):
@@ -47,11 +49,15 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent('''\
+            textwrap.dedent(
+                """\
                 self.second > 0:
                 self was RightHalfPlanePoint(first=1, second=-1)
-                self.second was -1'''), tests.error.wo_mandatory_location(str(violation_error)))
+                self.second was -1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -1,7 +1,16 @@
 """Define data structures shared among the modules."""
 import inspect
 import reprlib
-from typing import Callable, Optional, Union, Set, List, Any, Type, cast  # pylint: disable=unused-import
+from typing import (
+    Callable,
+    Optional,
+    Union,
+    Set,
+    List,
+    Any,
+    Type,
+    cast,
+)  # pylint: disable=unused-import
 
 import icontract._globals
 
@@ -11,12 +20,16 @@ from icontract._globals import ExceptionT
 class Contract:
     """Represent a contract to be enforced as a precondition, postcondition or as an invariant."""
 
-    def __init__(self,
-                 condition: Callable[..., Any],
-                 description: Optional[str] = None,
-                 a_repr: reprlib.Repr = icontract._globals.aRepr,
-                 error: Optional[Union[Callable[..., ExceptionT], Type[ExceptionT], BaseException]] = None,
-                 location: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        condition: Callable[..., Any],
+        description: Optional[str] = None,
+        a_repr: reprlib.Repr = icontract._globals.aRepr,
+        error: Optional[
+            Union[Callable[..., ExceptionT], Type[ExceptionT], BaseException]
+        ] = None,
+        location: Optional[str] = None,
+    ) -> None:
         """
         Initialize.
 
@@ -42,7 +55,9 @@ class Contract:
 
         # Names of the mandatory arguments of the condition
         self.mandatory_args = [
-            name for name, param in signature.parameters.items() if param.default == inspect.Parameter.empty
+            name
+            for name, param in signature.parameters.items()
+            if param.default == inspect.Parameter.empty
         ]
 
         self.description = description
@@ -53,7 +68,9 @@ class Contract:
         self.error_arg_set = None  # type: Optional[Set[str]]
         if error is not None and (inspect.isfunction(error) or inspect.ismethod(error)):
             error_as_callable = cast(Callable[..., ExceptionT], error)
-            self.error_args = list(inspect.signature(error_as_callable).parameters.keys())
+            self.error_args = list(
+                inspect.signature(error_as_callable).parameters.keys()
+            )
             self.error_arg_set = set(self.error_args)
 
         self.location = location
@@ -62,7 +79,12 @@ class Contract:
 class Snapshot:
     """Define a snapshot of an argument *prior* to the function invocation that is later supplied to a postcondition."""
 
-    def __init__(self, capture: Callable[..., Any], name: Optional[str] = None, location: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        capture: Callable[..., Any],
+        name: Optional[str] = None,
+        location: Optional[str] = None,
+    ) -> None:
         """
         Initialize.
 
@@ -80,14 +102,20 @@ class Snapshot:
 
         if name is None:
             if len(args) == 0:
-                raise ValueError("You must name a snapshot if no argument was given in the capture function.")
+                raise ValueError(
+                    "You must name a snapshot if no argument was given in the capture function."
+                )
             elif len(args) > 1:
-                raise ValueError("You must name a snapshot if multiple arguments were given in the capture function.")
+                raise ValueError(
+                    "You must name a snapshot if multiple arguments were given in the capture function."
+                )
             else:
                 assert len(args) == 1
                 name = args[0]
 
-        assert name is not None, "Expected ``name`` to be set in the preceding execution paths."
+        assert (
+            name is not None
+        ), "Expected ``name`` to be set in the preceding execution paths."
         self.name = name
 
         self.args = args
