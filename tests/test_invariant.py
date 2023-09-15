@@ -197,7 +197,7 @@ class TestOK(unittest.TestCase):
         inst.some_method()
         self.assertEqual(10, inst.x)
 
-    def test_inv_with_empty_arguments(self) -> None:  # pylint: disable=no-self-use
+    def test_inv_with_empty_arguments(self) -> None:
         z = 42
 
         @icontract.invariant(lambda: z == 42)

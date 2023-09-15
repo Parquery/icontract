@@ -1,5 +1,4 @@
 # pylint: disable=missing-docstring
-# pylint: disable=no-self-use
 # pylint: disable=unnecessary-lambda
 # pylint: disable=disallowed-name
 import asyncio

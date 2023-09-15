@@ -51,7 +51,7 @@ setup(
     install_requires=install_requires,
     extras_require={
         "dev": [
-            "pylint==2.13.9",
+            "pylint==2.17.5",
             "tox>=3.0.0",
             "pydocstyle>=6.1.1,<7",
             "coverage>=4.5.1,<5",

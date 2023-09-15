@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# pylint: disable=missing-docstring,invalid-name,no-self-use
+# pylint: disable=missing-docstring,invalid-name
 # pylint: disable=unused-argument
 import textwrap
 import unittest

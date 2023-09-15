@@ -27,7 +27,7 @@ class TestOK(unittest.TestCase):
             def __repr__(self) -> str:
                 return "instance of A"
 
-            def some_func(self) -> int:  # pylint: disable=no-self-use
+            def some_func(self) -> int:
                 return 1
 
         class B(A):

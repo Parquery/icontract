@@ -1,5 +1,4 @@
 # pylint: disable=missing-docstring
-# pylint: disable=no-self-use
 # pylint: disable=unnecessary-lambda
 import unittest
 from typing import List

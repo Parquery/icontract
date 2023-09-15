@@ -1,4 +1,4 @@
-# pylint: disable=missing-docstring,unnecessary-lambda,no-self-use
+# pylint: disable=missing-docstring,unnecessary-lambda
 import threading
 import unittest
 
