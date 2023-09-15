@@ -1,3 +1,5 @@
+asttokens>=2,<3
+typing_extensions
 sphinx>=5,<6
 sphinx-autodoc-typehints>=1.11.1
 sphinx-rtd-theme>=1,<2
