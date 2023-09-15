@@ -23,34 +23,42 @@ def main() -> int:
 
     repo_root = pathlib.Path(__file__).parent
 
-    print("Reformatting...")
-    reformat_targets = [
-        "tests",
-        "icontract",
-        "setup.py",
-        "precommit.py",
-        "benchmark.py",
-        "benchmarks",
-        "tests_with_others",
-    ]
-
-    if sys.version_info >= (3, 6):
-        reformat_targets.append("tests_3_6")
-
-    if sys.version_info >= (3, 7):
-        reformat_targets.append("tests_3_7")
-
-    if sys.version_info >= (3, 8, 5):
-        reformat_targets.append("tests_3_8")
-
-    if overwrite:
-        subprocess.check_call(
-            [sys.executable, "-m", "black"] + reformat_targets, cwd=str(repo_root)
+    if sys.version_info < (3, 8):
+        print(
+            "Our formatter, black, supports only Python versions from 3.8 on. "
+            "However, you are running Python {}. Hence, the reformatting step "
+            "will be skipped.".format(sys.version_info)
         )
     else:
-        subprocess.check_call(
-            [sys.executable, "-m", "black"] + reformat_targets, cwd=str(repo_root)
-        )
+        print("Reformatting...")
+
+        reformat_targets = [
+            "tests",
+            "icontract",
+            "setup.py",
+            "precommit.py",
+            "benchmark.py",
+            "benchmarks",
+            "tests_with_others",
+        ]
+
+        if sys.version_info >= (3, 6):
+            reformat_targets.append("tests_3_6")
+
+        if sys.version_info >= (3, 7):
+            reformat_targets.append("tests_3_7")
+
+        if sys.version_info >= (3, 8, 5):
+            reformat_targets.append("tests_3_8")
+
+        if overwrite:
+            subprocess.check_call(
+                [sys.executable, "-m", "black"] + reformat_targets, cwd=str(repo_root)
+            )
+        else:
+            subprocess.check_call(
+                [sys.executable, "-m", "black"] + reformat_targets, cwd=str(repo_root)
+            )
 
     if sys.version_info < (3, 8):
         print(
