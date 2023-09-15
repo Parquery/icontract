@@ -1,7 +1,6 @@
 # pylint: disable=missing-docstring
 # pylint: disable=invalid-name
 # pylint: disable=unused-argument
-# pylint: disable=no-self-use
 # pylint: disable=unused-variable
 
 import textwrap

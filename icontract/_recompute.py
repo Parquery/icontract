@@ -1096,7 +1096,7 @@ class Visitor(ast.NodeVisitor):
             "Please make a feature request on https://github.com/Parquery/icontract"
         )
 
-    def visit_Return(self, node: ast.Return) -> Any:  # pylint: disable=no-self-use
+    def visit_Return(self, node: ast.Return) -> Any:
         """Raise an exception that this node is unexpected."""
         raise AssertionError(
             "Unexpected return node during the re-computation: {}".format(

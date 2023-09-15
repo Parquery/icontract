@@ -1,6 +1,5 @@
 # pylint: disable=missing-docstring
 # pylint: disable=invalid-name
-# pylint: disable=no-self-use
 
 import abc
 import sys

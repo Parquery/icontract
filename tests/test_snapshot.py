@@ -2,7 +2,7 @@
 # pylint: disable=invalid-name
 # pylint: disable=unnecessary-lambda
 # pylint: disable=unused-argument
-# pylint: disable=no-self-use
+
 import textwrap
 import unittest
 from typing import List, Optional  # pylint: disable=unused-import
