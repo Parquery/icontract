@@ -26,7 +26,8 @@ class TestSyncFunctionAsyncConditionFail(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(value_error)
         self.assertRegex(
             str(value_error),
-            r'^Unexpected coroutine \(async\) condition <.*> for a sync function <.*\.some_func at .*>.')
+            r"^Unexpected coroutine \(async\) condition <.*> for a sync function <.*\.some_func at .*>.",
+        )
 
     def test_postcondition(self) -> None:
         async def result_greater_zero(result: int) -> bool:
@@ -45,7 +46,8 @@ class TestSyncFunctionAsyncConditionFail(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(value_error)
         self.assertRegex(
             str(value_error),
-            r'^Unexpected coroutine \(async\) condition <.*> for a sync function <.*\.some_func at .*>.')
+            r"^Unexpected coroutine \(async\) condition <.*> for a sync function <.*\.some_func at .*>.",
+        )
 
     def test_snapshot(self) -> None:
         async def capture_len_lst(lst: List[int]) -> int:
@@ -64,8 +66,10 @@ class TestSyncFunctionAsyncConditionFail(unittest.IsolatedAsyncioTestCase):
 
         self.assertIsNotNone(value_error)
         self.assertRegex(
-            str(value_error), r'^Unexpected coroutine \(async\) snapshot capture <function .*\.capture_len_lst at .*> '
-            r'for a sync function <function .*\.some_func at .*>\.')
+            str(value_error),
+            r"^Unexpected coroutine \(async\) snapshot capture <function .*\.capture_len_lst at .*> "
+            r"for a sync function <function .*\.some_func at .*>\.",
+        )
 
 
 class TestSyncFunctionConditionCoroutineFail(unittest.IsolatedAsyncioTestCase):
@@ -87,7 +91,8 @@ class TestSyncFunctionConditionCoroutineFail(unittest.IsolatedAsyncioTestCase):
 
         self.assertRegex(
             str(value_error),
-            r"^Unexpected coroutine resulting from the condition <function .*> for a sync function <function .*>\.$")
+            r"^Unexpected coroutine resulting from the condition <function .*> for a sync function <function .*>\.$",
+        )
 
     def test_postcondition(self) -> None:
         async def result_greater_zero(result: int) -> bool:
@@ -107,7 +112,8 @@ class TestSyncFunctionConditionCoroutineFail(unittest.IsolatedAsyncioTestCase):
 
         self.assertRegex(
             str(value_error),
-            r"^Unexpected coroutine resulting from the condition <function .*> for a sync function <function .*>\.$")
+            r"^Unexpected coroutine resulting from the condition <function .*> for a sync function <function .*>\.$",
+        )
 
     def test_snapshot(self) -> None:
         async def capture_len_lst(lst: List[int]) -> int:
@@ -126,13 +132,15 @@ class TestSyncFunctionConditionCoroutineFail(unittest.IsolatedAsyncioTestCase):
 
         assert value_error is not None
         self.assertRegex(
-            str(value_error), r'^Unexpected coroutine resulting '
-            r'from the snapshot capture <function .*> of a sync function <function .*>.$')
+            str(value_error),
+            r"^Unexpected coroutine resulting "
+            r"from the snapshot capture <function .*> of a sync function <function .*>.$",
+        )
 
 
 class TestAsyncInvariantsFail(unittest.IsolatedAsyncioTestCase):
     def test_that_async_invariants_reported(self) -> None:
-        async def some_async_invariant(self: 'A') -> bool:
+        async def some_async_invariant(self: "A") -> bool:
             return self.x > 0
 
         value_error = None  # type: Optional[ValueError]
@@ -142,6 +150,7 @@ class TestAsyncInvariantsFail(unittest.IsolatedAsyncioTestCase):
             class A:
                 def __init__(self) -> None:
                     self.x = 100
+
         except ValueError as error:
             value_error = error
 
@@ -149,8 +158,9 @@ class TestAsyncInvariantsFail(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(
             "Async conditions are not possible in invariants as sync methods such as __init__ have to be wrapped.",
-            str(value_error))
+            str(value_error),
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

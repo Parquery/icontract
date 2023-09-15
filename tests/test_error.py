@@ -25,12 +25,17 @@ class TestNoneSpecified(unittest.TestCase):
             violation_error = err
 
         assert violation_error is not None
-        self.assertEqual('x > 0: x was -1', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            "x > 0: x was -1", tests.error.wo_mandatory_location(str(violation_error))
+        )
 
 
 class TestSpecifiedAsFunction(unittest.TestCase):
     def test_lambda(self) -> None:
-        @icontract.require(lambda x: x > 0, error=lambda x: ValueError("x must be positive: {}".format(x)))
+        @icontract.require(
+            lambda x: x > 0,
+            error=lambda x: ValueError("x must be positive: {}".format(x)),
+        )
         def some_func(x: int) -> None:
             pass
 
@@ -41,7 +46,7 @@ class TestSpecifiedAsFunction(unittest.TestCase):
             value_error = err
 
         assert value_error is not None
-        self.assertEqual('x must be positive: -1', str(value_error))
+        self.assertEqual("x must be positive: -1", str(value_error))
 
     def test_separate_function(self) -> None:
         def error_func(x: int) -> ValueError:
@@ -58,7 +63,7 @@ class TestSpecifiedAsFunction(unittest.TestCase):
             value_error = err
 
         assert value_error is not None
-        self.assertEqual('x must be positive: -1', str(value_error))
+        self.assertEqual("x must be positive: -1", str(value_error))
 
     def test_separate_method(self) -> None:
         class Errorer:
@@ -78,7 +83,7 @@ class TestSpecifiedAsFunction(unittest.TestCase):
             value_error = err
 
         assert value_error is not None
-        self.assertEqual('x must be positive: -1', str(value_error))
+        self.assertEqual("x must be positive: -1", str(value_error))
 
     def test_report_if_result_is_not_base_exception(self) -> None:
         @icontract.require(lambda x: x > 0, error=lambda x: "x must be positive")  # type: ignore
@@ -94,7 +99,8 @@ class TestSpecifiedAsFunction(unittest.TestCase):
         assert type_error is not None
         self.assertRegex(
             str(type_error),
-            r"^The exception returned by the contract's error <function .*> does not inherit from BaseException\.$")
+            r"^The exception returned by the contract's error <function .*> does not inherit from BaseException\.$",
+        )
 
 
 class TestSpecifiedAsType(unittest.TestCase):
@@ -110,7 +116,9 @@ class TestSpecifiedAsType(unittest.TestCase):
             value_error = err
 
         assert value_error is not None
-        self.assertEqual('x > 0: x was -1', tests.error.wo_mandatory_location(str(value_error)))
+        self.assertEqual(
+            "x > 0: x was -1", tests.error.wo_mandatory_location(str(value_error))
+        )
 
 
 class TestSpecifiedAsInstance(unittest.TestCase):
@@ -126,7 +134,7 @@ class TestSpecifiedAsInstance(unittest.TestCase):
             value_error = err
 
         assert value_error is not None
-        self.assertEqual('negative x', str(value_error))
+        self.assertEqual("negative x", str(value_error))
 
     def test_repeated_raising(self) -> None:
         @icontract.require(lambda x: x > 0, error=ValueError("negative x"))
@@ -140,7 +148,7 @@ class TestSpecifiedAsInstance(unittest.TestCase):
             value_error = err
 
         assert value_error is not None
-        self.assertEqual('negative x', str(value_error))
+        self.assertEqual("negative x", str(value_error))
 
         # Repeat
         value_error = None
@@ -150,7 +158,7 @@ class TestSpecifiedAsInstance(unittest.TestCase):
             value_error = err
 
         assert value_error is not None
-        self.assertEqual('negative x', str(value_error))
+        self.assertEqual("negative x", str(value_error))
 
 
 class TestSpecifiedAsInvalidType(unittest.TestCase):
@@ -164,13 +172,16 @@ class TestSpecifiedAsInvalidType(unittest.TestCase):
             @icontract.require(lambda x: x > 0, error=A)  # type: ignore
             def some_func(x: int) -> None:
                 pass
+
         except ValueError as err:
             value_error = err
 
         assert value_error is not None
         self.assertRegex(
-            str(value_error), r"The error of the contract is given as a type, "
-            r"but the type does not inherit from BaseException: <class .*\.A'>")
+            str(value_error),
+            r"The error of the contract is given as a type, "
+            r"but the type does not inherit from BaseException: <class .*\.A'>",
+        )
 
     def test_in_postcondition(self) -> None:
         class A:
@@ -182,13 +193,16 @@ class TestSpecifiedAsInvalidType(unittest.TestCase):
             @icontract.ensure(lambda result: result > 0, error=A)  # type: ignore
             def some_func() -> int:
                 return -1
+
         except ValueError as err:
             value_error = err
 
         assert value_error is not None
         self.assertRegex(
-            str(value_error), r"The error of the contract is given as a type, "
-            r"but the type does not inherit from BaseException: <class .*\.A'>")
+            str(value_error),
+            r"The error of the contract is given as a type, "
+            r"but the type does not inherit from BaseException: <class .*\.A'>",
+        )
 
     def test_in_invariant(self) -> None:
         value_error = None  # type: Optional[ValueError]
@@ -201,13 +215,16 @@ class TestSpecifiedAsInvalidType(unittest.TestCase):
             class B:
                 def __init__(self) -> None:
                     self.x = -1
+
         except ValueError as err:
             value_error = err
 
         assert value_error is not None
         self.assertRegex(
-            str(value_error), r"The error of the contract is given as a type, "
-            r"but the type does not inherit from BaseException: <class .*\.A'>")
+            str(value_error),
+            r"The error of the contract is given as a type, "
+            r"but the type does not inherit from BaseException: <class .*\.A'>",
+        )
 
 
 class TestSpecifiedAsInstanceOfInvalidType(unittest.TestCase):
@@ -222,14 +239,17 @@ class TestSpecifiedAsInstanceOfInvalidType(unittest.TestCase):
             @icontract.require(lambda x: x > 0, error=A("something went wrong"))  # type: ignore
             def some_func(x: int) -> None:
                 pass
+
         except ValueError as err:
             value_error = err
 
         assert value_error is not None
         self.assertRegex(
-            str(value_error), r"^The error of the contract must be either a callable \(a function or a method\), "
+            str(value_error),
+            r"^The error of the contract must be either a callable \(a function or a method\), "
             r"a class \(subclass of BaseException\) or an instance of BaseException, "
-            r"but got: <.*\.A object at 0x.*>$")
+            r"but got: <.*\.A object at 0x.*>$",
+        )
 
     def test_in_postcondition(self) -> None:
         class A:
@@ -242,14 +262,17 @@ class TestSpecifiedAsInstanceOfInvalidType(unittest.TestCase):
             @icontract.ensure(lambda result: result > 0, error=A("something went wrong"))  # type: ignore
             def some_func() -> int:
                 return -1
+
         except ValueError as err:
             value_error = err
 
         assert value_error is not None
         self.assertRegex(
-            str(value_error), r"^The error of the contract must be either a callable \(a function or a method\), "
+            str(value_error),
+            r"^The error of the contract must be either a callable \(a function or a method\), "
             r"a class \(subclass of BaseException\) or an instance of BaseException, "
-            r"but got: <.*\.A object at 0x.*>$")
+            r"but got: <.*\.A object at 0x.*>$",
+        )
 
     def test_in_invariant(self) -> None:
         class A:
@@ -263,15 +286,18 @@ class TestSpecifiedAsInstanceOfInvalidType(unittest.TestCase):
             class B:
                 def __init__(self) -> None:
                     self.x = -1
+
         except ValueError as err:
             value_error = err
 
         assert value_error is not None
         self.assertRegex(
-            str(value_error), r"^The error of the contract must be either a callable \(a function or a method\), "
+            str(value_error),
+            r"^The error of the contract must be either a callable \(a function or a method\), "
             r"a class \(subclass of BaseException\) or an instance of BaseException, "
-            r"but got: <.*\.A object at 0x.*>$")
+            r"but got: <.*\.A object at 0x.*>$",
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

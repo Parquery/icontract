@@ -22,7 +22,10 @@ async def main() -> None:
 
     @icontract.require(
         lambda bar: is_between_0_and_100(bar),
-        error=lambda bar: icontract.ViolationError(f"bar between 0 and 100, but got {bar}"))
+        error=lambda bar: icontract.ViolationError(
+            f"bar between 0 and 100, but got {bar}"
+        ),
+    )
     async def is_less_than_42(bar: int) -> bool:
         sleep_time = random.randint(1, 5)
         await asyncio.sleep(sleep_time)
@@ -31,9 +34,9 @@ async def main() -> None:
     results_or_errors = await asyncio.gather(
         is_less_than_42(0),  # Should return True
         is_less_than_42(101),  # Should violate the pre-condition
-        is_less_than_42(-1)  # Should violate the pre-condition
-        ,
-        return_exceptions=True)
+        is_less_than_42(-1),  # Should violate the pre-condition
+        return_exceptions=True,
+    )
 
     assert len(results_or_errors) == 3
     assert results_or_errors[0]

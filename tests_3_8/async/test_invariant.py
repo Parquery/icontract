@@ -48,4 +48,8 @@ class TestAsyncMethod(unittest.IsolatedAsyncioTestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertTrue(tests.error.wo_mandatory_location(str(violation_error)).startswith('self.x > 0'))
+        self.assertTrue(
+            tests.error.wo_mandatory_location(str(violation_error)).startswith(
+                "self.x > 0"
+            )
+        )

@@ -53,14 +53,18 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 OLD.lst + [val] == self.lst:
                 OLD was a bunch of OLD values
                 OLD.lst was []
                 result was None
                 self was an instance of B
                 self.lst was [2, 1984]
-                val was 2"""), tests.error.wo_mandatory_location(str(violation_error)))
+                val was 2"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_with_inherited_snapshot(self) -> None:
         class A(icontract.DBC):
@@ -91,7 +95,8 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 OLD.len_lst + 1 == len(self.lst):
                 OLD was a bunch of OLD values
                 OLD.len_lst was 0
@@ -99,7 +104,10 @@ class TestViolation(unittest.TestCase):
                 result was None
                 self was an instance of B
                 self.lst was [2, 1984]
-                val was 2"""), tests.error.wo_mandatory_location(str(violation_error)))
+                val was 2"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
 
 class TestPropertyOK(unittest.TestCase):
@@ -188,13 +196,17 @@ class TestPropertyViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 self.gets == OLD.gets + 1:
                 OLD was a bunch of OLD values
                 OLD.gets was 0
                 result was 0
                 self was an instance of SomeClass
-                self.gets was 0"""), tests.error.wo_mandatory_location(str(violation_error)))
+                self.gets was 0"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
         # setter fails
         violation_error = None
@@ -205,14 +217,18 @@ class TestPropertyViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 self.sets == OLD.sets + 1:
                 OLD was a bunch of OLD values
                 OLD.sets was 0
                 result was None
                 self was an instance of SomeClass
                 self.sets was 0
-                value was 1"""), tests.error.wo_mandatory_location(str(violation_error)))
+                value was 1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
         # deleter fails
         violation_error = None
@@ -223,13 +239,17 @@ class TestPropertyViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 self.dels == OLD.dels + 1:
                 OLD was a bunch of OLD values
                 OLD.dels was 0
                 result was None
                 self was an instance of SomeClass
-                self.dels was 0"""), tests.error.wo_mandatory_location(str(violation_error)))
+                self.dels was 0"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
 
 class TestInvalid(unittest.TestCase):
@@ -259,9 +279,12 @@ class TestInvalid(unittest.TestCase):
             value_error = err
 
         self.assertIsNotNone(value_error)
-        self.assertEqual("There are conflicting snapshots with the name: 'len_lst'.\n\n"
-                         "Please mind that the snapshots are inherited from the base classes. "
-                         "Does one of the base classes defines a snapshot with the same name?", str(value_error))
+        self.assertEqual(
+            "There are conflicting snapshots with the name: 'len_lst'.\n\n"
+            "Please mind that the snapshots are inherited from the base classes. "
+            "Does one of the base classes defines a snapshot with the same name?",
+            str(value_error),
+        )
 
 
 class TestPropertyInvalid(unittest.TestCase):
@@ -292,9 +315,12 @@ class TestPropertyInvalid(unittest.TestCase):
             value_error = err
 
         self.assertIsNotNone(value_error)
-        self.assertEqual("There are conflicting snapshots with the name: 'gets'.\n\n"
-                         "Please mind that the snapshots are inherited from the base classes. "
-                         "Does one of the base classes defines a snapshot with the same name?", str(value_error))
+        self.assertEqual(
+            "There are conflicting snapshots with the name: 'gets'.\n\n"
+            "Please mind that the snapshots are inherited from the base classes. "
+            "Does one of the base classes defines a snapshot with the same name?",
+            str(value_error),
+        )
 
     def test_setter_with_conflicting_snapshot_names(self) -> None:
         class SomeBase(icontract.DBC):
@@ -332,9 +358,12 @@ class TestPropertyInvalid(unittest.TestCase):
             value_error = err
 
         self.assertIsNotNone(value_error)
-        self.assertEqual("There are conflicting snapshots with the name: 'sets'.\n\n"
-                         "Please mind that the snapshots are inherited from the base classes. "
-                         "Does one of the base classes defines a snapshot with the same name?", str(value_error))
+        self.assertEqual(
+            "There are conflicting snapshots with the name: 'sets'.\n\n"
+            "Please mind that the snapshots are inherited from the base classes. "
+            "Does one of the base classes defines a snapshot with the same name?",
+            str(value_error),
+        )
 
     def test_deleter_with_conflicting_snapshot_names(self) -> None:
         class SomeBase(icontract.DBC):
@@ -370,10 +399,13 @@ class TestPropertyInvalid(unittest.TestCase):
             value_error = err
 
         self.assertIsNotNone(value_error)
-        self.assertEqual("There are conflicting snapshots with the name: 'dels'.\n\n"
-                         "Please mind that the snapshots are inherited from the base classes. "
-                         "Does one of the base classes defines a snapshot with the same name?", str(value_error))
+        self.assertEqual(
+            "There are conflicting snapshots with the name: 'dels'.\n\n"
+            "Please mind that the snapshots are inherited from the base classes. "
+            "Does one of the base classes defines a snapshot with the same name?",
+            str(value_error),
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

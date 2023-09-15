@@ -14,7 +14,9 @@ import tests.error
 
 
 class TestNoneSpecified(unittest.TestCase):
-    def test_that_original_call_arguments_do_not_shadow_condition_variables_in_the_generated_message(self) -> None:
+    def test_that_original_call_arguments_do_not_shadow_condition_variables_in_the_generated_message(
+        self,
+    ) -> None:
         # ``y`` in the condition shadows the ``y`` in the arguments, but the condition lambda does not refer to
         # the original ``y``.
         @icontract.require(lambda x: (y := x + 3, x > 0)[1])
@@ -29,11 +31,15 @@ class TestNoneSpecified(unittest.TestCase):
 
         assert violation_error is not None
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 (y := x + 3, x > 0)[1]:
                 (y := x + 3, x > 0)[1] was False
                 x was -1
-                y was 2"""), tests.error.wo_mandatory_location(str(violation_error)))
+                y was 2"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
 
 if __name__ == "__main__":

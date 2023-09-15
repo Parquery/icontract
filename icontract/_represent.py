@@ -6,7 +6,16 @@ import reprlib
 import sys
 import textwrap
 import uuid
-from typing import (Any, Mapping, MutableMapping, Callable, List, Dict, cast, Optional)  # pylint: disable=unused-import
+from typing import (
+    Any,
+    Mapping,
+    MutableMapping,
+    Callable,
+    List,
+    Dict,
+    cast,
+    Optional,
+)  # pylint: disable=unused-import
 
 import asttokens.asttokens
 
@@ -27,8 +36,13 @@ def _representable(value: Any) -> bool:
     :param value: value related to an AST node
     :return: True if we want to represent it in the violation error
     """
-    return not inspect.isclass(value) and not inspect.isfunction(value) and not inspect.ismethod(value) and not \
-        inspect.ismodule(value) and not inspect.isbuiltin(value)
+    return (
+        not inspect.isclass(value)
+        and not inspect.isfunction(value)
+        and not inspect.ismethod(value)
+        and not inspect.ismodule(value)
+        and not inspect.isbuiltin(value)
+    )
 
 
 class Visitor(ast.NodeVisitor):
@@ -37,8 +51,12 @@ class Visitor(ast.NodeVisitor):
     # pylint: disable=invalid-name
     # pylint: disable=missing-docstring
 
-    def __init__(self, recomputed_values: Mapping[ast.AST, Any], variable_lookup: List[Mapping[str, Any]],
-                 atok: asttokens.asttokens.ASTTokens) -> None:
+    def __init__(
+        self,
+        recomputed_values: Mapping[ast.AST, Any],
+        variable_lookup: List[Mapping[str, Any]],
+        atok: asttokens.asttokens.ASTTokens,
+    ) -> None:
         """
         Initialize.
 
@@ -199,8 +217,8 @@ class ConditionLambdaInspection:
         self.text = text
 
 
-_DECORATOR_RE = re.compile(r'^\s*@[a-zA-Z_]')
-_DEF_CLASS_RE = re.compile(r'^\s*(async\s+def|def |class )')
+_DECORATOR_RE = re.compile(r"^\s*@[a-zA-Z_]")
+_DEF_CLASS_RE = re.compile(r"^\s*(async\s+def|def |class )")
 
 
 class DecoratorInspection:
@@ -217,7 +235,9 @@ class DecoratorInspection:
         self.node = node
 
 
-def inspect_decorator(lines: List[str], lineno: int, filename: str) -> DecoratorInspection:
+def inspect_decorator(
+    lines: List[str], lineno: int, filename: str
+) -> DecoratorInspection:
     """
     Parse the file in which the decorator is called and figure out the corresponding call AST node.
 
@@ -227,9 +247,13 @@ def inspect_decorator(lines: List[str], lineno: int, filename: str) -> Decorator
     :return: inspected decorator call
     """
     if lineno < 0 or lineno >= len(lines):
-        raise ValueError(("Given line number {} of one of the decorator lines "
-                          "is not within the range [{}, {}) of lines in {}.\n\n"
-                          "The decorator lines were:\n{}").format(lineno, 0, len(lines), filename, "\n".join(lines)))
+        raise ValueError(
+            (
+                "Given line number {} of one of the decorator lines "
+                "is not within the range [{}, {}) of lines in {}.\n\n"
+                "The decorator lines were:\n{}"
+            ).format(lineno, 0, len(lines), filename, "\n".join(lines))
+        )
 
     # Go up till a line starts with a decorator
     decorator_lineno = None  # type: Optional[int]
@@ -239,8 +263,11 @@ def inspect_decorator(lines: List[str], lineno: int, filename: str) -> Decorator
             break
 
     if decorator_lineno is None:
-        raise SyntaxError("Decorator corresponding to the line {} could not be found in file {}: {!r}".format(
-            lineno + 1, filename, lines[lineno]))
+        raise SyntaxError(
+            "Decorator corresponding to the line {} could not be found in file {}: {!r}".format(
+                lineno + 1, filename, lines[lineno]
+            )
+        )
 
     # Find the decorator end -- it's either a function definition, a class definition or another decorator
     decorator_end_lineno = None  # type: Optional[int]
@@ -252,69 +279,91 @@ def inspect_decorator(lines: List[str], lineno: int, filename: str) -> Decorator
             break
 
     if decorator_end_lineno is None:
-        raise SyntaxError(("The next statement following the decorator corresponding to the line {} "
-                           "could not be found in file {}: {!r}").format(lineno + 1, filename, lines[lineno]))
+        raise SyntaxError(
+            (
+                "The next statement following the decorator corresponding to the line {} "
+                "could not be found in file {}: {!r}"
+            ).format(lineno + 1, filename, lines[lineno])
+        )
 
     decorator_lines = lines[decorator_lineno:decorator_end_lineno]
 
     # We need to dedent the decorator and add a dummy decorate so that we can parse its text as valid source code.
-    decorator_text = textwrap.dedent("".join(decorator_lines)) + "def dummy_{}(): pass".format(uuid.uuid4().hex)
+    decorator_text = textwrap.dedent(
+        "".join(decorator_lines)
+    ) + "def dummy_{}(): pass".format(uuid.uuid4().hex)
 
     atok = asttokens.asttokens.ASTTokens(decorator_text, parse=True)
 
     if not isinstance(atok.tree, ast.Module):
-        raise ValueError(("Expected the parsed decorator text to live in an AST module. "
-                          "Are you trying to inspect a condition lambda which was not stated in a decorator? "
-                          "(This feature is currently unsupported in icontract.) "
-                          "The decorator was expected at line {} in {}. "
-                          "The decorator lines under inspection were {}-{}.").format(
-                              lineno + 1, filename, decorator_lineno + 1, decorator_end_lineno))
+        raise ValueError(
+            (
+                "Expected the parsed decorator text to live in an AST module. "
+                "Are you trying to inspect a condition lambda which was not stated in a decorator? "
+                "(This feature is currently unsupported in icontract.) "
+                "The decorator was expected at line {} in {}. "
+                "The decorator lines under inspection were {}-{}."
+            ).format(lineno + 1, filename, decorator_lineno + 1, decorator_end_lineno)
+        )
 
     module_node = atok.tree
 
     if len(module_node.body) != 1:
-        raise ValueError(("Expected the module AST of the decorator text to have a single statement. "
-                          "Are you trying to inspect a condition lambda which was not stated in a decorator? "
-                          "(This feature is currently unsupported in icontract.) "
-                          "The decorator was expected at line {} in {}. "
-                          "The decorator lines under inspection were {}-{}.").format(
-                              lineno + 1, filename, decorator_lineno + 1, decorator_end_lineno))
+        raise ValueError(
+            (
+                "Expected the module AST of the decorator text to have a single statement. "
+                "Are you trying to inspect a condition lambda which was not stated in a decorator? "
+                "(This feature is currently unsupported in icontract.) "
+                "The decorator was expected at line {} in {}. "
+                "The decorator lines under inspection were {}-{}."
+            ).format(lineno + 1, filename, decorator_lineno + 1, decorator_end_lineno)
+        )
 
     if not isinstance(module_node.body[0], ast.FunctionDef):
-        raise ValueError(("Expected the only statement in the AST module corresponding to the decorator text "
-                          "to be a function definition. "
-                          "Are you trying to inspect a condition lambda which was not stated in a decorator? "
-                          "(This feature is currently unsupported in icontract.) "
-                          "The decorator was expected at line {} in {}. "
-                          "The decorator lines under inspection were {}-{}.").format(
-                              lineno + 1, filename, decorator_lineno + 1, decorator_end_lineno))
+        raise ValueError(
+            (
+                "Expected the only statement in the AST module corresponding to the decorator text "
+                "to be a function definition. "
+                "Are you trying to inspect a condition lambda which was not stated in a decorator? "
+                "(This feature is currently unsupported in icontract.) "
+                "The decorator was expected at line {} in {}. "
+                "The decorator lines under inspection were {}-{}."
+            ).format(lineno + 1, filename, decorator_lineno + 1, decorator_end_lineno)
+        )
 
     func_def_node = module_node.body[0]
 
     if len(func_def_node.decorator_list) != 1:
         raise ValueError(
-            ("Expected the function AST node corresponding to the decorator text to have a single decorator. "
-             "Are you trying to inspect a condition lambda which was not stated in a decorator? "
-             "(This feature is currently unsupported in icontract.) "
-             "The decorator was expected at line {} in {}. "
-             "The decorator lines under inspection were {}-{}.").format(lineno + 1, filename, decorator_lineno + 1,
-                                                                        decorator_end_lineno))
+            (
+                "Expected the function AST node corresponding to the decorator text to have a single decorator. "
+                "Are you trying to inspect a condition lambda which was not stated in a decorator? "
+                "(This feature is currently unsupported in icontract.) "
+                "The decorator was expected at line {} in {}. "
+                "The decorator lines under inspection were {}-{}."
+            ).format(lineno + 1, filename, decorator_lineno + 1, decorator_end_lineno)
+        )
 
     if not isinstance(func_def_node.decorator_list[0], ast.Call):
-        raise ValueError(("Expected the only decorator in the function definition AST node corresponding "
-                          "to the decorator text to be a call node. "
-                          "Are you trying to inspect a condition lambda which was not stated in a decorator? "
-                          "(This feature is currently unsupported in icontract.) "
-                          "The decorator was expected at line {} in {}. "
-                          "The decorator lines under inspection were {}-{}.").format(
-                              lineno + 1, filename, decorator_lineno + 1, decorator_end_lineno))
+        raise ValueError(
+            (
+                "Expected the only decorator in the function definition AST node corresponding "
+                "to the decorator text to be a call node. "
+                "Are you trying to inspect a condition lambda which was not stated in a decorator? "
+                "(This feature is currently unsupported in icontract.) "
+                "The decorator was expected at line {} in {}. "
+                "The decorator lines under inspection were {}-{}."
+            ).format(lineno + 1, filename, decorator_lineno + 1, decorator_end_lineno)
+        )
 
     call_node = func_def_node.decorator_list[0]
 
     return DecoratorInspection(atok=atok, node=call_node)
 
 
-def find_lambda_condition(decorator_inspection: DecoratorInspection) -> Optional[ConditionLambdaInspection]:
+def find_lambda_condition(
+    decorator_inspection: DecoratorInspection,
+) -> Optional[ConditionLambdaInspection]:
     """
     Inspect the decorator and extract the condition as lambda.
 
@@ -325,31 +374,39 @@ def find_lambda_condition(decorator_inspection: DecoratorInspection) -> Optional
     lambda_node = None  # type: Optional[ast.Lambda]
 
     if len(call_node.args) > 0:
-        assert isinstance(call_node.args[0], ast.Lambda), \
-            ("Expected the first argument to the decorator to be a condition as lambda AST node, "
-             "but got: {}").format(type(call_node.args[0]))
+        assert isinstance(call_node.args[0], ast.Lambda), (
+            "Expected the first argument to the decorator to be a condition as lambda AST node, "
+            "but got: {}"
+        ).format(type(call_node.args[0]))
 
         lambda_node = call_node.args[0]
 
     elif len(call_node.keywords) > 0:
         for keyword in call_node.keywords:
             if keyword.arg == "condition":
-                assert isinstance(keyword.value, ast.Lambda), \
-                    "Expected lambda node as value of the 'condition' argument to the decorator."
+                assert isinstance(
+                    keyword.value, ast.Lambda
+                ), "Expected lambda node as value of the 'condition' argument to the decorator."
 
                 lambda_node = keyword.value
                 break
 
-        assert lambda_node is not None, "Expected to find a keyword AST node with 'condition' arg, but found none"
+        assert (
+            lambda_node is not None
+        ), "Expected to find a keyword AST node with 'condition' arg, but found none"
     else:
         raise AssertionError(
             "Expected a call AST node of a decorator to have either args or keywords, but got: {}".format(
-                ast.dump(call_node)))
+                ast.dump(call_node)
+            )
+        )
 
     return ConditionLambdaInspection(atok=decorator_inspection.atok, node=lambda_node)
 
 
-def inspect_lambda_condition(condition: Callable[..., Any]) -> Optional[ConditionLambdaInspection]:
+def inspect_lambda_condition(
+    condition: Callable[..., Any]
+) -> Optional[ConditionLambdaInspection]:
     """
     Try to extract the source code of the condition as lambda.
 
@@ -362,7 +419,9 @@ def inspect_lambda_condition(condition: Callable[..., Any]) -> Optional[Conditio
     filename = inspect.getsourcefile(condition)
     assert filename is not None
 
-    decorator_inspection = inspect_decorator(lines=lines, lineno=condition_lineno, filename=filename)
+    decorator_inspection = inspect_decorator(
+        lines=lines, lineno=condition_lineno, filename=filename
+    )
 
     lambda_inspection = find_lambda_condition(decorator_inspection=decorator_inspection)
 

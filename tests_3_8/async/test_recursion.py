@@ -33,8 +33,16 @@ class TestPrecondition(unittest.IsolatedAsyncioTestCase):
 
         await some_func()
 
-        self.assertListEqual(['yet_another_func', 'yet_yet_another_func', 'some_func', 'another_func', 'some_func'],
-                             order)
+        self.assertListEqual(
+            [
+                "yet_another_func",
+                "yet_yet_another_func",
+                "some_func",
+                "another_func",
+                "some_func",
+            ],
+            order,
+        )
 
     async def test_recover_after_exception(self) -> None:
         order = []  # type: List[str]
@@ -44,15 +52,19 @@ class TestPrecondition(unittest.IsolatedAsyncioTestCase):
             pass
 
         @icontract.require(lambda: another_func())  # pylint: disable=unnecessary-lambda
-        @icontract.require(lambda: yet_another_func())  # pylint: disable=unnecessary-lambda
+        @icontract.require(
+            lambda: yet_another_func()
+        )  # pylint: disable=unnecessary-lambda
         async def some_func() -> bool:
             order.append(some_func.__name__)
             if some_func_should_raise:
-                raise CustomError('some_func_should_raise')
+                raise CustomError("some_func_should_raise")
             return True
 
         @icontract.require(lambda: some_func())  # pylint: disable=unnecessary-lambda
-        @icontract.require(lambda: yet_yet_another_func())  # pylint: disable=unnecessary-lambda
+        @icontract.require(
+            lambda: yet_yet_another_func()
+        )  # pylint: disable=unnecessary-lambda
         async def another_func() -> bool:
             order.append(another_func.__name__)
             return True
@@ -70,7 +82,9 @@ class TestPrecondition(unittest.IsolatedAsyncioTestCase):
         except CustomError:
             pass
 
-        self.assertListEqual(['yet_another_func', 'yet_yet_another_func', 'some_func'], order)
+        self.assertListEqual(
+            ["yet_another_func", "yet_yet_another_func", "some_func"], order
+        )
 
         # Reset for the next experiment
         order = []
@@ -78,8 +92,16 @@ class TestPrecondition(unittest.IsolatedAsyncioTestCase):
 
         await some_func()
 
-        self.assertListEqual(['yet_another_func', 'yet_yet_another_func', 'some_func', 'another_func', 'some_func'],
-                             order)
+        self.assertListEqual(
+            [
+                "yet_another_func",
+                "yet_yet_another_func",
+                "some_func",
+                "another_func",
+                "some_func",
+            ],
+            order,
+        )
 
 
 class TestPostcondition(unittest.IsolatedAsyncioTestCase):
@@ -91,17 +113,21 @@ class TestPostcondition(unittest.IsolatedAsyncioTestCase):
             pass
 
         @icontract.ensure(lambda: another_func())  # pylint: disable=unnecessary-lambda
-        @icontract.ensure(lambda: yet_another_func())  # pylint: disable=unnecessary-lambda
+        @icontract.ensure(
+            lambda: yet_another_func()
+        )  # pylint: disable=unnecessary-lambda
         async def some_func() -> bool:
             order.append(some_func.__name__)
             return True
 
         @icontract.ensure(lambda: some_func())  # pylint: disable=unnecessary-lambda
-        @icontract.ensure(lambda: yet_yet_another_func())  # pylint: disable=unnecessary-lambda
+        @icontract.ensure(
+            lambda: yet_yet_another_func()
+        )  # pylint: disable=unnecessary-lambda
         async def another_func() -> bool:
             order.append(another_func.__name__)
             if another_func_should_raise:
-                raise CustomError('some_func_should_raise')
+                raise CustomError("some_func_should_raise")
 
             return True
 
@@ -118,7 +144,7 @@ class TestPostcondition(unittest.IsolatedAsyncioTestCase):
         except CustomError:
             pass
 
-        self.assertListEqual(['some_func', 'yet_another_func', 'another_func'], order)
+        self.assertListEqual(["some_func", "yet_another_func", "another_func"], order)
 
         # Reset for the next experiments
         order = []
@@ -126,20 +152,32 @@ class TestPostcondition(unittest.IsolatedAsyncioTestCase):
 
         await some_func()
 
-        self.assertListEqual(['some_func', 'yet_another_func', 'another_func', 'yet_yet_another_func', 'some_func'],
-                             order)
+        self.assertListEqual(
+            [
+                "some_func",
+                "yet_another_func",
+                "another_func",
+                "yet_yet_another_func",
+                "some_func",
+            ],
+            order,
+        )
 
     async def test_recover_after_exception(self) -> None:
         order = []  # type: List[str]
 
         @icontract.ensure(lambda: another_func())  # pylint: disable=unnecessary-lambda
-        @icontract.ensure(lambda: yet_another_func())  # pylint: disable=unnecessary-lambda
+        @icontract.ensure(
+            lambda: yet_another_func()
+        )  # pylint: disable=unnecessary-lambda
         async def some_func() -> bool:
             order.append(some_func.__name__)
             return True
 
         @icontract.ensure(lambda: some_func())  # pylint: disable=unnecessary-lambda
-        @icontract.ensure(lambda: yet_yet_another_func())  # pylint: disable=unnecessary-lambda
+        @icontract.ensure(
+            lambda: yet_yet_another_func()
+        )  # pylint: disable=unnecessary-lambda
         async def another_func() -> bool:
             order.append(another_func.__name__)
             return True
@@ -154,9 +192,17 @@ class TestPostcondition(unittest.IsolatedAsyncioTestCase):
 
         await some_func()
 
-        self.assertListEqual(['some_func', 'yet_another_func', 'another_func', 'yet_yet_another_func', 'some_func'],
-                             order)
+        self.assertListEqual(
+            [
+                "some_func",
+                "yet_another_func",
+                "another_func",
+                "yet_yet_another_func",
+                "some_func",
+            ],
+            order,
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

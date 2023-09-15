@@ -68,10 +68,14 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 x < 100:
                 self was an instance of B
-                x was 1000"""), tests.error.wo_mandatory_location(str(violation_error)))
+                x was 1000"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_inherited_with_implementation(self) -> None:
         class A(icontract.DBC):
@@ -95,10 +99,14 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 x < 100:
                 self was an instance of B
-                x was 1000"""), tests.error.wo_mandatory_location(str(violation_error)))
+                x was 1000"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_require_else(self) -> None:
         class A(icontract.DBC):
@@ -124,10 +132,14 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 x % 3 == 0:
                 self was an instance of B
-                x was 5"""), tests.error.wo_mandatory_location(str(violation_error)))
+                x was 5"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_triple_inheritance_wo_implementation(self) -> None:
         class A(icontract.DBC):
@@ -152,10 +164,14 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 x < 100:
                 self was an instance of C
-                x was 1000"""), tests.error.wo_mandatory_location(str(violation_error)))
+                x was 1000"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_triple_inheritance_with_implementation(self) -> None:
         class A(icontract.DBC):
@@ -182,10 +198,14 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 x < 100:
                 self was an instance of C
-                x was 1000"""), tests.error.wo_mandatory_location(str(violation_error)))
+                x was 1000"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_triple_inheritance_with_require_else(self) -> None:
         class A(icontract.DBC):
@@ -216,10 +236,14 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 x % 5 == 0:
                 self was an instance of C
-                x was 7"""), tests.error.wo_mandatory_location(str(violation_error)))
+                x was 7"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_abstract_method(self) -> None:
         class A(icontract.DBC):
@@ -244,10 +268,14 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 x > 0:
                 self was an instance of B
-                x was -1"""), tests.error.wo_mandatory_location(str(violation_error)))
+                x was -1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_that_base_preconditions_apply_to_init_if_not_defined(self) -> None:
         class A(icontract.DBC):
@@ -267,10 +295,14 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 x >= 0:
                 self was an instance of B
-                x was -1"""), tests.error.wo_mandatory_location(str(violation_error)))
+                x was -1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_that_base_preconditions_dont_apply_to_init_if_overridden(self) -> None:
         class A(icontract.DBC):
@@ -298,10 +330,14 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 x < 0:
                 self was an instance of B
-                x was 0"""), tests.error.wo_mandatory_location(str(violation_error)))
+                x was 0"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
 
 class TestPropertyOK(unittest.TestCase):
@@ -366,10 +402,14 @@ class TestPropertyViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 not self.toggled:
                 self was an instance of SomeClass
-                self.toggled was True"""), tests.error.wo_mandatory_location(str(violation_error)))
+                self.toggled was True"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_setter(self) -> None:
         class SomeBase(icontract.DBC):
@@ -400,10 +440,14 @@ class TestPropertyViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 value > 0:
                 self was an instance of SomeClass
-                value was 0"""), tests.error.wo_mandatory_location(str(violation_error)))
+                value was 0"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_deleter(self) -> None:
         class SomeBase(icontract.DBC):
@@ -437,10 +481,14 @@ class TestPropertyViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 not self.toggled:
                 self was an instance of SomeClass
-                self.toggled was True"""), tests.error.wo_mandatory_location(str(violation_error)))
+                self.toggled was True"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
 
 class TestConstructor(unittest.TestCase):
@@ -470,14 +518,18 @@ class TestConstructor(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 x > 0:
                 self was an instance of B
-                x was -1"""), tests.error.wo_mandatory_location(str(violation_error)))
+                x was -1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_new_tightens_preconditions(self) -> None:
         class A(icontract.DBC):
-            def __new__(cls, xs: Sequence[int]) -> 'A':
+            def __new__(cls, xs: Sequence[int]) -> "A":
                 return cast(A, xs)
 
         class B(A):
@@ -485,7 +537,7 @@ class TestConstructor(unittest.TestCase):
             # __new__ is a special case: while other functions need to satisfy Liskov substitution principle,
             # __new__ is an exception.
             @icontract.require(lambda xs: all(x > 0 for x in xs))
-            def __new__(cls, xs: Sequence[int]) -> 'B':
+            def __new__(cls, xs: Sequence[int]) -> "B":
                 return cast(B, xs)
 
             def __repr__(self) -> str:
@@ -501,11 +553,15 @@ class TestConstructor(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent('''\
+            textwrap.dedent(
+                """\
                 all(x > 0 for x in xs):
                 all(x > 0 for x in xs) was False, e.g., with
                   x = -1
-                xs was [-1, -2, -3]'''), tests.error.wo_mandatory_location(str(violation_error)))
+                xs was [-1, -2, -3]"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
 
 class TestInvalid(unittest.TestCase):
@@ -528,9 +584,15 @@ class TestInvalid(unittest.TestCase):
 
         self.assertIsNotNone(type_err)
         if sys.version_info < (3, 9):
-            self.assertEqual("Can't instantiate abstract class B with abstract methods func", str(type_err))
+            self.assertEqual(
+                "Can't instantiate abstract class B with abstract methods func",
+                str(type_err),
+            )
         else:
-            self.assertEqual("Can't instantiate abstract class B with abstract method func", str(type_err))
+            self.assertEqual(
+                "Can't instantiate abstract class B with abstract method func",
+                str(type_err),
+            )
 
     def test_cant_weaken_base_function_without_preconditions(self) -> None:
         class A(icontract.DBC):
@@ -545,6 +607,7 @@ class TestInvalid(unittest.TestCase):
                 @icontract.require(lambda x: x < 0)
                 def func(self, x: int) -> int:
                     return 1000
+
         except TypeError as err:
             type_error = err
 
@@ -554,8 +617,10 @@ class TestInvalid(unittest.TestCase):
             "TestInvalid.test_cant_weaken_base_function_without_preconditions.<locals>.B.func can not "
             "weaken the preconditions because the bases specify no preconditions at all. Hence this function must "
             "accept all possible input since the preconditions are OR'ed and no precondition implies a dummy "
-            "precondition which is always fulfilled.", str(type_error))
+            "precondition which is always fulfilled.",
+            str(type_error),
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

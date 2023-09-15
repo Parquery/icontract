@@ -28,7 +28,7 @@ class TestArgs(unittest.IsolatedAsyncioTestCase):
         await some_func(3)
 
         assert recorded_args is not None
-        self.assertTupleEqual((3, ), recorded_args)
+        self.assertTupleEqual((3,), recorded_args)
 
     async def test_args_with_named_and_variable_positional_arguments(self) -> None:
         recorded_args = None  # type: Optional[Tuple[Any, ...]]
@@ -94,11 +94,15 @@ class TestArgs(unittest.IsolatedAsyncioTestCase):
 
         assert violation_error is not None
         self.assertEqual(
-            textwrap.dedent('''\
+            textwrap.dedent(
+                """\
                 len(_ARGS) > 2:
                 _ARGS was (3,)
                 args was 3
-                len(_ARGS) was 1'''), tests.error.wo_mandatory_location(str(violation_error)))
+                len(_ARGS) was 1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
 
 class TestKwargs(unittest.IsolatedAsyncioTestCase):
@@ -153,7 +157,9 @@ class TestKwargs(unittest.IsolatedAsyncioTestCase):
         assert recorded_kwargs is not None
         self.assertDictEqual({"x": 3, "y": 2, "z": 1}, recorded_kwargs)
 
-    async def test_kwargs_with_uncommon_argument_name_for_variable_keyword_arguments(self) -> None:
+    async def test_kwargs_with_uncommon_argument_name_for_variable_keyword_arguments(
+        self,
+    ) -> None:
         recorded_kwargs = None  # type: Optional[Dict[str, Any]]
 
         def set_kwargs(kwargs: Dict[str, Any]) -> bool:
@@ -171,7 +177,7 @@ class TestKwargs(unittest.IsolatedAsyncioTestCase):
         self.assertDictEqual({"x": 3, "y": 2, "z": 1, "a": 0}, recorded_kwargs)
 
     async def test_fail(self) -> None:
-        @icontract.require(lambda _KWARGS: 'x' in _KWARGS)
+        @icontract.require(lambda _KWARGS: "x" in _KWARGS)
         async def some_func(**kwargs: Any) -> None:
             pass
 
@@ -183,10 +189,14 @@ class TestKwargs(unittest.IsolatedAsyncioTestCase):
 
         assert violation_error is not None
         self.assertEqual(
-            textwrap.dedent("""\
-                'x' in _KWARGS:
+            textwrap.dedent(
+                """\
+                "x" in _KWARGS:
                 _KWARGS was {'y': 3}
-                y was 3"""), tests.error.wo_mandatory_location(str(violation_error)))
+                y was 3"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
 
 class TestArgsAndKwargs(unittest.IsolatedAsyncioTestCase):
@@ -208,7 +218,7 @@ class TestArgsAndKwargs(unittest.IsolatedAsyncioTestCase):
         await some_func(5, x=10, y=20, z=30)
 
         assert recorded_args is not None
-        self.assertTupleEqual((5, ), recorded_args)
+        self.assertTupleEqual((5,), recorded_args)
 
         assert recorded_kwargs is not None
         self.assertDictEqual({"x": 10, "y": 20, "z": 30}, recorded_kwargs)
@@ -250,8 +260,11 @@ class TestConflictOnARGSReported(unittest.IsolatedAsyncioTestCase):
             type_error = error
 
         assert type_error is not None
-        self.assertEqual('The arguments of the function call include "_ARGS" '
-                         'which is a placeholder for positional arguments in a condition.', str(type_error))
+        self.assertEqual(
+            'The arguments of the function call include "_ARGS" '
+            "which is a placeholder for positional arguments in a condition.",
+            str(type_error),
+        )
 
 
 class TestConflictOnKWARGSReported(unittest.IsolatedAsyncioTestCase):
@@ -267,9 +280,12 @@ class TestConflictOnKWARGSReported(unittest.IsolatedAsyncioTestCase):
             type_error = error
 
         assert type_error is not None
-        self.assertEqual('The arguments of the function call include "_KWARGS" '
-                         'which is a placeholder for keyword arguments in a condition.', str(type_error))
+        self.assertEqual(
+            'The arguments of the function call include "_KWARGS" '
+            "which is a placeholder for keyword arguments in a condition.",
+            str(type_error),
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

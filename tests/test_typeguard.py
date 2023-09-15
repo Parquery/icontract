@@ -44,7 +44,7 @@ class TestPrecondition(unittest.TestCase):
             type_error = err
 
         expected = 'type of argument "x" must be '
-        self.assertEqual(expected, str(type_error)[:len(expected)])
+        self.assertEqual(expected, str(type_error)[: len(expected)])
 
     def test_precondition_fails_and_typeguard_ok(self) -> None:
         @typeguard.typechecked
@@ -59,7 +59,9 @@ class TestPrecondition(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('x > 0: x was -10', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            "x > 0: x was -10", tests.error.wo_mandatory_location(str(violation_error))
+        )
 
 
 class TestInvariant(unittest.TestCase):
@@ -100,7 +102,7 @@ class TestInvariant(unittest.TestCase):
             type_error = err
 
         expected = 'type of argument "a" must be '
-        self.assertEqual(expected, str(type_error)[:len(expected)])
+        self.assertEqual(expected, str(type_error)[: len(expected)])
 
     def test_invariant_fails_and_typeguard_ok(self) -> None:
         @typeguard.typechecked
@@ -120,10 +122,14 @@ class TestInvariant(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent('''\
+            textwrap.dedent(
+                """\
                 self.x > 0:
                 self was an instance of A
-                self.x was -1'''), tests.error.wo_mandatory_location(str(violation_error)))
+                self.x was -1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
 
 class TestInheritance(unittest.TestCase):
@@ -172,7 +178,7 @@ class TestInheritance(unittest.TestCase):
         self.assertIsNotNone(type_error)
 
         expected = 'type of argument "a" must be '
-        self.assertEqual(expected, str(type_error)[:len(expected)])
+        self.assertEqual(expected, str(type_error)[: len(expected)])
 
     def test_invariant_fails_and_typeguard_ok(self) -> None:
         @typeguard.typechecked
@@ -196,11 +202,15 @@ class TestInheritance(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent('''\
+            textwrap.dedent(
+                """\
                 self.x > 0:
                 self was an instance of B
-                self.x was -1'''), tests.error.wo_mandatory_location(str(violation_error)))
+                self.x was -1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

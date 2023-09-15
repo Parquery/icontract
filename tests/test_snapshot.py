@@ -42,7 +42,9 @@ class TestOK(unittest.TestCase):
 
     def test_with_multiple_arguments(self) -> None:
         @icontract.snapshot(lambda lst_a, lst_b: set(lst_a).union(lst_b), name="union")
-        @icontract.ensure(lambda OLD, lst_a, lst_b: set(lst_a).union(lst_b) == OLD.union)
+        @icontract.ensure(
+            lambda OLD, lst_a, lst_b: set(lst_a).union(lst_b) == OLD.union
+        )
         def some_func(lst_a: List[int], lst_b: List[int]) -> None:
             pass
 
@@ -66,13 +68,17 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 OLD.lst + [val] == lst:
                 OLD was a bunch of OLD values
                 OLD.lst was [1]
                 lst was [1, 2, 1984]
                 result was None
-                val was 2"""), tests.error.wo_mandatory_location(str(violation_error)))
+                val was 2"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_with_custom_name(self) -> None:
         @icontract.snapshot(lambda lst: len(lst), name="len_lst")
@@ -89,18 +95,24 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 OLD.len_lst + 1 == len(lst):
                 OLD was a bunch of OLD values
                 OLD.len_lst was 1
                 len(lst) was 3
                 lst was [1, 2, 1984]
                 result was None
-                val was 2"""), tests.error.wo_mandatory_location(str(violation_error)))
+                val was 2"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_with_multiple_arguments(self) -> None:
         @icontract.snapshot(lambda lst_a, lst_b: set(lst_a).union(lst_b), name="union")
-        @icontract.ensure(lambda OLD, lst_a, lst_b: set(lst_a).union(lst_b) == OLD.union)
+        @icontract.ensure(
+            lambda OLD, lst_a, lst_b: set(lst_a).union(lst_b) == OLD.union
+        )
         def some_func(lst_a: List[int], lst_b: List[int]) -> None:
             lst_a.append(1984)  # bug
 
@@ -112,7 +124,8 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent('''\
+            textwrap.dedent(
+                """\
                 set(lst_a).union(lst_b) == OLD.union:
                 OLD was a bunch of OLD values
                 OLD.union was {1, 2, 3, 4}
@@ -120,8 +133,10 @@ class TestViolation(unittest.TestCase):
                 lst_b was [3, 4]
                 result was None
                 set(lst_a) was {1, 2, 1984}
-                set(lst_a).union(lst_b) was {1, 2, 3, 4, 1984}'''),
-            tests.error.wo_mandatory_location(str(violation_error)))
+                set(lst_a).union(lst_b) was {1, 2, 3, 4, 1984}"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
 
 class TestInvalid(unittest.TestCase):
@@ -137,10 +152,12 @@ class TestInvalid(unittest.TestCase):
             type_error = err
 
         self.assertIsNotNone(type_error)
-        self.assertEqual("The argument(s) of the contract condition have not been set: ['OLD']. "
-                         "Does the original function define them? Did you supply them in the call? "
-                         "Did you decorate the function with a snapshot to capture OLD values?",
-                         tests.error.wo_mandatory_location(str(type_error)))
+        self.assertEqual(
+            "The argument(s) of the contract condition have not been set: ['OLD']. "
+            "Does the original function define them? Did you supply them in the call? "
+            "Did you decorate the function with a snapshot to capture OLD values?",
+            tests.error.wo_mandatory_location(str(type_error)),
+        )
 
     def test_conflicting_snapshots_with_argument_name(self) -> None:
         value_error = None  # type: Optional[ValueError]
@@ -157,15 +174,17 @@ class TestInvalid(unittest.TestCase):
             value_error = err
 
         self.assertIsNotNone(value_error)
-        self.assertEqual("There are conflicting snapshots with the name: 'lst'", str(value_error))
+        self.assertEqual(
+            "There are conflicting snapshots with the name: 'lst'", str(value_error)
+        )
 
     def test_conflicting_snapshots_with_custom_name(self) -> None:
         value_error = None  # type: Optional[ValueError]
         try:
             # pylint: disable=unused-variable
 
-            @icontract.snapshot(lambda lst: len(lst), name='len_lst')
-            @icontract.snapshot(lambda lst: len(lst), name='len_lst')
+            @icontract.snapshot(lambda lst: len(lst), name="len_lst")
+            @icontract.snapshot(lambda lst: len(lst), name="len_lst")
             @icontract.ensure(lambda OLD, val, lst: OLD.len_lst + 1 == len(lst))
             def some_func(lst: List[int], val: int) -> None:
                 lst.append(val)
@@ -174,14 +193,16 @@ class TestInvalid(unittest.TestCase):
             value_error = err
 
         self.assertIsNotNone(value_error)
-        self.assertEqual("There are conflicting snapshots with the name: 'len_lst'", str(value_error))
+        self.assertEqual(
+            "There are conflicting snapshots with the name: 'len_lst'", str(value_error)
+        )
 
     def test_with_invalid_argument(self) -> None:
         # lst versus a_list
         type_error = None  # type: Optional[TypeError]
         try:
 
-            @icontract.snapshot(lambda lst: len(lst), name='len_lst')
+            @icontract.snapshot(lambda lst: len(lst), name="len_lst")
             @icontract.ensure(lambda OLD, val, a_list: OLD.len_lst + 1 == len(a_list))
             def some_func(a_list: List[int], val: int) -> None:
                 a_list.append(val)
@@ -191,9 +212,11 @@ class TestInvalid(unittest.TestCase):
             type_error = err
 
         self.assertIsNotNone(type_error)
-        self.assertEqual("The argument(s) of the snapshot have not been set: ['lst']. "
-                         "Does the original function define them? Did you supply them in the call?",
-                         tests.error.wo_mandatory_location(str(type_error)))
+        self.assertEqual(
+            "The argument(s) of the snapshot have not been set: ['lst']. "
+            "Does the original function define them? Did you supply them in the call?",
+            tests.error.wo_mandatory_location(str(type_error)),
+        )
 
     def test_with_no_arguments_and_no_name(self) -> None:
         z = [1]
@@ -211,7 +234,10 @@ class TestInvalid(unittest.TestCase):
             value_error = err
 
         self.assertIsNotNone(value_error)
-        self.assertEqual("You must name a snapshot if no argument was given in the capture function.", str(value_error))
+        self.assertEqual(
+            "You must name a snapshot if no argument was given in the capture function.",
+            str(value_error),
+        )
 
     def test_with_multiple_arguments_and_no_name(self) -> None:
         value_error = None  # type: Optional[ValueError]
@@ -219,7 +245,9 @@ class TestInvalid(unittest.TestCase):
             # pylint: disable=unused-variable
 
             @icontract.snapshot(lambda lst_a, lst_b: set(lst_a).union(lst_b))
-            @icontract.ensure(lambda OLD, lst_a, lst_b: set(lst_a).union(lst_b) == OLD.union)
+            @icontract.ensure(
+                lambda OLD, lst_a, lst_b: set(lst_a).union(lst_b) == OLD.union
+            )
             def some_func(lst_a: List[int], lst_b: List[int]) -> None:
                 pass
 
@@ -227,8 +255,10 @@ class TestInvalid(unittest.TestCase):
             value_error = err
 
         self.assertIsNotNone(value_error)
-        self.assertEqual("You must name a snapshot if multiple arguments were given in the capture function.",
-                         str(value_error))
+        self.assertEqual(
+            "You must name a snapshot if multiple arguments were given in the capture function.",
+            str(value_error),
+        )
 
     def test_with_no_postcondition(self) -> None:
         value_error = None  # type: Optional[ValueError]
@@ -238,16 +268,22 @@ class TestInvalid(unittest.TestCase):
             @icontract.snapshot(lambda lst: lst[:])
             def some_func(lst: List[int]) -> None:
                 return
+
         except ValueError as err:
             value_error = err
 
         self.assertIsNotNone(value_error)
-        self.assertEqual("You are decorating a function with a snapshot, "
-                         "but no postcondition was defined on the function before.", str(value_error))
+        self.assertEqual(
+            "You are decorating a function with a snapshot, "
+            "but no postcondition was defined on the function before.",
+            str(value_error),
+        )
 
     def test_missing_old_attribute(self) -> None:
         @icontract.snapshot(lambda lst: lst[:])
-        @icontract.ensure(lambda OLD, lst: OLD.len_list == lst)  # We miss len_lst in OLD here!
+        @icontract.ensure(
+            lambda OLD, lst: OLD.len_list == lst
+        )  # We miss len_lst in OLD here!
         def some_func(lst: List[int]) -> None:
             return
 
@@ -260,10 +296,12 @@ class TestInvalid(unittest.TestCase):
 
         assert attribute_error is not None
 
-        self.assertEqual("The snapshot with the name 'len_list' is not available in the OLD of a postcondition. "
-                         "Have you decorated the function with a corresponding snapshot decorator?",
-                         str(attribute_error))
+        self.assertEqual(
+            "The snapshot with the name 'len_list' is not available in the OLD of a postcondition. "
+            "Have you decorated the function with a corresponding snapshot decorator?",
+            str(attribute_error),
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -38,10 +38,18 @@ class TestOK(unittest.TestCase):
                 return 2
 
         inst = B()
-        self.assertEqual(1, Increment.count, "Invariant is expected to run only once at the initializer.")
+        self.assertEqual(
+            1,
+            Increment.count,
+            "Invariant is expected to run only once at the initializer.",
+        )
 
         inst.some_func()
-        self.assertEqual(3, Increment.count, "Invariant is expected to run before and after the method call.")
+        self.assertEqual(
+            3,
+            Increment.count,
+            "Invariant is expected to run before and after the method call.",
+        )
 
 
 class TestViolation(unittest.TestCase):
@@ -70,10 +78,14 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 self.x > 0:
                 self was instance of B
-                self.x was -1"""), tests.error.wo_mandatory_location(str(violation_error)))
+                self.x was -1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_inherited_violated_in_child(self) -> None:
         @icontract.invariant(lambda self: self.x > 0)
@@ -103,10 +115,14 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 self.x > 0:
                 self was instance of B
-                self.x was -1"""), tests.error.wo_mandatory_location(str(violation_error)))
+                self.x was -1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_additional_invariant_violated_in_childs_init(self) -> None:
         @icontract.invariant(lambda self: self.x > 0)
@@ -130,10 +146,14 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 self.x > 100:
                 self was an instance of B
-                self.x was 10"""), tests.error.wo_mandatory_location(str(violation_error)))
+                self.x was 10"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_method_violates_in_child(self) -> None:
         @icontract.invariant(lambda self: self.x > 0)
@@ -161,10 +181,14 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 self.x > 100:
                 self was an instance of B
-                self.x was 10"""), tests.error.wo_mandatory_location(str(violation_error)))
+                self.x was 10"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_triple_inheritance(self) -> None:
         @icontract.invariant(lambda self: self.x > 0)
@@ -195,10 +219,14 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 self.x > 0:
                 self was instance of C
-                self.x was -1"""), tests.error.wo_mandatory_location(str(violation_error)))
+                self.x was -1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_with_abstract_method(self) -> None:
         @icontract.invariant(lambda self: self.x > 0)
@@ -229,10 +257,14 @@ class TestViolation(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 self.x > 0:
                 self was an instance of B
-                self.x was -1"""), tests.error.wo_mandatory_location(str(violation_error)))
+                self.x was -1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
 
 class TestProperty(unittest.TestCase):
@@ -261,10 +293,14 @@ class TestProperty(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 not self.toggled:
                 self was an instance of SomeClass
-                self.toggled was True"""), tests.error.wo_mandatory_location(str(violation_error)))
+                self.toggled was True"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_inherited_setter(self) -> None:
         @icontract.invariant(lambda self: not self.toggled)
@@ -294,10 +330,14 @@ class TestProperty(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 not self.toggled:
                 self was an instance of SomeClass
-                self.toggled was True"""), tests.error.wo_mandatory_location(str(violation_error)))
+                self.toggled was True"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_inherited_deleter(self) -> None:
         @icontract.invariant(lambda self: not self.toggled)
@@ -327,10 +367,14 @@ class TestProperty(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 not self.toggled:
                 self was an instance of SomeClass
-                self.toggled was True"""), tests.error.wo_mandatory_location(str(violation_error)))
+                self.toggled was True"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_inherited_invariant_on_getter(self) -> None:
         @icontract.invariant(lambda self: not self.toggled)
@@ -357,10 +401,14 @@ class TestProperty(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 not self.toggled:
                 self was an instance of SomeClass
-                self.toggled was True"""), tests.error.wo_mandatory_location(str(violation_error)))
+                self.toggled was True"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_inherited_invariant_on_setter(self) -> None:
         @icontract.invariant(lambda self: not self.toggled)
@@ -390,10 +438,14 @@ class TestProperty(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 not self.toggled:
                 self was an instance of SomeClass
-                self.toggled was True"""), tests.error.wo_mandatory_location(str(violation_error)))
+                self.toggled was True"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_inherited_invariant_on_deleter(self) -> None:
         @icontract.invariant(lambda self: not self.toggled)
@@ -423,11 +475,15 @@ class TestProperty(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 not self.toggled:
                 self was an instance of SomeClass
-                self.toggled was True"""), tests.error.wo_mandatory_location(str(violation_error)))
+                self.toggled was True"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

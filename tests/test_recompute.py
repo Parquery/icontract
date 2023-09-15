@@ -38,31 +38,41 @@ class TestTranslationForTracingAll(unittest.TestCase):
 
         module_node = icontract._recompute._translate_all_expression_to_a_module(
             generator_exp=generator_exp,
-            generated_function_name='some_func',
-            name_to_value={'SOME_GLOBAL_CONSTANT': 10})
+            generated_function_name="some_func",
+            name_to_value={"SOME_GLOBAL_CONSTANT": 10},
+        )
 
         got = astor.to_source(module_node)
 
         # We need to replace the UUID of the result variable for reproducibility.
-        got = re.sub(r'icontract_tracing_all_result_[a-zA-Z0-9]+', 'icontract_tracing_all_result', got)
+        got = re.sub(
+            r"icontract_tracing_all_result_[a-zA-Z0-9]+",
+            "icontract_tracing_all_result",
+            got,
+        )
 
         assert isinstance(got, str)
         return got
 
     def test_global_variable(self) -> None:
-        input_source_code = textwrap.dedent('''\
+        input_source_code = textwrap.dedent(
+            """\
             all(
                 x > SOME_GLOBAL_CONSTANT
                 for x in lst
             )
-            ''')
+            """
+        )
 
-        got_source_code = TestTranslationForTracingAll.translate_all_expression(input_source_code=input_source_code)
+        got_source_code = TestTranslationForTracingAll.translate_all_expression(
+            input_source_code=input_source_code
+        )
 
         # Please see ``TestTranslationForTracingAll.translate_all_expression`` and the note about ``name_to_value``
         # if you wonder why ``lst`` is not in the arguments.
         self.assertEqual(
-            textwrap.dedent('''\
+            textwrap.dedent(
+                """\
                 def some_func(SOME_GLOBAL_CONSTANT):
                     for x in lst:
                         icontract_tracing_all_result = (x >
@@ -74,10 +84,14 @@ class TestTranslationForTracingAll(unittest.TestCase):
                                 icontract_tracing_all_result,
                                 (('x', x),))
                     return icontract_tracing_all_result, None
-                '''), got_source_code)
+                """
+            ),
+            got_source_code,
+        )
 
     def test_translation_two_fors_and_two_ifs(self) -> None:
-        input_source_code = textwrap.dedent('''\
+        input_source_code = textwrap.dedent(
+            """\
             all(
                 cell > SOME_GLOBAL_CONSTANT
                 for i, row in enumerate(matrix)
@@ -85,14 +99,18 @@ class TestTranslationForTracingAll(unittest.TestCase):
                 for j, cell in enumerate(row)
                 if i == j
             )
-            ''')
+            """
+        )
 
-        got_source_code = TestTranslationForTracingAll.translate_all_expression(input_source_code=input_source_code)
+        got_source_code = TestTranslationForTracingAll.translate_all_expression(
+            input_source_code=input_source_code
+        )
 
         # Please see ``TestTranslationForTracingAll.translate_all_expression`` and the note about ``name_to_value``
         # if you wonder why ``matrix`` is not in the arguments.
         self.assertEqual(
-            textwrap.dedent('''\
+            textwrap.dedent(
+                """\
                 def some_func(SOME_GLOBAL_CONSTANT):
                     for i, row in enumerate(matrix):
                         if i > 0:
@@ -109,24 +127,32 @@ class TestTranslationForTracingAll(unittest.TestCase):
                                             , (('i', i), ('row', row), ('j', j), ('cell',
                                             cell)))
                     return icontract_tracing_all_result, None
-                '''), got_source_code)
+                """
+            ),
+            got_source_code,
+        )
 
     def test_nested_all(self) -> None:
         # Nesting is not recursively followed by design. Only the outer-most all expression should be traced.
 
-        input_source_code = textwrap.dedent('''\
+        input_source_code = textwrap.dedent(
+            """\
             all(
                 all(cell > SOME_GLOBAL_CONSTANT for cell in row)
                 for row in matrix
             )
-            ''')
+            """
+        )
 
-        got_source_code = TestTranslationForTracingAll.translate_all_expression(input_source_code=input_source_code)
+        got_source_code = TestTranslationForTracingAll.translate_all_expression(
+            input_source_code=input_source_code
+        )
 
         # Please see ``TestTranslationForTracingAll.translate_all_expression`` and the note about ``name_to_value``
         # if you wonder why ``matrix`` is not in the arguments.
         self.assertEqual(
-            textwrap.dedent('''\
+            textwrap.dedent(
+                """\
                 def some_func(SOME_GLOBAL_CONSTANT):
                     for row in matrix:
                         icontract_tracing_all_result = all(
@@ -138,7 +164,10 @@ class TestTranslationForTracingAll(unittest.TestCase):
                                 icontract_tracing_all_result,
                                 (('row', row),))
                     return icontract_tracing_all_result, None
-                '''), got_source_code)
+                """
+            ),
+            got_source_code,
+        )
 
 
 if __name__ == "__main__":

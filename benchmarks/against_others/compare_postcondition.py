@@ -49,14 +49,17 @@ def writeln_utf8(text: str) -> None:
     We can not use ``print()`` as we can not rely on the correct encoding in Windows.
     See: https://stackoverflow.com/questions/31469707/changing-the-locale-preferred-encoding-in-python-3-in-windows
     """
-    sys.stdout.buffer.write(text.encode('utf-8'))
-    sys.stdout.buffer.write(os.linesep.encode('utf-8'))
+    sys.stdout.buffer.write(text.encode("utf-8"))
+    sys.stdout.buffer.write(os.linesep.encode("utf-8"))
 
 
 def measure_functions() -> None:
     funcs = [
-        'function_with_icontract', 'function_with_dpcontracts', 'function_with_deal_post', 'function_with_deal_ensure',
-        'function_with_inline_contract'
+        "function_with_icontract",
+        "function_with_dpcontracts",
+        "function_with_deal_post",
+        "function_with_deal_ensure",
+        "function_with_inline_contract",
     ]
 
     durations = [0.0] * len(funcs)
@@ -64,7 +67,11 @@ def measure_functions() -> None:
     number = 10 * 1000
 
     for i, func in enumerate(funcs):
-        duration = timeit.timeit("{}(198.4)".format(func), setup="from __main__ import {}".format(func), number=number)
+        duration = timeit.timeit(
+            "{}(198.4)".format(func),
+            setup="from __main__ import {}".format(func),
+            number=number,
+        )
         durations[i] = duration
 
     table = []  # type: List[List[str]]
@@ -92,5 +99,5 @@ def measure_functions() -> None:
 
 if __name__ == "__main__":
     writeln_utf8("Benchmarking postcondition:")
-    writeln_utf8('')
+    writeln_utf8("")
     measure_functions()

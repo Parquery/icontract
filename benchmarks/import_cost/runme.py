@@ -7,7 +7,7 @@ from typing import List
 
 
 def main() -> None:
-    """"Execute the main routine."""
+    """ "Execute the main routine."""
     modules = [
         "functions_100_with_no_contract",
         "functions_100_with_1_contract",
@@ -29,13 +29,20 @@ def main() -> None:
         durations = []  # type: List[float]
         for i in range(0, 10):
             duration = float(
-                subprocess.check_output(["./measure.py", "--module", a_module], cwd=os.path.dirname(__file__)).strip())
+                subprocess.check_output(
+                    ["./measure.py", "--module", a_module],
+                    cwd=os.path.dirname(__file__),
+                ).strip()
+            )
             durations.append(duration)
 
-        print("Duration to import the module {} (in milliseconds): {:.2f} ± {:.2f}".format(
-            a_module,
-            statistics.mean(durations) * 10e3,
-            statistics.stdev(durations) * 10e3))
+        print(
+            "Duration to import the module {} (in milliseconds): {:.2f} ± {:.2f}".format(
+                a_module,
+                statistics.mean(durations) * 10e3,
+                statistics.stdev(durations) * 10e3,
+            )
+        )
 
 
 if __name__ == "__main__":

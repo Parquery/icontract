@@ -30,7 +30,9 @@ class TestReprValues(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("x < 5: x was 100", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            "x < 5: x was 100", tests.error.wo_mandatory_location(str(violation_error))
+        )
 
     def test_str(self) -> None:
         @icontract.require(lambda x: x != "oi")
@@ -44,7 +46,10 @@ class TestReprValues(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("""x != "oi": x was 'oi'""", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            """x != "oi": x was 'oi'""",
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_bytes(self) -> None:
         @icontract.require(lambda x: x != b"oi")
@@ -58,7 +63,10 @@ class TestReprValues(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual("""x != b"oi": x was b'oi'""", tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            """x != b"oi": x was b'oi'""",
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_bool(self) -> None:
         @icontract.require(lambda x: x is not False)
@@ -72,7 +80,10 @@ class TestReprValues(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('x is not False: x was False', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            "x is not False: x was False",
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_list(self) -> None:
         y = 1
@@ -89,11 +100,15 @@ class TestReprValues(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 sum([1, y, x]) == 1:
                 sum([1, y, x]) was 5
                 x was 3
-                y was 1"""), tests.error.wo_mandatory_location(str(violation_error)))
+                y was 1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_tuple(self) -> None:
         y = 1
@@ -110,11 +125,15 @@ class TestReprValues(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 sum((1, y, x)) == 1:
                 sum((1, y, x)) was 5
                 x was 3
-                y was 1"""), tests.error.wo_mandatory_location(str(violation_error)))
+                y was 1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_set(self) -> None:
         y = 2
@@ -131,11 +150,15 @@ class TestReprValues(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 sum({1, y, x}) == 1:
                 sum({1, y, x}) was 6
                 x was 3
-                y was 2"""), tests.error.wo_mandatory_location(str(violation_error)))
+                y was 2"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_dict(self) -> None:
         y = "someKey"
@@ -152,11 +175,15 @@ class TestReprValues(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 len({y: 3, x: 8}) == 6:
                 len({y: 3, x: 8}) was 2
                 x was 'oi'
-                y was 'someKey'"""), tests.error.wo_mandatory_location(str(violation_error)))
+                y was 'someKey'"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_unary_op(self) -> None:
         @icontract.require(lambda x: not -x + 10 > 3)
@@ -170,7 +197,10 @@ class TestReprValues(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('not -x + 10 > 3: x was 1', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            "not -x + 10 > 3: x was 1",
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_binary_op(self) -> None:
         @icontract.require(lambda x: -x + x - x * x / x // x**x % x > 3)
@@ -184,8 +214,10 @@ class TestReprValues(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('-x + x - x * x / x // x**x % x > 3: x was 1',
-                         tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            "-x + x - x * x / x // x**x % x > 3: x was 1",
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_binary_op_bit(self) -> None:
         @icontract.require(lambda x: ~(x << x | x & x ^ x) >> x > x)
@@ -199,8 +231,10 @@ class TestReprValues(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('~(x << x | x & x ^ x) >> x > x: x was 1',
-                         tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            "~(x << x | x & x ^ x) >> x > x: x was 1",
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_bool_op_single(self) -> None:
         # pylint: disable=chained-comparison
@@ -215,7 +249,10 @@ class TestReprValues(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('x > 3 and x < 10: x was 1', tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            "x > 3 and x < 10: x was 1",
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_bool_op_multiple(self) -> None:
         # pylint: disable=chained-comparison
@@ -230,16 +267,25 @@ class TestReprValues(unittest.TestCase):
             violation_error = err
 
         self.assertIsNotNone(violation_error)
-        self.assertEqual('x > 3 and x < 10 and x % 2 == 0: x was 1',
-                         tests.error.wo_mandatory_location(str(violation_error)))
+        self.assertEqual(
+            "x > 3 and x < 10 and x % 2 == 0: x was 1",
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_compare(self) -> None:
         # pylint: disable=chained-comparison
 
         # Chain the compare operators in a meaningless order and semantics
         @icontract.require(
-            lambda x: 0 < x < 3 and x > 10 and x != 7 and x >= 10 and x <= 11 and x is not None and
-                      x in [1, 2, 3] and x not in [1, 2, 3])
+            lambda x: 0 < x < 3
+            and x > 10
+            and x != 7
+            and x >= 10
+            and x <= 11
+            and x is not None
+            and x in [1, 2, 3]
+            and x not in [1, 2, 3]
+        )
         def func(x: int) -> int:
             return x
 
@@ -251,10 +297,17 @@ class TestReprValues(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
-                0 < x < 3 and x > 10 and x != 7 and x >= 10 and x <= 11 and x is not None and
-                              x in [1, 2, 3] and x not in [1, 2, 3]: x was 1"""),
-            tests.error.wo_mandatory_location(str(violation_error)))
+            """\
+0 < x < 3
+    and x > 10
+    and x != 7
+    and x >= 10
+    and x <= 11
+    and x is not None
+    and x in [1, 2, 3]
+    and x not in [1, 2, 3]: x was 1""",
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_call(self) -> None:
         def y() -> int:
@@ -272,10 +325,14 @@ class TestReprValues(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 x < y():
                 x was 1
-                y() was 1"""), tests.error.wo_mandatory_location(str(violation_error)))
+                y() was 1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_if_exp_body(self) -> None:
         y = 5
@@ -292,10 +349,14 @@ class TestReprValues(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 x < (x**2 if y == 5 else x**3):
                 x was 1
-                y was 5"""), tests.error.wo_mandatory_location(str(violation_error)))
+                y was 5"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_if_exp_orelse(self) -> None:
         y = 5
@@ -312,10 +373,14 @@ class TestReprValues(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 x < (x**2 if y != 5 else x**3):
                 x was 1
-                y was 5"""), tests.error.wo_mandatory_location(str(violation_error)))
+                y was 5"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_attr(self) -> None:
         class A:
@@ -339,11 +404,15 @@ class TestReprValues(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 x > a.y:
                 a was an instance of A
                 a.y was 3
-                x was 1"""), tests.error.wo_mandatory_location(str(violation_error)))
+                x was 1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_index(self) -> None:
         lst = [1, 2, 3]
@@ -360,11 +429,15 @@ class TestReprValues(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 x > lst[1]:
                 lst was [1, 2, 3]
                 lst[1] was 2
-                x was 1"""), tests.error.wo_mandatory_location(str(violation_error)))
+                x was 1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_slice(self) -> None:
         lst = [1, 2, 3]
@@ -381,12 +454,16 @@ class TestReprValues(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 x > sum(lst[1:2:1]):
                 lst was [1, 2, 3]
                 lst[1:2:1] was [2]
                 sum(lst[1:2:1]) was 2
-                x was 1"""), tests.error.wo_mandatory_location(str(violation_error)))
+                x was 1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_ext_slice(self) -> None:
         class SomeClass:
@@ -409,10 +486,14 @@ class TestReprValues(unittest.TestCase):
 
         self.assertIsNotNone(violation_err)
         self.assertEqual(
-            textwrap.dedent('''\
+            textwrap.dedent(
+                """\
                 something[1, 2:3] is None:
                 something was <instance of SomeClass>
-                something[1, 2:3] was (1, slice(2, 3, None))'''), tests.error.wo_mandatory_location(str(violation_err)))
+                something[1, 2:3] was (1, slice(2, 3, None))"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_err)),
+        )
 
     def test_lambda(self) -> None:
         @icontract.require(lambda x: x > (lambda y: y + 4).__call__(y=7))  # type: ignore
@@ -432,14 +513,18 @@ class TestReprValues(unittest.TestCase):
         not_implemented_error = runtime_error.__cause__
 
         self.assertEqual(
-            'Re-computation of in-line lambda functions is not supported since it is quite tricky to implement and '
-            'we decided to implement it only once there is a real need for it. '
-            'Please make a feature request on https://github.com/Parquery/icontract', str(not_implemented_error))
+            "Re-computation of in-line lambda functions is not supported since it is quite tricky to implement and "
+            "we decided to implement it only once there is a real need for it. "
+            "Please make a feature request on https://github.com/Parquery/icontract",
+            str(not_implemented_error),
+        )
 
 
 class TestGeneratorExpr(unittest.TestCase):
     def test_attr_on_element(self) -> None:
-        @icontract.ensure(lambda result: all(single_res[1].is_absolute() for single_res in result))
+        @icontract.ensure(
+            lambda result: all(single_res[1].is_absolute() for single_res in result)
+        )
         def some_func() -> List[Tuple[pathlib.Path, pathlib.Path]]:
             return [(pathlib.Path("/home/file1"), pathlib.Path("home/file2"))]
 
@@ -450,16 +535,19 @@ class TestGeneratorExpr(unittest.TestCase):
             violation_error = err
 
         # This dummy path is necessary to obtain the class name.
-        dummy_path = pathlib.Path('/also/doesnt/exist')
+        dummy_path = pathlib.Path("/also/doesnt/exist")
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent('''\
+            textwrap.dedent(
+                """\
                 all(single_res[1].is_absolute() for single_res in result):
                 all(single_res[1].is_absolute() for single_res in result) was False, e.g., with
                   single_res = ({0}('/home/file1'), {0}('home/file2'))
-                result was [({0}('/home/file1'), {0}('home/file2'))]''').format(dummy_path.__class__.__name__),
-            tests.error.wo_mandatory_location(str(violation_error)))
+                result was [({0}('/home/file1'), {0}('home/file2'))]"""
+            ).format(dummy_path.__class__.__name__),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_multiple_for(self) -> None:
         lst = [[1, 2], [3]]
@@ -481,32 +569,37 @@ class TestGeneratorExpr(unittest.TestCase):
         self.assertIsNotNone(violation_error)
 
         self.assertEqual(
-            textwrap.dedent('''\
+            textwrap.dedent(
+                """\
                 all(item == x for sublst in lst for item in sublst):
                 all(item == x for sublst in lst for item in sublst) was False, e.g., with
                   sublst = [1, 2]
                   item = 1
                 lst was [[1, 2], [3]]
-                x was 0'''), tests.error.wo_mandatory_location(str(violation_error)))
+                x was 0"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_zip_and_multiple_for(self) -> None:
         # Taken from a solution for Advent of Code 2020 day 11.
         @icontract.ensure(
-            lambda layout, result:
-            all(cell == result_cell
+            lambda layout, result: all(
+                cell == result_cell
                 for row, result_row in zip(layout, result[0])
                 for cell, result_cell in zip(row, result_row)
-                if cell == '.'),
-            "Floor remains floor"
+                if cell == "."
+            ),
+            "Floor remains floor",
         )
         def apply(layout: List[List[str]]) -> Tuple[List[List[str]], int]:
             height = len(layout)
             width = len(layout[0])
 
-            result = [[''] * width] * height
+            result = [[""] * width] * height
             return result, 0
 
-        layout = [['L', '.', '#'], ['.', '#', '#']]
+        layout = [["L", ".", "#"], [".", "#", "#"]]
 
         violation_error = None  # type: Optional[icontract.ViolationError]
         try:
@@ -516,19 +609,27 @@ class TestGeneratorExpr(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
 
-        text = re.sub(r'<zip object at 0x[0-9a-fA-F]+>', '<zip object at some address>',
-                      tests.error.wo_mandatory_location(str(violation_error)))
+        text = re.sub(
+            r"<zip object at 0x[0-9a-fA-F]+>",
+            "<zip object at some address>",
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
         self.assertEqual(
-            textwrap.dedent('''\
-                Floor remains floor: all(cell == result_cell
+            textwrap.dedent(
+                """\
+                Floor remains floor: all(
+                        cell == result_cell
                         for row, result_row in zip(layout, result[0])
                         for cell, result_cell in zip(row, result_row)
-                        if cell == '.'):
-                all(cell == result_cell
+                        if cell == "."
+                    ):
+                all(
+                        cell == result_cell
                         for row, result_row in zip(layout, result[0])
                         for cell, result_cell in zip(row, result_row)
-                        if cell == '.') was False, e.g., with
+                        if cell == "."
+                    ) was False, e.g., with
                   row = ['L', '.', '#']
                   result_row = ['', '', '']
                   cell = '.'
@@ -536,7 +637,10 @@ class TestGeneratorExpr(unittest.TestCase):
                 layout was [['L', '.', '#'], ['.', '#', '#']]
                 result was ([['', '', ''], ['', '', '']], 0)
                 result[0] was [['', '', ''], ['', '', '']]
-                zip(layout, result[0]) was <zip object at some address>'''), text)
+                zip(layout, result[0]) was <zip object at some address>"""
+            ),
+            text,
+        )
 
 
 class TestListComprehension(unittest.TestCase):
@@ -555,11 +659,15 @@ class TestListComprehension(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent('''\
+            textwrap.dedent(
+                """\
                 [item < x for item in lst if item % x == 0] == []:
                 [item < x for item in lst if item % x == 0] was [False]
                 lst was [1, 2, 3]
-                x was 2'''), tests.error.wo_mandatory_location(str(violation_error)))
+                x was 2"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_nested(self) -> None:
         lst_of_lsts = [[1, 2, 3]]
@@ -584,7 +692,8 @@ class TestListComprehension(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent('''\
+            textwrap.dedent(
+                """\
                 [
                         [item for item in sublst if item > 0]
                         for sublst in lst_of_lsts
@@ -593,14 +702,19 @@ class TestListComprehension(unittest.TestCase):
                         [item for item in sublst if item > 0]
                         for sublst in lst_of_lsts
                     ] was [[1, 2, 3]]
-                lst_of_lsts was [[1, 2, 3]]'''), tests.error.wo_mandatory_location(str(violation_error)))
+                lst_of_lsts was [[1, 2, 3]]"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
 
 class TestSetComprehension(unittest.TestCase):
     def test_single(self) -> None:
         lst = [1, 2, 3]
 
-        @icontract.require(lambda x: len({item < x for item in lst if item % x == 0}) == 0)
+        @icontract.require(
+            lambda x: len({item < x for item in lst if item % x == 0}) == 0
+        )
         def func(x: int) -> int:
             return x
 
@@ -612,13 +726,16 @@ class TestSetComprehension(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent('''\
+            textwrap.dedent(
+                """\
                 len({item < x for item in lst if item % x == 0}) == 0:
                 len({item < x for item in lst if item % x == 0}) was 1
                 lst was [1, 2, 3]
                 x was 2
-                {item < x for item in lst if item % x == 0} was {False}'''),
-            tests.error.wo_mandatory_location(str(violation_error)))
+                {item < x for item in lst if item % x == 0} was {False}"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_nested(self) -> None:
         lst_of_lsts = [[1, 2, 3]]
@@ -643,7 +760,8 @@ class TestSetComprehension(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent('''\
+            textwrap.dedent(
+                """\
                 {
                         len({item for item in lst if item > 0})
                         for lst in lst_of_lsts
@@ -653,7 +771,10 @@ class TestSetComprehension(unittest.TestCase):
                 {
                         len({item for item in lst if item > 0})
                         for lst in lst_of_lsts
-                    } was {3}'''), tests.error.wo_mandatory_location(str(violation_error)))
+                    } was {3}"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
 
 class TestDictComprehension(unittest.TestCase):
@@ -670,13 +791,16 @@ class TestDictComprehension(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent('''\
+            textwrap.dedent(
+                """\
                 len({i: i**2 for i in range(x)}) == 0:
                 len({i: i**2 for i in range(x)}) was 2
                 range(x) was range(0, 2)
                 x was 2
-                {i: i**2 for i in range(x)} was {0: 0, 1: 1}'''), tests.error.wo_mandatory_location(
-                str(violation_error)))
+                {i: i**2 for i in range(x)} was {0: 0, 1: 1}"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_nested(self) -> None:
         lst_of_lsts = [[1, 2, 3]]
@@ -701,7 +825,8 @@ class TestDictComprehension(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent('''\
+            textwrap.dedent(
+                """\
                 len({
                         len(lst): {item: item for item in lst}
                         for lst in lst_of_lsts
@@ -714,7 +839,10 @@ class TestDictComprehension(unittest.TestCase):
                 {
                         len(lst): {item: item for item in lst}
                         for lst in lst_of_lsts
-                    } was {3: {1: 1, 2: 2, 3: 3}}'''), tests.error.wo_mandatory_location(str(violation_error)))
+                    } was {3: {1: 1, 2: 2, 3: 3}}"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
 
 class TestConditionAsText(unittest.TestCase):
@@ -735,7 +863,9 @@ class TestConditionAsText(unittest.TestCase):
             violation_err = err
 
         self.assertIsNotNone(violation_err)
-        self.assertEqual("x > 3: x was 0", tests.error.wo_mandatory_location(str(violation_err)))
+        self.assertEqual(
+            "x > 3: x was 0", tests.error.wo_mandatory_location(str(violation_err))
+        )
 
     def test_condition_on_next_line(self) -> None:
         # yapf: disable
@@ -753,7 +883,9 @@ class TestConditionAsText(unittest.TestCase):
             violation_err = err
 
         self.assertIsNotNone(violation_err)
-        self.assertEqual("x > 3: x was 0", tests.error.wo_mandatory_location(str(violation_err)))
+        self.assertEqual(
+            "x > 3: x was 0", tests.error.wo_mandatory_location(str(violation_err))
+        )
 
     def test_condition_on_multiple_lines(self) -> None:
         # yapf: disable
@@ -775,10 +907,14 @@ class TestConditionAsText(unittest.TestCase):
 
         self.assertIsNotNone(violation_err)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 x
                     >
-                    3: x was 0"""), tests.error.wo_mandatory_location(str(violation_err)))
+                    3: x was 0"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_err)),
+        )
 
     def test_with_multiple_lambdas_on_a_line(self) -> None:
         # pylint: disable=unnecessary-lambda
@@ -831,10 +967,14 @@ class TestRepr(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 len(x) < 10:
                 len(x) was 10000
-                x was [0, 1, 2, ...]"""), tests.error.wo_mandatory_location(str(violation_error)))
+                x was [0, 1, 2, ...]"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
 
 class TestClass(unittest.TestCase):
@@ -870,11 +1010,15 @@ class TestClass(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 self.b.x > 0:
                 self was A()
                 self.b was B(x=0)
-                self.b.x was 0"""), tests.error.wo_mandatory_location(str(violation_error)))
+                self.b.x was 0"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_nested_method(self) -> None:
         z = 10
@@ -903,7 +1047,10 @@ class TestClass(unittest.TestCase):
             def __init__(self) -> None:
                 self.b = B()
 
-            @icontract.require(lambda self: pathlib.Path(str(gt_zero(self.b.c(x=0).x() + 12.2 * z))) is None)
+            @icontract.require(
+                lambda self: pathlib.Path(str(gt_zero(self.b.c(x=0).x() + 12.2 * z)))
+                is None
+            )
             def some_func(self) -> None:
                 pass
 
@@ -919,12 +1066,14 @@ class TestClass(unittest.TestCase):
             violation_error = err
 
         # This dummy path is necessary to obtain the class name.
-        dummy_path = pathlib.Path('/just/a/dummy/path')
+        dummy_path = pathlib.Path("/just/a/dummy/path")
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent('''\
-                pathlib.Path(str(gt_zero(self.b.c(x=0).x() + 12.2 * z))) is None:
+            textwrap.dedent(
+                """\
+                pathlib.Path(str(gt_zero(self.b.c(x=0).x() + 12.2 * z)))
+                    is None:
                 gt_zero(self.b.c(x=0).x() + 12.2 * z) was True
                 pathlib.Path(str(gt_zero(self.b.c(x=0).x() + 12.2 * z))) was {}('True')
                 self was A()
@@ -932,8 +1081,10 @@ class TestClass(unittest.TestCase):
                 self.b.c(x=0) was C(x=0)
                 self.b.c(x=0).x() was 0
                 str(gt_zero(self.b.c(x=0).x() + 12.2 * z)) was 'True'
-                z was 10''').format(dummy_path.__class__.__name__),
-            tests.error.wo_mandatory_location(str(violation_error)))
+                z was 10"""
+            ).format(dummy_path.__class__.__name__),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
 
 class TestClosures(unittest.TestCase):
@@ -953,11 +1104,15 @@ class TestClosures(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 x < y + z:
                 x was 100
                 y was 4
-                z was 5"""), tests.error.wo_mandatory_location(str(violation_error)))
+                z was 5"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_global(self) -> None:
         @icontract.require(lambda x: x < SOME_GLOBAL_CONSTANT)
@@ -972,10 +1127,14 @@ class TestClosures(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 x < SOME_GLOBAL_CONSTANT:
                 SOME_GLOBAL_CONSTANT was 10
-                x was 100"""), tests.error.wo_mandatory_location(str(violation_error)))
+                x was 100"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_closure_and_global(self) -> None:
         y = 4
@@ -992,11 +1151,15 @@ class TestClosures(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 x < y + SOME_GLOBAL_CONSTANT:
                 SOME_GLOBAL_CONSTANT was 10
                 x was 100
-                y was 4"""), tests.error.wo_mandatory_location(str(violation_error)))
+                y was 4"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
 
 class TestWithNumpyMock(unittest.TestCase):
@@ -1010,7 +1173,10 @@ class TestWithNumpyMock(unittest.TestCase):
             value_err = err
 
         self.assertIsNotNone(value_err)
-        self.assertEqual('The truth value of an array with more than one element is ambiguous.', str(value_err))
+        self.assertEqual(
+            "The truth value of an array with more than one element is ambiguous.",
+            str(value_err),
+        )
 
     def test_that_single_comparator_works(self) -> None:
         @icontract.require(lambda arr: (arr > 0).all())
@@ -1025,10 +1191,14 @@ class TestWithNumpyMock(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 (arr > 0).all():
                 (arr > 0).all() was False
-                arr was NumpyArray([-3, 3])"""), tests.error.wo_mandatory_location(str(violation_error)))
+                arr was NumpyArray([-3, 3])"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_that_multiple_comparators_fail(self) -> None:
         """
@@ -1061,7 +1231,10 @@ class TestWithNumpyMock(unittest.TestCase):
             value_err = err
 
         self.assertIsNotNone(value_err)
-        self.assertEqual('The truth value of an array with more than one element is ambiguous.', str(value_err))
+        self.assertEqual(
+            "The truth value of an array with more than one element is ambiguous.",
+            str(value_err),
+        )
 
 
 class TestNumpyArrays(unittest.TestCase):
@@ -1081,10 +1254,14 @@ class TestNumpyArrays(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 len(arr) > 2:
                 arr was array([0, 1])
-                len(arr) was 2"""), tests.error.wo_mandatory_location(str(violation_error)))
+                len(arr) was 2"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_arange_in_kwargs_values(self) -> None:
         # This test case addresses ``visit_Call` in the Visitor.
@@ -1105,10 +1282,14 @@ class TestNumpyArrays(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent("""\
+            textwrap.dedent(
+                """\
                 custom_len(arr=arr) > 2:
                 arr was array([0, 1])
-                custom_len(arr=arr) was 2"""), tests.error.wo_mandatory_location(str(violation_error)))
+                custom_len(arr=arr) was 2"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
 
 class TestRecomputationFailure(unittest.TestCase):
@@ -1138,17 +1319,24 @@ class TestRecomputationFailure(unittest.TestCase):
         assert runtime_error is not None
 
         lines = [
-            re.sub(r'^File (.*), line ([0-9]+) in (.*):$',
-                   'File <erased path>, line <erased line> in <erased function>:', line)
+            re.sub(
+                r"^File (.*), line ([0-9]+) in (.*):$",
+                "File <erased path>, line <erased line> in <erased function>:",
+                line,
+            )
             for line in str(runtime_error).splitlines()
         ]
-        text = '\n'.join(lines)
+        text = "\n".join(lines)
 
         self.assertEqual(
-            textwrap.dedent('''\
+            textwrap.dedent(
+                """\
             Failed to recompute the values of the contract condition:
             File <erased path>, line <erased line> in <erased function>:
-            lambda: some_condition()'''), text)
+            lambda: some_condition()"""
+            ),
+            text,
+        )
 
 
 class TestTracingAll(unittest.TestCase):
@@ -1176,7 +1364,8 @@ class TestTracingAll(unittest.TestCase):
         got = tests.error.wo_mandatory_location(str(violation_error))
 
         self.assertEqual(
-            textwrap.dedent('''\
+            textwrap.dedent(
+                """\
                 all(
                         value > SOME_GLOBAL_CONSTANT
                         for value in lst
@@ -1187,7 +1376,10 @@ class TestTracingAll(unittest.TestCase):
                         for value in lst
                     ) was False, e.g., with
                   value = -1
-                lst was [-1, -2]'''), got)
+                lst was [-1, -2]"""
+            ),
+            got,
+        )
 
     def test_formatted_string(self) -> None:
         # yapf: disable
@@ -1204,7 +1396,7 @@ class TestTracingAll(unittest.TestCase):
 
         violation_error = None  # type: Optional[icontract.ViolationError]
         try:
-            func(lst=['y'])
+            func(lst=["y"])
         except icontract.ViolationError as err:
             violation_error = err
 
@@ -1213,7 +1405,8 @@ class TestTracingAll(unittest.TestCase):
         got = tests.error.wo_mandatory_location(str(violation_error))
 
         self.assertEqual(
-            textwrap.dedent('''\
+            textwrap.dedent(
+                """\
                 all(
                         f'{value}' == 'x'
                         for value in lst
@@ -1223,7 +1416,10 @@ class TestTracingAll(unittest.TestCase):
                         for value in lst
                     ) was False, e.g., with
                   value = 'y'
-                lst was ['y']'''), got)
+                lst was ['y']"""
+            ),
+            got,
+        )
 
     def test_two_fors_and_two_ifs(self) -> None:
         # yapf: disable
@@ -1249,11 +1445,15 @@ class TestTracingAll(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
 
-        got = re.sub(r'<enumerate object at 0x[0-9A-Za-z]+>', '<enumerate object at 0x...>',
-                     tests.error.wo_mandatory_location(str(violation_error)))
+        got = re.sub(
+            r"<enumerate object at 0x[0-9A-Za-z]+>",
+            "<enumerate object at 0x...>",
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
         self.assertEqual(
-            textwrap.dedent('''\
+            textwrap.dedent(
+                """\
             all(
                     cell > SOME_GLOBAL_CONSTANT
                     for i, row in enumerate(matrix)
@@ -1274,7 +1474,10 @@ class TestTracingAll(unittest.TestCase):
               j = 1
               cell = -1
             enumerate(matrix) was <enumerate object at 0x...>
-            matrix was [[-1, -1], [-1, -1]]'''), got)
+            matrix was [[-1, -1], [-1, -1]]"""
+            ),
+            got,
+        )
 
     def test_nested_all(self) -> None:
         # Nesting is not recursively followed by design. Only the outer-most all expression should be traced.
@@ -1299,7 +1502,8 @@ class TestTracingAll(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent('''\
+            textwrap.dedent(
+                """\
                 all(
                         all(item > 0 for item in sublst)
                         for sublst in lst_of_lsts
@@ -1309,7 +1513,10 @@ class TestTracingAll(unittest.TestCase):
                         for sublst in lst_of_lsts
                     ) was False, e.g., with
                   sublst = [-1, -1]
-                lst_of_lsts was [[-1, -1]]'''), tests.error.wo_mandatory_location(str(violation_error)))
+                lst_of_lsts was [[-1, -1]]"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_property_of_an_object_represented(self) -> None:
         class Something:
@@ -1340,7 +1547,8 @@ class TestTracingAll(unittest.TestCase):
         self.assertIsNotNone(violation_error)
 
         self.assertEqual(
-            textwrap.dedent('''\
+            textwrap.dedent(
+                """\
                 all(
                         item > something.some_property
                         for item in lst
@@ -1352,7 +1560,10 @@ class TestTracingAll(unittest.TestCase):
                   item = -1
                 lst was [-1]
                 something was Something()
-                something.some_property was 0'''), tests.error.wo_mandatory_location(str(violation_error)))
+                something.some_property was 0"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
     def test_shadows_in_targets(self) -> None:
         # yapf: disable
@@ -1375,7 +1586,8 @@ class TestTracingAll(unittest.TestCase):
 
         self.assertIsNotNone(violation_error)
         self.assertEqual(
-            textwrap.dedent('''\
+            textwrap.dedent(
+                """\
                 all(
                         all(item > 0 for item in item)
                         for item in lst_of_lsts
@@ -1385,8 +1597,11 @@ class TestTracingAll(unittest.TestCase):
                         for item in lst_of_lsts
                     ) was False, e.g., with
                   item = [-1, -1]
-                lst_of_lsts was [[-1, -1]]'''), tests.error.wo_mandatory_location(str(violation_error)))
+                lst_of_lsts was [[-1, -1]]"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

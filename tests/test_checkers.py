@@ -35,14 +35,20 @@ class TestUnwindDecoratorStack(unittest.TestCase):
         def func() -> int:
             return 0
 
-        self.assertListEqual([0], [a_func() for a_func in icontract._checkers._walk_decorator_stack(func)])
+        self.assertListEqual(
+            [0],
+            [a_func() for a_func in icontract._checkers._walk_decorator_stack(func)],
+        )
 
     def test_with_single_decorator(self) -> None:
         @decorator_plus_1
         def func() -> int:
             return 0
 
-        self.assertListEqual([1, 0], [a_func() for a_func in icontract._checkers._walk_decorator_stack(func)])
+        self.assertListEqual(
+            [1, 0],
+            [a_func() for a_func in icontract._checkers._walk_decorator_stack(func)],
+        )
 
     def test_with_double_decorator(self) -> None:
         @decorator_plus_2
@@ -50,7 +56,10 @@ class TestUnwindDecoratorStack(unittest.TestCase):
         def func() -> int:
             return 0
 
-        self.assertListEqual([3, 1, 0], [a_func() for a_func in icontract._checkers._walk_decorator_stack(func)])
+        self.assertListEqual(
+            [3, 1, 0],
+            [a_func() for a_func in icontract._checkers._walk_decorator_stack(func)],
+        )
 
 
 class TestResolveKwargs(unittest.TestCase):
@@ -67,7 +76,9 @@ class TestResolveKwargs(unittest.TestCase):
 
         assert type_error is not None
         self.assertRegex(
-            str(type_error), r"^([a-zA-Z_0-9<>.]+\.)?some_func\(\) takes 2 positional arguments but 3 were given$")
+            str(type_error),
+            r"^([a-zA-Z_0-9<>.]+\.)?some_func\(\) takes 2 positional arguments but 3 were given$",
+        )
 
     def test_that_result_in_kwargs_raises_an_error(self) -> None:
         @icontract.ensure(lambda result: result > 0)
@@ -83,7 +94,10 @@ class TestResolveKwargs(unittest.TestCase):
 
         assert type_error is not None
 
-        self.assertEqual("Unexpected argument 'result' in a function decorated with postconditions.", str(type_error))
+        self.assertEqual(
+            "Unexpected argument 'result' in a function decorated with postconditions.",
+            str(type_error),
+        )
 
     def test_that_OLD_in_kwargs_raises_an_error(self) -> None:
         @icontract.ensure(lambda result: result > 0)
@@ -99,8 +113,11 @@ class TestResolveKwargs(unittest.TestCase):
 
         assert type_error is not None
 
-        self.assertEqual("Unexpected argument 'OLD' in a function decorated with postconditions.", str(type_error))
+        self.assertEqual(
+            "Unexpected argument 'OLD' in a function decorated with postconditions.",
+            str(type_error),
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -2,8 +2,19 @@
 import contextvars
 import functools
 import inspect
-from typing import Callable, Any, Iterable, Optional, Tuple, List, Mapping, \
-    MutableMapping, Dict, cast, Set
+from typing import (
+    Callable,
+    Any,
+    Iterable,
+    Optional,
+    Tuple,
+    List,
+    Mapping,
+    MutableMapping,
+    Dict,
+    cast,
+    Set,
+)
 
 import icontract._represent
 from icontract._globals import CallableT, ClassT
@@ -15,7 +26,7 @@ from icontract.errors import ViolationError
 # pylint: disable=raising-bad-type
 
 
-def _walk_decorator_stack(func: CallableT) -> Iterable['CallableT']:
+def _walk_decorator_stack(func: CallableT) -> Iterable["CallableT"]:
     """
     Iterate through the stack of decorated functions until the original function.
 
@@ -33,14 +44,20 @@ def find_checker(func: CallableT) -> Optional[CallableT]:
     """Iterate through the decorator stack till we find the contract checker."""
     contract_checker = None  # type: Optional[CallableT]
     for a_wrapper in _walk_decorator_stack(func):
-        if hasattr(a_wrapper, "__preconditions__") or hasattr(a_wrapper, "__postconditions__"):
+        if hasattr(a_wrapper, "__preconditions__") or hasattr(
+            a_wrapper, "__postconditions__"
+        ):
             contract_checker = a_wrapper
 
     return contract_checker
 
 
-def kwargs_from_call(param_names: List[str], kwdefaults: Dict[str, Any], args: Tuple[Any, ...],
-                     kwargs: Dict[str, Any]) -> MutableMapping[str, Any]:
+def kwargs_from_call(
+    param_names: List[str],
+    kwdefaults: Dict[str, Any],
+    args: Tuple[Any, ...],
+    kwargs: Dict[str, Any],
+) -> MutableMapping[str, Any]:
     """
     Inspect the input values received at the wrapper for the actual function call.
 
@@ -57,7 +74,7 @@ def kwargs_from_call(param_names: List[str], kwdefaults: Dict[str, Any], args: T
     # (*e.g.*, when the contracts do not need them or don't use any argument at all).
     # We need to have a concrete issue where profiling helps us determine if this is a real
     # bottleneck or not and not optimize for no real benefit.
-    resolved_kwargs = {'_ARGS': args, '_KWARGS': kwargs}
+    resolved_kwargs = {"_ARGS": args, "_KWARGS": kwargs}
 
     # Set the default argument values as condition parameters.
     for param_name, param_value in kwdefaults.items():
@@ -99,12 +116,14 @@ def not_check(check: Any, contract: Contract) -> bool:
         if contract.location is not None:
             msg_parts.append("{}:\n".format(contract.location))
 
-        msg_parts.append('Failed to negate the evaluation of the condition.')
+        msg_parts.append("Failed to negate the evaluation of the condition.")
 
-        raise ValueError(''.join(msg_parts)) from err
+        raise ValueError("".join(msg_parts)) from err
 
 
-def select_condition_kwargs(contract: Contract, resolved_kwargs: Mapping[str, Any]) -> Mapping[str, Any]:
+def select_condition_kwargs(
+    contract: Contract, resolved_kwargs: Mapping[str, Any]
+) -> Mapping[str, Any]:
     """
     Select the keyword arguments that are used by the contract.
 
@@ -114,24 +133,34 @@ def select_condition_kwargs(contract: Contract, resolved_kwargs: Mapping[str, An
     :return: a subset of resolved_kwargs
     """
     # Check that all arguments to the condition function have been set.
-    missing_args = [arg_name for arg_name in contract.mandatory_args if arg_name not in resolved_kwargs]
+    missing_args = [
+        arg_name
+        for arg_name in contract.mandatory_args
+        if arg_name not in resolved_kwargs
+    ]
     if missing_args:
         msg_parts = []  # type: List[str]
         if contract.location is not None:
             msg_parts.append("{}:\n".format(contract.location))
 
         msg_parts.append(
-            ("The argument(s) of the contract condition have not been set: {}. "
-             "Does the original function define them? Did you supply them in the call?").format(missing_args))
+            (
+                "The argument(s) of the contract condition have not been set: {}. "
+                "Does the original function define them? Did you supply them in the call?"
+            ).format(missing_args)
+        )
 
-        if 'OLD' in missing_args:
-            msg_parts.append(' Did you decorate the function with a snapshot to capture OLD values?')
+        if "OLD" in missing_args:
+            msg_parts.append(
+                " Did you decorate the function with a snapshot to capture OLD values?"
+            )
 
-        raise TypeError(''.join(msg_parts))
+        raise TypeError("".join(msg_parts))
 
     condition_kwargs = {
         arg_name: value
-        for arg_name, value in resolved_kwargs.items() if arg_name in contract.condition_arg_set
+        for arg_name, value in resolved_kwargs.items()
+        if arg_name in contract.condition_arg_set
     }
 
     return condition_kwargs
@@ -139,18 +168,24 @@ def select_condition_kwargs(contract: Contract, resolved_kwargs: Mapping[str, An
 
 def _assert_no_invalid_kwargs(kwargs: Any) -> Optional[TypeError]:
     """Check that kwargs of a function contain no unexpected arguments."""
-    if '_ARGS' in kwargs:
-        return TypeError('The arguments of the function call include "_ARGS" which is '
-                         'a placeholder for positional arguments in a condition.')
+    if "_ARGS" in kwargs:
+        return TypeError(
+            'The arguments of the function call include "_ARGS" which is '
+            "a placeholder for positional arguments in a condition."
+        )
 
-    if '_KWARGS' in kwargs:
-        return TypeError('The arguments of the function call include "_KWARGS" which is '
-                         'a placeholder for keyword arguments in a condition.')
+    if "_KWARGS" in kwargs:
+        return TypeError(
+            'The arguments of the function call include "_KWARGS" which is '
+            "a placeholder for keyword arguments in a condition."
+        )
 
     return None
 
 
-def _unpack_pre_snap_posts(wrapper: CallableT) -> Tuple[List[List[Contract]], List[Snapshot], List[Contract]]:
+def _unpack_pre_snap_posts(
+    wrapper: CallableT,
+) -> Tuple[List[List[Contract]], List[Snapshot], List[Contract]]:
     """Retrieve the preconditions, snapshots and postconditions defined for the given wrapper checker."""
     preconditions = getattr(wrapper, "__preconditions__")  # type: List[List[Contract]]
     snapshots = getattr(wrapper, "__postcondition_snapshots__")  # type: List[Snapshot]
@@ -159,26 +194,35 @@ def _unpack_pre_snap_posts(wrapper: CallableT) -> Tuple[List[List[Contract]], Li
     return preconditions, snapshots, postconditions
 
 
-def _assert_resolved_kwargs_valid(postconditions: List[Contract],
-                                  resolved_kwargs: Mapping[str, Any]) -> Optional[TypeError]:
+def _assert_resolved_kwargs_valid(
+    postconditions: List[Contract], resolved_kwargs: Mapping[str, Any]
+) -> Optional[TypeError]:
     """Check that the resolved kwargs of a decorated function are valid."""
     if postconditions:
-        if 'result' in resolved_kwargs:
-            return TypeError("Unexpected argument 'result' in a function decorated with postconditions.")
+        if "result" in resolved_kwargs:
+            return TypeError(
+                "Unexpected argument 'result' in a function decorated with postconditions."
+            )
 
-        if 'OLD' in resolved_kwargs:
-            return TypeError("Unexpected argument 'OLD' in a function decorated with postconditions.")
+        if "OLD" in resolved_kwargs:
+            return TypeError(
+                "Unexpected argument 'OLD' in a function decorated with postconditions."
+            )
 
     return None
 
 
-def _create_violation_error(contract: Contract, resolved_kwargs: Mapping[str, Any]) -> BaseException:
+def _create_violation_error(
+    contract: Contract, resolved_kwargs: Mapping[str, Any]
+) -> BaseException:
     """Create the violation error based on the violated contract."""
     exception = None  # type: Optional[BaseException]
 
     if contract.error is None:
         try:
-            msg = icontract._represent.generate_message(contract=contract, resolved_kwargs=resolved_kwargs)
+            msg = icontract._represent.generate_message(
+                contract=contract, resolved_kwargs=resolved_kwargs
+            )
         except Exception as err:
             parts = ["Failed to recompute the values of the contract condition:\n"]
             if contract.location is not None:
@@ -187,45 +231,62 @@ def _create_violation_error(contract: Contract, resolved_kwargs: Mapping[str, An
             if contract.description is not None:
                 parts.append("{}: ".format(contract.description))
 
-            parts.append(icontract._represent.represent_condition(condition=contract.condition))
+            parts.append(
+                icontract._represent.represent_condition(condition=contract.condition)
+            )
 
-            raise RuntimeError(''.join(parts)) from err
+            raise RuntimeError("".join(parts)) from err
 
         exception = ViolationError(msg)
     elif inspect.ismethod(contract.error) or inspect.isfunction(contract.error):
-        assert contract.error_arg_set is not None, ("Expected error_arg_set non-None if contract.error a function.")
-        assert contract.error_args is not None, ("Expected error_args non-None if contract.error a function.")
+        assert (
+            contract.error_arg_set is not None
+        ), "Expected error_arg_set non-None if contract.error a function."
+        assert (
+            contract.error_args is not None
+        ), "Expected error_args non-None if contract.error a function."
 
-        error_kwargs = select_error_kwargs(contract=contract, resolved_kwargs=resolved_kwargs)
+        error_kwargs = select_error_kwargs(
+            contract=contract, resolved_kwargs=resolved_kwargs
+        )
 
         exception = cast(BaseException, contract.error(**error_kwargs))
 
         if not isinstance(exception, BaseException):
             raise TypeError(
                 "The exception returned by the contract's error {} does not inherit from BaseException.".format(
-                    contract.error))
+                    contract.error
+                )
+            )
     elif isinstance(contract.error, type):
         if not issubclass(contract.error, BaseException):
             raise TypeError(
                 "The exception class supplied in the contract's error {} is not a subclass of BaseException.".format(
-                    contract.error))
+                    contract.error
+                )
+            )
 
-        msg = icontract._represent.generate_message(contract=contract, resolved_kwargs=resolved_kwargs)
+        msg = icontract._represent.generate_message(
+            contract=contract, resolved_kwargs=resolved_kwargs
+        )
         exception = contract.error(msg)
     elif isinstance(contract.error, BaseException):
         exception = contract.error
     else:
         raise NotImplementedError(
-            ("icontract does not know how to handle the error of type {} "
-             "(expected a function, a subclass of BaseException or an instance of BaseException)").format(
-                 type(contract.error)))
+            (
+                "icontract does not know how to handle the error of type {} "
+                "(expected a function, a subclass of BaseException or an instance of BaseException)"
+            ).format(type(contract.error))
+        )
 
     assert exception is not None
     return exception
 
 
-async def _assert_preconditions_async(preconditions: List[List[Contract]],
-                                      resolved_kwargs: Mapping[str, Any]) -> Optional[BaseException]:
+async def _assert_preconditions_async(
+    preconditions: List[List[Contract]], resolved_kwargs: Mapping[str, Any]
+) -> Optional[BaseException]:
     """Assert that the preconditions of an async function hold."""
     exception = None  # type: Optional[BaseException]
 
@@ -236,9 +297,13 @@ async def _assert_preconditions_async(preconditions: List[List[Contract]],
         exception = None
 
         for contract in group:
-            assert exception is None, "No exception as long as pre-condition group is satisfiable."
+            assert (
+                exception is None
+            ), "No exception as long as pre-condition group is satisfiable."
 
-            condition_kwargs = select_condition_kwargs(contract=contract, resolved_kwargs=resolved_kwargs)
+            condition_kwargs = select_condition_kwargs(
+                contract=contract, resolved_kwargs=resolved_kwargs
+            )
 
             if inspect.iscoroutinefunction(contract.condition):
                 check = await contract.condition(**condition_kwargs)
@@ -250,7 +315,9 @@ async def _assert_preconditions_async(preconditions: List[List[Contract]],
                     check = check_or_coroutine
 
             if not_check(check=check, contract=contract):
-                exception = _create_violation_error(contract=contract, resolved_kwargs=resolved_kwargs)
+                exception = _create_violation_error(
+                    contract=contract, resolved_kwargs=resolved_kwargs
+                )
                 break
 
         # The group of preconditions was satisfied, no need to check the other groups.
@@ -260,8 +327,11 @@ async def _assert_preconditions_async(preconditions: List[List[Contract]],
     return exception
 
 
-def _assert_preconditions(preconditions: List[List[Contract]], resolved_kwargs: Mapping[str, Any],
-                          func: CallableT) -> Optional[BaseException]:
+def _assert_preconditions(
+    preconditions: List[List[Contract]],
+    resolved_kwargs: Mapping[str, Any],
+    func: CallableT,
+) -> Optional[BaseException]:
     """Assert that the preconditions of a sync function hold."""
     exception = None  # type: Optional[BaseException]
 
@@ -272,22 +342,34 @@ def _assert_preconditions(preconditions: List[List[Contract]], resolved_kwargs: 
         exception = None
 
         for contract in group:
-            assert exception is None, "No exception as long as pre-condition group is satisfiable."
+            assert (
+                exception is None
+            ), "No exception as long as pre-condition group is satisfiable."
 
-            condition_kwargs = select_condition_kwargs(contract=contract, resolved_kwargs=resolved_kwargs)
+            condition_kwargs = select_condition_kwargs(
+                contract=contract, resolved_kwargs=resolved_kwargs
+            )
 
             if inspect.iscoroutinefunction(contract.condition):
-                raise ValueError("Unexpected coroutine (async) condition {} for a sync function {}.".format(
-                    contract.condition, func))
+                raise ValueError(
+                    "Unexpected coroutine (async) condition {} for a sync function {}.".format(
+                        contract.condition, func
+                    )
+                )
 
             check = contract.condition(**condition_kwargs)
 
             if inspect.iscoroutine(check):
-                raise ValueError("Unexpected coroutine resulting from the condition {} for a sync function {}.".format(
-                    contract.condition, func))
+                raise ValueError(
+                    "Unexpected coroutine resulting from the condition {} for a sync function {}.".format(
+                        contract.condition, func
+                    )
+                )
 
             if not_check(check=check, contract=contract):
-                exception = _create_violation_error(contract=contract, resolved_kwargs=resolved_kwargs)
+                exception = _create_violation_error(
+                    contract=contract, resolved_kwargs=resolved_kwargs
+                )
                 break
 
         # The group of preconditions was satisfied, no need to check the other groups.
@@ -297,16 +379,22 @@ def _assert_preconditions(preconditions: List[List[Contract]], resolved_kwargs: 
     return exception
 
 
-async def _capture_old_async(snapshots: List[Snapshot], resolved_kwargs: Mapping[str, Any]) -> 'Old':
+async def _capture_old_async(
+    snapshots: List[Snapshot], resolved_kwargs: Mapping[str, Any]
+) -> "Old":
     """Capture all snapshots of an async function and return the captured values bundled in an ``Old``."""
     old_as_mapping = dict()  # type: MutableMapping[str, Any]
     for snap in snapshots:
         # This assert is just a last defense.
         # Conflicting snapshot names should have been caught before, either during the decoration or
         # in the meta-class.
-        assert snap.name not in old_as_mapping, "Snapshots with the conflicting name: {}"
+        assert (
+            snap.name not in old_as_mapping
+        ), "Snapshots with the conflicting name: {}"
 
-        capture_kwargs = select_capture_kwargs(a_snapshot=snap, resolved_kwargs=resolved_kwargs)
+        capture_kwargs = select_capture_kwargs(
+            a_snapshot=snap, resolved_kwargs=resolved_kwargs
+        )
 
         if inspect.iscoroutinefunction(snap.capture):
             old_as_mapping[snap.name] = await snap.capture(**capture_kwargs)
@@ -322,39 +410,56 @@ async def _capture_old_async(snapshots: List[Snapshot], resolved_kwargs: Mapping
     return Old(mapping=old_as_mapping)
 
 
-def _capture_old(snapshots: List[Snapshot], resolved_kwargs: Mapping[str, Any], func: CallableT) -> 'Old':
+def _capture_old(
+    snapshots: List[Snapshot], resolved_kwargs: Mapping[str, Any], func: CallableT
+) -> "Old":
     """Capture all snapshots of a sync function and return the captured values bundled in an ``Old``."""
     old_as_mapping = dict()  # type: MutableMapping[str, Any]
     for snap in snapshots:
         # This assert is just a last defense.
         # Conflicting snapshot names should have been caught before, either during the decoration or
         # in the meta-class.
-        assert snap.name not in old_as_mapping, "Snapshots with the conflicting name: {}"
+        assert (
+            snap.name not in old_as_mapping
+        ), "Snapshots with the conflicting name: {}"
 
         if inspect.iscoroutinefunction(snap.capture):
-            raise ValueError("Unexpected coroutine (async) snapshot capture {} for a sync function {}.".format(
-                snap.capture, func))
+            raise ValueError(
+                "Unexpected coroutine (async) snapshot capture {} for a sync function {}.".format(
+                    snap.capture, func
+                )
+            )
 
-        capture_kwargs = select_capture_kwargs(a_snapshot=snap, resolved_kwargs=resolved_kwargs)
+        capture_kwargs = select_capture_kwargs(
+            a_snapshot=snap, resolved_kwargs=resolved_kwargs
+        )
 
         captured = snap.capture(**capture_kwargs)
         if inspect.iscoroutine(captured):
-            raise ValueError(("Unexpected coroutine resulting from the snapshot capture {} "
-                              "of a sync function {}.").format(snap.capture, func))
+            raise ValueError(
+                (
+                    "Unexpected coroutine resulting from the snapshot capture {} "
+                    "of a sync function {}."
+                ).format(snap.capture, func)
+            )
 
         old_as_mapping[snap.name] = captured
 
     return Old(mapping=old_as_mapping)
 
 
-async def _assert_postconditions_async(postconditions: List[Contract],
-                                       resolved_kwargs: Mapping[str, Any]) -> Optional[BaseException]:
+async def _assert_postconditions_async(
+    postconditions: List[Contract], resolved_kwargs: Mapping[str, Any]
+) -> Optional[BaseException]:
     """Assert that the postconditions of an async function hold."""
-    assert 'result' in resolved_kwargs, \
-        "Expected 'result' to be already set in resolved kwargs before calling this function."
+    assert (
+        "result" in resolved_kwargs
+    ), "Expected 'result' to be already set in resolved kwargs before calling this function."
 
     for contract in postconditions:
-        condition_kwargs = select_condition_kwargs(contract=contract, resolved_kwargs=resolved_kwargs)
+        condition_kwargs = select_condition_kwargs(
+            contract=contract, resolved_kwargs=resolved_kwargs
+        )
 
         if inspect.iscoroutinefunction(contract.condition):
             check = await contract.condition(**condition_kwargs)
@@ -366,34 +471,48 @@ async def _assert_postconditions_async(postconditions: List[Contract],
                 check = check_or_coroutine
 
         if not_check(check=check, contract=contract):
-            exception = _create_violation_error(contract=contract, resolved_kwargs=resolved_kwargs)
+            exception = _create_violation_error(
+                contract=contract, resolved_kwargs=resolved_kwargs
+            )
 
             return exception
 
     return None
 
 
-def _assert_postconditions(postconditions: List[Contract], resolved_kwargs: Mapping[str, Any],
-                           func: CallableT) -> Optional[BaseException]:
+def _assert_postconditions(
+    postconditions: List[Contract], resolved_kwargs: Mapping[str, Any], func: CallableT
+) -> Optional[BaseException]:
     """Assert that the postconditions of a sync function hold."""
-    assert 'result' in resolved_kwargs, \
-        "Expected 'result' to be already set in resolved kwargs before calling this function."
+    assert (
+        "result" in resolved_kwargs
+    ), "Expected 'result' to be already set in resolved kwargs before calling this function."
 
     for contract in postconditions:
         if inspect.iscoroutinefunction(contract.condition):
-            raise ValueError("Unexpected coroutine (async) condition {} for a sync function {}.".format(
-                contract.condition, func))
+            raise ValueError(
+                "Unexpected coroutine (async) condition {} for a sync function {}.".format(
+                    contract.condition, func
+                )
+            )
 
-        condition_kwargs = select_condition_kwargs(contract=contract, resolved_kwargs=resolved_kwargs)
+        condition_kwargs = select_condition_kwargs(
+            contract=contract, resolved_kwargs=resolved_kwargs
+        )
 
         check = contract.condition(**condition_kwargs)
 
         if inspect.iscoroutine(check):
-            raise ValueError("Unexpected coroutine resulting from the condition {} for a sync function {}.".format(
-                contract.condition, func))
+            raise ValueError(
+                "Unexpected coroutine resulting from the condition {} for a sync function {}.".format(
+                    contract.condition, func
+                )
+            )
 
         if not_check(check=check, contract=contract):
-            exception = _create_violation_error(contract=contract, resolved_kwargs=resolved_kwargs)
+            exception = _create_violation_error(
+                contract=contract, resolved_kwargs=resolved_kwargs
+            )
 
             return exception
 
@@ -402,16 +521,20 @@ def _assert_postconditions(postconditions: List[Contract], resolved_kwargs: Mapp
 
 def _assert_invariant(contract: Contract, instance: Any) -> None:
     """Assert that the contract holds as a class invariant given the instance of the class."""
-    if 'self' in contract.condition_arg_set:
+    if "self" in contract.condition_arg_set:
         check = contract.condition(self=instance)
     else:
         check = contract.condition()
 
     if not_check(check=check, contract=contract):
-        raise _create_violation_error(contract=contract, resolved_kwargs={'self': instance})
+        raise _create_violation_error(
+            contract=contract, resolved_kwargs={"self": instance}
+        )
 
 
-def select_capture_kwargs(a_snapshot: Snapshot, resolved_kwargs: Mapping[str, Any]) -> Mapping[str, Any]:
+def select_capture_kwargs(
+    a_snapshot: Snapshot, resolved_kwargs: Mapping[str, Any]
+) -> Mapping[str, Any]:
     """
     Select the keyword arguments that are used by the snapshot capture.
 
@@ -419,22 +542,33 @@ def select_capture_kwargs(a_snapshot: Snapshot, resolved_kwargs: Mapping[str, An
     :param resolved_kwargs: resolved keyword arguments (including the default values)
     :return: a subset of resolved_kwargs
     """
-    missing_args = [arg_name for arg_name in a_snapshot.args if arg_name not in resolved_kwargs]
+    missing_args = [
+        arg_name for arg_name in a_snapshot.args if arg_name not in resolved_kwargs
+    ]
     if missing_args:
         msg_parts = []
         if a_snapshot.location is not None:
             msg_parts.append("{}:\n".format(a_snapshot.location))
 
         msg_parts.append(
-            ("The argument(s) of the snapshot have not been set: {}. "
-             "Does the original function define them? Did you supply them in the call?").format(missing_args))
+            (
+                "The argument(s) of the snapshot have not been set: {}. "
+                "Does the original function define them? Did you supply them in the call?"
+            ).format(missing_args)
+        )
 
-        raise TypeError(''.join(msg_parts))
+        raise TypeError("".join(msg_parts))
 
-    return {arg_name: arg_value for arg_name, arg_value in resolved_kwargs.items() if arg_name in a_snapshot.arg_set}
+    return {
+        arg_name: arg_value
+        for arg_name, arg_value in resolved_kwargs.items()
+        if arg_name in a_snapshot.arg_set
+    }
 
 
-def select_error_kwargs(contract: Contract, resolved_kwargs: Mapping[str, Any]) -> Mapping[str, Any]:
+def select_error_kwargs(
+    contract: Contract, resolved_kwargs: Mapping[str, Any]
+) -> Mapping[str, Any]:
     """
     Select the keyword arguments that are used by the error creator of the contract.
 
@@ -447,20 +581,26 @@ def select_error_kwargs(contract: Contract, resolved_kwargs: Mapping[str, Any]) 
 
     error_kwargs = {
         arg_name: value
-        for arg_name, value in resolved_kwargs.items() if arg_name in contract.error_arg_set
+        for arg_name, value in resolved_kwargs.items()
+        if arg_name in contract.error_arg_set
     }
 
-    missing_args = [arg_name for arg_name in contract.error_args if arg_name not in resolved_kwargs]
+    missing_args = [
+        arg_name for arg_name in contract.error_args if arg_name not in resolved_kwargs
+    ]
     if missing_args:
         msg_parts = []  # type: List[str]
         if contract.location is not None:
             msg_parts.append("{}:\n".format(contract.location))
 
         msg_parts.append(
-            ("The argument(s) of the contract error have not been set: {}. "
-             "Does the original function define them? Did you supply them in the call?").format(missing_args))
+            (
+                "The argument(s) of the contract error have not been set: {}. "
+                "Does the original function define them? Did you supply them in the call?"
+            ).format(missing_args)
+        )
 
-        raise TypeError(''.join(msg_parts))
+        raise TypeError("".join(msg_parts))
 
     return error_kwargs
 
@@ -478,8 +618,12 @@ class Old:
 
     def __getattr__(self, item: str) -> Any:
         """Raise an error as this ``item`` should not be in the ``__dict__``."""
-        raise AttributeError("The snapshot with the name {!r} is not available in the OLD of a postcondition. "
-                             "Have you decorated the function with a corresponding snapshot decorator?".format(item))
+        raise AttributeError(
+            "The snapshot with the name {!r} is not available in the OLD of a postcondition. "
+            "Have you decorated the function with a corresponding snapshot decorator?".format(
+                item
+            )
+        )
 
     def __repr__(self) -> str:
         """Represent the old values with a string literal as user is unaware of the class."""
@@ -502,31 +646,38 @@ def resolve_kwdefaults(sign: inspect.Signature) -> Dict[str, Any]:
 # contract checking is already in progress.
 #
 # The key refers to the id() of the function (preconditions and postconditions) or instance (invariants).
-_IN_PROGRESS = contextvars.ContextVar("_IN_PROGRESS", default=None)  # type: contextvars.ContextVar[Optional[Set[int]]]
+_IN_PROGRESS = contextvars.ContextVar(
+    "_IN_PROGRESS", default=None
+)  # type: contextvars.ContextVar[Optional[Set[int]]]
 
 
 def decorate_with_checker(func: CallableT) -> CallableT:
     """Decorate the function with a checker that verifies the preconditions and postconditions."""
-    assert not hasattr(func, "__preconditions__"), \
-        "Expected func to have no list of preconditions (there should be only a single contract checker per function)."
+    assert not hasattr(
+        func, "__preconditions__"
+    ), "Expected func to have no list of preconditions (there should be only a single contract checker per function)."
 
-    assert not hasattr(func, "__postconditions__"), \
-        "Expected func to have no list of postconditions (there should be only a single contract checker per function)."
+    assert not hasattr(
+        func, "__postconditions__"
+    ), "Expected func to have no list of postconditions (there should be only a single contract checker per function)."
 
-    assert not hasattr(func, "__postcondition_snapshots__"), \
-        "Expected func to have no list of postcondition snapshots (there should be only a single contract checker " \
+    assert not hasattr(func, "__postcondition_snapshots__"), (
+        "Expected func to have no list of postcondition snapshots (there should be only a single contract checker "
         "per function)."
+    )
 
     sign = inspect.signature(func)
-    if '_ARGS' in sign.parameters:
+    if "_ARGS" in sign.parameters:
         raise TypeError(
             'The arguments of the function to be decorated with a contract checker include "_ARGS" which is '
-            'a reserved placeholder for positional arguments in the condition.')
+            "a reserved placeholder for positional arguments in the condition."
+        )
 
-    if '_KWARGS' in sign.parameters:
+    if "_KWARGS" in sign.parameters:
         raise TypeError(
             'The arguments of the function to be decorated with a contract checker include "_KWARGS" which is '
-            'a reserved placeholder for keyword arguments in the condition.')
+            "a reserved placeholder for keyword arguments in the condition."
+        )
 
     param_names = list(sign.parameters.keys())
 
@@ -571,24 +722,34 @@ def decorate_with_checker(func: CallableT) -> CallableT:
 
                 in_progress.add(id_func)
 
-                (preconditions, snapshots, postconditions) = _unpack_pre_snap_posts(wrapper)
+                (preconditions, snapshots, postconditions) = _unpack_pre_snap_posts(
+                    wrapper
+                )
 
                 resolved_kwargs = kwargs_from_call(
-                    param_names=param_names, kwdefaults=kwdefaults, args=args, kwargs=kwargs)
+                    param_names=param_names,
+                    kwdefaults=kwdefaults,
+                    args=args,
+                    kwargs=kwargs,
+                )
 
-                type_error = _assert_resolved_kwargs_valid(postconditions, resolved_kwargs)
+                type_error = _assert_resolved_kwargs_valid(
+                    postconditions, resolved_kwargs
+                )
                 if type_error:
                     raise type_error
 
                 violation_error = await _assert_preconditions_async(
-                    preconditions=preconditions, resolved_kwargs=resolved_kwargs)
+                    preconditions=preconditions, resolved_kwargs=resolved_kwargs
+                )
                 if violation_error:
                     raise violation_error
 
                 # Capture the snapshots
                 if postconditions and snapshots:
-                    resolved_kwargs['OLD'] = await _capture_old_async(
-                        snapshots=snapshots, resolved_kwargs=resolved_kwargs)
+                    resolved_kwargs["OLD"] = await _capture_old_async(
+                        snapshots=snapshots, resolved_kwargs=resolved_kwargs
+                    )
 
                 # Ideally, we would catch any exception here and strip the checkers from the traceback.
                 # Unfortunately, this can not be done in Python 3, see
@@ -596,16 +757,18 @@ def decorate_with_checker(func: CallableT) -> CallableT:
                 result = await func(*args, **kwargs)
 
                 if postconditions:
-                    resolved_kwargs['result'] = result
+                    resolved_kwargs["result"] = result
 
                     violation_error = await _assert_postconditions_async(
-                        postconditions=postconditions, resolved_kwargs=resolved_kwargs)
+                        postconditions=postconditions, resolved_kwargs=resolved_kwargs
+                    )
                     if violation_error:
                         raise violation_error
 
                 return result
             finally:
                 in_progress.discard(id_func)
+
     else:
 
         def wrapper(*args, **kwargs):  # type: ignore
@@ -632,25 +795,36 @@ def decorate_with_checker(func: CallableT) -> CallableT:
 
                 in_progress.add(id_func)
 
-                (preconditions, snapshots, postconditions) = _unpack_pre_snap_posts(wrapper)
+                (preconditions, snapshots, postconditions) = _unpack_pre_snap_posts(
+                    wrapper
+                )
 
                 resolved_kwargs = kwargs_from_call(
-                    param_names=param_names, kwdefaults=kwdefaults, args=args, kwargs=kwargs)
+                    param_names=param_names,
+                    kwdefaults=kwdefaults,
+                    args=args,
+                    kwargs=kwargs,
+                )
 
                 type_error = _assert_resolved_kwargs_valid(
-                    postconditions=postconditions, resolved_kwargs=resolved_kwargs)
+                    postconditions=postconditions, resolved_kwargs=resolved_kwargs
+                )
                 if type_error:
                     raise type_error
 
                 violation_error = _assert_preconditions(
-                    preconditions=preconditions, resolved_kwargs=resolved_kwargs, func=func)
+                    preconditions=preconditions,
+                    resolved_kwargs=resolved_kwargs,
+                    func=func,
+                )
                 if violation_error:
                     raise violation_error
 
                 # Capture the snapshots
                 if postconditions and snapshots:
-                    resolved_kwargs['OLD'] = _capture_old(
-                        snapshots=snapshots, resolved_kwargs=resolved_kwargs, func=func)
+                    resolved_kwargs["OLD"] = _capture_old(
+                        snapshots=snapshots, resolved_kwargs=resolved_kwargs, func=func
+                    )
 
                 # Ideally, we would catch any exception here and strip the checkers from the traceback.
                 # Unfortunately, this can not be done in Python 3, see
@@ -658,10 +832,13 @@ def decorate_with_checker(func: CallableT) -> CallableT:
                 result = func(*args, **kwargs)
 
                 if postconditions:
-                    resolved_kwargs['result'] = result
+                    resolved_kwargs["result"] = result
 
                     violation_error = _assert_postconditions(
-                        postconditions=postconditions, resolved_kwargs=resolved_kwargs, func=func)
+                        postconditions=postconditions,
+                        resolved_kwargs=resolved_kwargs,
+                        func=func,
+                    )
                     if violation_error:
                         raise violation_error
 
@@ -672,10 +849,15 @@ def decorate_with_checker(func: CallableT) -> CallableT:
     # Copy __doc__ and other properties so that doctests can run
     functools.update_wrapper(wrapper=wrapper, wrapped=func)
 
-    assert not hasattr(wrapper, "__preconditions__"), "Expected no preconditions set on a pristine contract checker."
-    assert not hasattr(wrapper, "__postcondition_snapshots__"), \
-        "Expected no postcondition snapshots set on a pristine contract checker."
-    assert not hasattr(wrapper, "__postconditions__"), "Expected no postconditions set on a pristine contract checker."
+    assert not hasattr(
+        wrapper, "__preconditions__"
+    ), "Expected no preconditions set on a pristine contract checker."
+    assert not hasattr(
+        wrapper, "__postcondition_snapshots__"
+    ), "Expected no postcondition snapshots set on a pristine contract checker."
+    assert not hasattr(
+        wrapper, "__postconditions__"
+    ), "Expected no postconditions set on a pristine contract checker."
 
     # Precondition is a list of condition groups (i.e. disjunctive normal form):
     # each group consists of AND'ed preconditions, while the groups are OR'ed.
@@ -700,10 +882,11 @@ def add_precondition_to_checker(checker: CallableT, contract: Contract) -> None:
     assert hasattr(checker, "__preconditions__")
     preconditions = getattr(checker, "__preconditions__")
     assert isinstance(preconditions, list)
-    assert len(preconditions) <= 1, \
-        ("At most a single group of preconditions expected when wrapping with a contract checker. "
-         "The preconditions are merged only in the DBC metaclass. "
-         "The current number of precondition groups: {}").format(len(preconditions))
+    assert len(preconditions) <= 1, (
+        "At most a single group of preconditions expected when wrapping with a contract checker. "
+        "The preconditions are merged only in the DBC metaclass. "
+        "The current number of precondition groups: {}"
+    ).format(len(preconditions))
 
     if len(preconditions) == 0:
         # Create the first group if there is no group so far, i.e. this is the first decorator.
@@ -728,7 +911,9 @@ def add_snapshot_to_checker(checker: CallableT, snapshot: Snapshot) -> None:
     for snap in snapshots:
         assert isinstance(snap, Snapshot)
         if snap.name == snapshot.name:
-            raise ValueError("There are conflicting snapshots with the name: {!r}".format(snap.name))
+            raise ValueError(
+                "There are conflicting snapshots with the name: {!r}".format(snap.name)
+            )
 
     snapshots.append(snapshot)
 
@@ -746,7 +931,9 @@ def add_postcondition_to_checker(checker: CallableT, contract: Contract) -> None
     getattr(checker, "__postconditions__").append(contract)
 
 
-def _find_self(param_names: List[str], args: Tuple[Any, ...], kwargs: Dict[str, Any]) -> Any:
+def _find_self(
+    param_names: List[str], args: Tuple[Any, ...], kwargs: Dict[str, Any]
+) -> Any:
     """Find the instance of ``self`` in the arguments."""
     instance_i = None
     try:
@@ -813,9 +1000,12 @@ def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
             try:
                 instance = _find_self(param_names=param_names, args=args, kwargs=kwargs)
             except KeyError as err:
-                raise KeyError(("The parameter 'self' could not be found in the call to function {!r}: "
-                                "the param names were {!r}, the args were {!r} and kwargs were {!r}").format(
-                                    func, param_names, args, kwargs)) from err
+                raise KeyError(
+                    (
+                        "The parameter 'self' could not be found in the call to function {!r}: "
+                        "the param names were {!r}, the args were {!r} and kwargs were {!r}"
+                    ).format(func, param_names, args, kwargs)
+                ) from err
 
             # We need to disable the invariants check during the constructor.
 
@@ -859,11 +1049,16 @@ def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
             async def wrapper(*args, **kwargs):  # type: ignore
                 """Wrap a function of a class by checking the invariants *before* and *after* the invocation."""
                 try:
-                    instance = _find_self(param_names=param_names, args=args, kwargs=kwargs)
+                    instance = _find_self(
+                        param_names=param_names, args=args, kwargs=kwargs
+                    )
                 except KeyError as err:
-                    raise KeyError(("The parameter 'self' could not be found in the call to function {!r}: "
-                                    "the param names were {!r}, the args were {!r} and kwargs were {!r}").format(
-                                        func, param_names, args, kwargs)) from err
+                    raise KeyError(
+                        (
+                            "The parameter 'self' could not be found in the call to function {!r}: "
+                            "the param names were {!r}, the args were {!r} and kwargs were {!r}"
+                        ).format(func, param_names, args, kwargs)
+                    ) from err
 
                 # We need to create a new in-progress set if it is None as the ``ContextVar`` does not accept
                 # a factory function for the default argument. If we didn't do this, and simply set an empty
@@ -902,11 +1097,16 @@ def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
             def wrapper(*args, **kwargs):  # type: ignore
                 """Wrap a function of a class by checking the invariants *before* and *after* the invocation."""
                 try:
-                    instance = _find_self(param_names=param_names, args=args, kwargs=kwargs)
+                    instance = _find_self(
+                        param_names=param_names, args=args, kwargs=kwargs
+                    )
                 except KeyError as err:
-                    raise KeyError(("The parameter 'self' could not be found in the call to function {!r}: "
-                                    "the param names were {!r}, the args were {!r} and kwargs were {!r}").format(
-                                        func, param_names, args, kwargs)) from err
+                    raise KeyError(
+                        (
+                            "The parameter 'self' could not be found in the call to function {!r}: "
+                            "the param names were {!r}, the args were {!r} and kwargs were {!r}"
+                        ).format(func, param_names, args, kwargs)
+                    ) from err
 
                 # The following dunder indicates whether another invariant is currently being checked. If so,
                 # we need to suspend any further invariant check to avoid endless recursion.
@@ -981,19 +1181,30 @@ def add_invariant_checks(cls: ClassT) -> None:
         # We need to ignore __repr__ to prevent endless loops when generating error messages.
         # __getattribute__, __setattr__ and __delattr__ are too invasive and alter the state of the instance.
         # Hence we don't consider them "public".
-        if name in ["__new__", "__repr__", "__getattribute__", "__setattr__", "__delattr__"]:
+        if name in [
+            "__new__",
+            "__repr__",
+            "__getattribute__",
+            "__setattr__",
+            "__delattr__",
+        ]:
             continue
 
         if name == "__init__":
-            assert inspect.isfunction(value) or isinstance(value, _SLOT_WRAPPER_TYPE), \
-                "Expected __init__ to be either a function or a slot wrapper, but got: {}".format(
-                    type(value))
+            assert inspect.isfunction(value) or isinstance(
+                value, _SLOT_WRAPPER_TYPE
+            ), "Expected __init__ to be either a function or a slot wrapper, but got: {}".format(
+                type(value)
+            )
 
             init_name_func = (name, value)
             continue
 
-        if not inspect.isfunction(value) and not isinstance(value, _SLOT_WRAPPER_TYPE) and \
-                not isinstance(value, property):
+        if (
+            not inspect.isfunction(value)
+            and not isinstance(value, _SLOT_WRAPPER_TYPE)
+            and not isinstance(value, property)
+        ):
             continue
 
         # Ignore "protected"/"private" methods
@@ -1017,7 +1228,11 @@ def add_invariant_checks(cls: ClassT) -> None:
             names_properties.append((name, value))
 
         else:
-            raise NotImplementedError("Unhandled directory entry of class {} for {}: {}".format(cls, name, value))
+            raise NotImplementedError(
+                "Unhandled directory entry of class {} for {}: {}".format(
+                    cls, name, value
+                )
+            )
 
     if init_name_func:
         name, func = init_name_func
@@ -1038,8 +1253,15 @@ def add_invariant_checks(cls: ClassT) -> None:
 
     for name, prop in names_properties:
         new_prop = property(
-            fget=_decorate_with_invariants(func=prop.fget, is_init=False) if prop.fget else None,
-            fset=_decorate_with_invariants(func=prop.fset, is_init=False) if prop.fset else None,
-            fdel=_decorate_with_invariants(func=prop.fdel, is_init=False) if prop.fdel else None,
-            doc=prop.__doc__)
+            fget=_decorate_with_invariants(func=prop.fget, is_init=False)
+            if prop.fget
+            else None,
+            fset=_decorate_with_invariants(func=prop.fset, is_init=False)
+            if prop.fset
+            else None,
+            fdel=_decorate_with_invariants(func=prop.fdel, is_init=False)
+            if prop.fdel
+            else None,
+            doc=prop.__doc__,
+        )
         setattr(cls, name, new_prop)

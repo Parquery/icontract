@@ -7,7 +7,20 @@ import functools
 import inspect
 import sys
 import uuid
-from typing import (Any, Mapping, Dict, List, Optional, Union, Tuple, Set, Callable, cast, Iterable, TypeVar)  # pylint: disable=unused-import
+from typing import (
+    Any,
+    Mapping,
+    Dict,
+    List,
+    Optional,
+    Union,
+    Tuple,
+    Set,
+    Callable,
+    cast,
+    Iterable,
+    TypeVar,
+)  # pylint: disable=unused-import
 
 from _ast import If
 
@@ -41,7 +54,7 @@ class FirstExceptionInAll:
         return self.result
 
 
-ContextT = TypeVar('ContextT', bound=ast.expr_context)
+ContextT = TypeVar("ContextT", bound=ast.expr_context)
 
 
 class _CollectStoredNamesVisitor(ast.NodeVisitor):
@@ -85,8 +98,11 @@ def _collect_name_loads(nodes: Iterable[ast.expr]) -> List[ast.expr]:
 
 
 # noinspection PyTypeChecker
-def _translate_all_expression_to_a_module(generator_exp: ast.GeneratorExp, generated_function_name: str,
-                                          name_to_value: Mapping[str, Any]) -> ast.Module:
+def _translate_all_expression_to_a_module(
+    generator_exp: ast.GeneratorExp,
+    generated_function_name: str,
+    name_to_value: Mapping[str, Any],
+) -> ast.Module:
     """
     Generate the AST of the module to trace an all quantifier on an generator expression.
 
@@ -101,14 +117,18 @@ def _translate_all_expression_to_a_module(generator_exp: ast.GeneratorExp, gener
     assert not hasattr(builtins, generated_function_name)
 
     # Collect all the names involved in the generation
-    relevant_names = _collect_stored_names(generator.target for generator in generator_exp.generators)
+    relevant_names = _collect_stored_names(
+        generator.target for generator in generator_exp.generators
+    )
 
     assert generated_function_name not in relevant_names
 
     # Work backwards, from the most-inner block outwards
 
-    result_id = 'icontract_tracing_all_result_{}'.format(uuid.uuid4().hex)
-    result_assignment = ast.Assign(targets=[ast.Name(id=result_id, ctx=ast.Store())], value=generator_exp.elt)
+    result_id = "icontract_tracing_all_result_{}".format(uuid.uuid4().hex)
+    result_assignment = ast.Assign(
+        targets=[ast.Name(id=result_id, ctx=ast.Store())], value=generator_exp.elt
+    )
 
     exceptional_return = ast.Return(
         ast.Tuple(
@@ -119,22 +139,36 @@ def _translate_all_expression_to_a_module(generator_exp: ast.GeneratorExp, gener
                         ast.Tuple(
                             elts=[
                                 ast.Constant(value=relevant_name, kind=None),
-                                ast.Name(id=relevant_name, ctx=ast.Load())
+                                ast.Name(id=relevant_name, ctx=ast.Load()),
                             ],
-                            ctx=ast.Load()) for relevant_name in relevant_names
+                            ctx=ast.Load(),
+                        )
+                        for relevant_name in relevant_names
                     ],
-                    ctx=ast.Load())
+                    ctx=ast.Load(),
+                ),
             ],
-            ctx=ast.Load()))
+            ctx=ast.Load(),
+        )
+    )
 
     # While happy return shall not be executed, we add it here for robustness in case
     # future refactorings forget to check for that edge case.
     happy_return = ast.Return(
-        ast.Tuple(elts=[ast.Name(id=result_id, ctx=ast.Load()),
-                        ast.Constant(value=None, kind=None)], ctx=ast.Load()))
+        ast.Tuple(
+            elts=[
+                ast.Name(id=result_id, ctx=ast.Load()),
+                ast.Constant(value=None, kind=None),
+            ],
+            ctx=ast.Load(),
+        )
+    )
 
     critical_if: If = ast.If(
-        test=ast.Name(id=result_id, ctx=ast.Load()), body=[ast.Pass()], orelse=[exceptional_return])
+        test=ast.Name(id=result_id, ctx=ast.Load()),
+        body=[ast.Pass()],
+        orelse=[exceptional_return],
+    )
 
     # Previous inner block to be added as body to the next outer block
     block = None  # type: Optional[List[ast.stmt]]
@@ -148,9 +182,23 @@ def _translate_all_expression_to_a_module(generator_exp: ast.GeneratorExp, gener
             block = [ast.If(test=condition, body=block, orelse=[])]
 
         if not comprehension.is_async:
-            block = [ast.For(target=comprehension.target, iter=comprehension.iter, body=block, orelse=[])]
+            block = [
+                ast.For(
+                    target=comprehension.target,
+                    iter=comprehension.iter,
+                    body=block,
+                    orelse=[],
+                )
+            ]
         else:
-            block = [ast.AsyncFor(target=comprehension.target, iter=comprehension.iter, body=block, orelse=[])]
+            block = [
+                ast.AsyncFor(
+                    target=comprehension.target,
+                    iter=comprehension.iter,
+                    body=block,
+                    orelse=[],
+                )
+            ]
 
     assert block is not None
 
@@ -163,42 +211,76 @@ def _translate_all_expression_to_a_module(generator_exp: ast.GeneratorExp, gener
     args = [ast.arg(arg=name, annotation=None) for name in sorted(name_to_value.keys())]
 
     if sys.version_info < (3, 5):
-        raise NotImplementedError("Python versions below 3.5 not supported, got: {}".format(sys.version_info))
+        raise NotImplementedError(
+            "Python versions below 3.5 not supported, got: {}".format(sys.version_info)
+        )
 
     if not is_async:
         if sys.version_info < (3, 8):
             func_def_node = ast.FunctionDef(
                 name=generated_function_name,
-                args=ast.arguments(args=args, kwonlyargs=[], kw_defaults=[], defaults=[], vararg=None, kwarg=None),
+                args=ast.arguments(
+                    args=args,
+                    kwonlyargs=[],
+                    kw_defaults=[],
+                    defaults=[],
+                    vararg=None,
+                    kwarg=None,
+                ),
                 decorator_list=[],
-                body=block)  # type: Union[ast.FunctionDef, ast.AsyncFunctionDef]
+                body=block,
+            )  # type: Union[ast.FunctionDef, ast.AsyncFunctionDef]
 
             module_node = ast.Module(body=[func_def_node])
         else:
             func_def_node = ast.FunctionDef(
                 name=generated_function_name,
                 args=ast.arguments(
-                    args=args, posonlyargs=[], kwonlyargs=[], kw_defaults=[], defaults=[], vararg=None, kwarg=None),
+                    args=args,
+                    posonlyargs=[],
+                    kwonlyargs=[],
+                    kw_defaults=[],
+                    defaults=[],
+                    vararg=None,
+                    kwarg=None,
+                ),
                 decorator_list=[],
-                body=block)
+                body=block,
+            )
 
             module_node = ast.Module(body=[func_def_node], type_ignores=[])
     else:
         if sys.version_info < (3, 8):
             async_func_def_node = ast.AsyncFunctionDef(
                 name=generated_function_name,
-                args=ast.arguments(args=args, kwonlyargs=[], kw_defaults=[], defaults=[], vararg=None, kwarg=None),
+                args=ast.arguments(
+                    args=args,
+                    kwonlyargs=[],
+                    kw_defaults=[],
+                    defaults=[],
+                    vararg=None,
+                    kwarg=None,
+                ),
                 decorator_list=[],
-                body=block)
+                body=block,
+            )
 
             module_node = ast.Module(body=[async_func_def_node])
         else:
             async_func_def_node = ast.AsyncFunctionDef(
                 name=generated_function_name,
                 args=ast.arguments(
-                    args=args, posonlyargs=[], kwonlyargs=[], kw_defaults=[], defaults=[], vararg=None, kwarg=None),
+                    args=args,
+                    posonlyargs=[],
+                    kwonlyargs=[],
+                    kw_defaults=[],
+                    defaults=[],
+                    vararg=None,
+                    kwarg=None,
+                ),
                 decorator_list=[],
-                body=block)
+                body=block,
+            )
 
             module_node = ast.Module(body=[async_func_def_node], type_ignores=[])
 
@@ -267,6 +349,7 @@ class Visitor(ast.NodeVisitor):
             """Forward the node value as a result."""
             self.recomputed_values[node] = node.value
             return node.value
+
     else:
 
         def visit_Constant(self, node: ast.Constant) -> Any:
@@ -276,7 +359,9 @@ class Visitor(ast.NodeVisitor):
 
     if sys.version_info >= (3, 6):
 
-        def visit_FormattedValue(self, node: ast.FormattedValue) -> Union[str, Placeholder]:
+        def visit_FormattedValue(
+            self, node: ast.FormattedValue
+        ) -> Union[str, Placeholder]:
             """Format the node value."""
             recomputed_format_spec = None  # type: Optional[Union[str, Placeholder]]
             if node.format_spec is not None:
@@ -291,27 +376,30 @@ class Visitor(ast.NodeVisitor):
             if recomputed_format_spec is PLACEHOLDER or recomputed_value is PLACEHOLDER:
                 return PLACEHOLDER
 
-            fmt = ['{']
+            fmt = ["{"]
             # See https://docs.python.org/3/library/ast.html#ast.FormattedValue for these
             # constants
             if node.conversion == -1:
                 pass
             elif node.conversion == 115:
-                fmt.append('!s')
+                fmt.append("!s")
             elif node.conversion == 114:
-                fmt.append('!r')
+                fmt.append("!r")
             elif node.conversion == 97:
-                fmt.append('!a')
+                fmt.append("!a")
             else:
-                raise NotImplementedError("Unhandled conversion of a formatted value node {!r}: {}".format(
-                    node, node.conversion))
+                raise NotImplementedError(
+                    "Unhandled conversion of a formatted value node {!r}: {}".format(
+                        node, node.conversion
+                    )
+                )
 
             if recomputed_format_spec is not None:
                 fmt.append(f":{recomputed_format_spec}")
 
-            fmt.append('}')
+            fmt.append("}")
 
-            return ''.join(fmt).format(recomputed_value)
+            return "".join(fmt).format(recomputed_value)
 
         def visit_JoinedStr(self, node: ast.JoinedStr) -> Union[str, Placeholder]:
             """Visit the values and concatenate them."""
@@ -321,7 +409,7 @@ class Visitor(ast.NodeVisitor):
             if PLACEHOLDER in recomputed_values:
                 return PLACEHOLDER
 
-            joined_str = ''.join(recomputed_values)
+            joined_str = "".join(recomputed_values)
 
             self.recomputed_values[node] = joined_str
             return joined_str
@@ -373,7 +461,10 @@ class Visitor(ast.NodeVisitor):
             recomputed_dict[self.visit(node=key)] = self.visit(node=val)
 
         # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
-        if any(key is PLACEHOLDER or value is PLACEHOLDER for key, value in recomputed_dict.items()):
+        if any(
+            key is PLACEHOLDER or value is PLACEHOLDER
+            for key, value in recomputed_dict.items()
+        ):
             return PLACEHOLDER
 
         self.recomputed_values[node] = recomputed_dict
@@ -382,8 +473,11 @@ class Visitor(ast.NodeVisitor):
     def visit_Name(self, node: ast.Name) -> Any:
         """Load the variable by looking it up in the variable look-up and in the built-ins."""
         if not isinstance(node.ctx, ast.Load):
-            raise NotImplementedError("Can only compute a value of Load on a name {}, but got context: {}".format(
-                node.id, node.ctx))
+            raise NotImplementedError(
+                "Can only compute a value of Load on a name {}, but got context: {}".format(
+                    node.id, node.ctx
+                )
+            )
 
         result = None  # type: Optional[Any]
 
@@ -500,7 +594,9 @@ class Visitor(ast.NodeVisitor):
         comparators = [self.visit(node=comparator) for comparator in node.comparators]
 
         # Please see "NOTE ABOUT PLACEHOLDERS AND RE-COMPUTATION"
-        if left is PLACEHOLDER or any(comparator is PLACEHOLDER for comparator in comparators):
+        if left is PLACEHOLDER or any(
+            comparator is PLACEHOLDER for comparator in comparators
+        ):
             return PLACEHOLDER
 
         result = None  # type: Optional[Any]
@@ -547,13 +643,19 @@ class Visitor(ast.NodeVisitor):
             return PLACEHOLDER
 
         if not callable(func):
-            raise ValueError("Unexpected call to a non-calllable during the re-computation: {}".format(func))
+            raise ValueError(
+                "Unexpected call to a non-calllable during the re-computation: {}".format(
+                    func
+                )
+            )
 
         if inspect.iscoroutinefunction(func):
             raise ValueError(
-                ("Unexpected coroutine function {} as a condition of a contract. "
-                 "You must specify your own error if the condition of your contract is a coroutine function."
-                 ).format(func))
+                (
+                    "Unexpected coroutine function {} as a condition of a contract. "
+                    "You must specify your own error if the condition of your contract is a coroutine function."
+                ).format(func)
+            )
 
         # Short-circuit tracing the all quantifier over a generator expression
         # yapf: disable
@@ -633,7 +735,10 @@ class Visitor(ast.NodeVisitor):
 
         if not isinstance(node.ctx, ast.Load):
             raise NotImplementedError(
-                "Can only compute a value of Load on the attribute {}, but got context: {}".format(node.attr, node.ctx))
+                "Can only compute a value of Load on the attribute {}, but got context: {}".format(
+                    node.attr, node.ctx
+                )
+            )
 
         result = getattr(value, node.attr)
 
@@ -656,7 +761,10 @@ class Visitor(ast.NodeVisitor):
 
             if not isinstance(target.ctx, ast.Store):
                 raise NotImplementedError(
-                    "Expected Store context in the target of a named expression, but got: {}".format(target.ctx))
+                    "Expected Store context in the target of a named expression, but got: {}".format(
+                        target.ctx
+                    )
+                )
 
             self._name_to_value[target.id] = value
 
@@ -700,7 +808,9 @@ class Visitor(ast.NodeVisitor):
 
     if sys.version_info < (3, 9):
 
-        def visit_ExtSlice(self, node: ast.ExtSlice) -> Union[Tuple[Any, ...], Placeholder]:
+        def visit_ExtSlice(
+            self, node: ast.ExtSlice
+        ) -> Union[Tuple[Any, ...], Placeholder]:
             """Visit each dimension of the advanced slicing and assemble the dimensions in a tuple."""
             result = tuple(self.visit(node=dim) for dim in node.dims)
 
@@ -723,7 +833,9 @@ class Visitor(ast.NodeVisitor):
         self.recomputed_values[node] = result
         return result
 
-    def _trace_all_with_generator(self, func: Callable[..., Any], node: ast.Call) -> Any:
+    def _trace_all_with_generator(
+        self, func: Callable[..., Any], node: ast.Call
+    ) -> Any:
         """Re-write the all call with for loops to trace the first offending item, if any."""
         assert func == builtins.all  # pylint: disable=comparison-with-callable
         assert len(node.args) == 1
@@ -736,7 +848,7 @@ class Visitor(ast.NodeVisitor):
         if recomputed_arg is PLACEHOLDER:
             return PLACEHOLDER
 
-        result = func(*(self.visit(node=node.args[0]), ))
+        result = func(*(self.visit(node=node.args[0]),))
         if result:
             return result
 
@@ -747,18 +859,21 @@ class Visitor(ast.NodeVisitor):
         generator_exp = node.args[0]
         assert isinstance(generator_exp, ast.GeneratorExp)
 
-        generated_function_name = "icontract_tracing_all_with_generator_expr_{}".format(uuid.uuid4().hex)
+        generated_function_name = "icontract_tracing_all_with_generator_expr_{}".format(
+            uuid.uuid4().hex
+        )
 
         module_node = _translate_all_expression_to_a_module(
             generator_exp=generator_exp,
             generated_function_name=generated_function_name,
-            name_to_value=self._name_to_value)
+            name_to_value=self._name_to_value,
+        )
 
         # In case you want to debug the generated function at this point,
         # you probably want to use ``astor`` module to generate the source code
         # based on the ``module_node``.
 
-        code = compile(source=module_node, filename='<ast>', mode='exec')
+        code = compile(source=module_node, filename="<ast>", mode="exec")
 
         module_locals = {}  # type: Dict[str, Any]
         module_globals = {}  # type: Dict[str, Any]
@@ -770,41 +885,65 @@ class Visitor(ast.NodeVisitor):
 
         assert not bool(result), "Expected the unhappy path here"
         assert isinstance(inputs, tuple)
-        assert all(isinstance(item, tuple) and len(item) == 2 and isinstance(item[0], str) for item in inputs)
+        assert all(
+            isinstance(item, tuple) and len(item) == 2 and isinstance(item[0], str)
+            for item in inputs
+        )
 
-        return FirstExceptionInAll(result=result, inputs=cast(Tuple[Tuple[str, Any]], inputs))
+        return FirstExceptionInAll(
+            result=result, inputs=cast(Tuple[Tuple[str, Any]], inputs)
+        )
 
-    def _execute_comprehension(self, node: Union[ast.ListComp, ast.SetComp, ast.GeneratorExp, ast.DictComp]) -> Any:
+    def _execute_comprehension(
+        self, node: Union[ast.ListComp, ast.SetComp, ast.GeneratorExp, ast.DictComp]
+    ) -> Any:
         """Compile the generator or comprehension from the node and execute the compiled code."""
         # Please see "NOTE ABOUT NAME 🠒 VALUE STACKING".
         if any(value is PLACEHOLDER for value in self._name_to_value.values()):
             return PLACEHOLDER
 
-        args = [ast.arg(arg=name, annotation=None) for name in sorted(self._name_to_value.keys())]
+        args = [
+            ast.arg(arg=name, annotation=None)
+            for name in sorted(self._name_to_value.keys())
+        ]
 
-        if sys.version_info < (3, ):
-            raise NotImplementedError("Python versions below 3 not supported, got: {}".format(sys.version_info))
+        if sys.version_info < (3,):
+            raise NotImplementedError(
+                "Python versions below 3 not supported, got: {}".format(
+                    sys.version_info
+                )
+            )
 
         if sys.version_info < (3, 8):
             func_def_node = ast.FunctionDef(
                 name="generator_expr",
-                args=ast.arguments(args=args, kwonlyargs=[], kw_defaults=[], defaults=[]),
+                args=ast.arguments(
+                    args=args, kwonlyargs=[], kw_defaults=[], defaults=[]
+                ),
                 decorator_list=[],
-                body=[ast.Return(node)])
+                body=[ast.Return(node)],
+            )
 
             module_node = ast.Module(body=[func_def_node])
         else:
             func_def_node = ast.FunctionDef(
                 name="generator_expr",
-                args=ast.arguments(args=args, posonlyargs=[], kwonlyargs=[], kw_defaults=[], defaults=[]),
+                args=ast.arguments(
+                    args=args,
+                    posonlyargs=[],
+                    kwonlyargs=[],
+                    kw_defaults=[],
+                    defaults=[],
+                ),
                 decorator_list=[],
-                body=[ast.Return(node)])
+                body=[ast.Return(node)],
+            )
 
             module_node = ast.Module(body=[func_def_node], type_ignores=[])
 
         ast.fix_missing_locations(module_node)
 
-        code = compile(source=module_node, filename='<ast>', mode='exec')
+        code = compile(source=module_node, filename="<ast>", mode="exec")
 
         module_locals = {}  # type: Dict[str, Any]
         module_globals = {}  # type: Dict[str, Any]
@@ -841,7 +980,9 @@ class Visitor(ast.NodeVisitor):
         # PLACEHOLDER's.
 
         old_name_to_value = copy.copy(self._name_to_value)
-        for target_name in _collect_stored_names([generator.target for generator in node.generators]):
+        for target_name in _collect_stored_names(
+            [generator.target for generator in node.generators]
+        ):
             self._name_to_value[target_name] = PLACEHOLDER
 
         self.visit(node.elt)
@@ -866,7 +1007,9 @@ class Visitor(ast.NodeVisitor):
 
         # Please see "NOTE ABOUT NAME 🠒 VALUE STACKING".
         old_name_to_value = copy.copy(self._name_to_value)
-        for target_name in _collect_stored_names([generator.target for generator in node.generators]):
+        for target_name in _collect_stored_names(
+            [generator.target for generator in node.generators]
+        ):
             self._name_to_value[target_name] = PLACEHOLDER
 
         self.visit(node.elt)
@@ -893,7 +1036,9 @@ class Visitor(ast.NodeVisitor):
 
         # Please see "NOTE ABOUT NAME 🠒 VALUE STACKING".
         old_name_to_value = copy.copy(self._name_to_value)
-        for target_name in _collect_stored_names([generator.target for generator in node.generators]):
+        for target_name in _collect_stored_names(
+            [generator.target for generator in node.generators]
+        ):
             self._name_to_value[target_name] = PLACEHOLDER
 
         self.visit(node.elt)
@@ -920,7 +1065,9 @@ class Visitor(ast.NodeVisitor):
 
         # Please see "NOTE ABOUT NAME 🠒 VALUE STACKING".
         old_name_to_value = copy.copy(self._name_to_value)
-        for target_name in _collect_stored_names([generator.target for generator in node.generators]):
+        for target_name in _collect_stored_names(
+            [generator.target for generator in node.generators]
+        ):
             self._name_to_value[target_name] = PLACEHOLDER
 
         self.visit(node.key)
@@ -946,12 +1093,19 @@ class Visitor(ast.NodeVisitor):
         raise NotImplementedError(
             "Re-computation of in-line lambda functions is not supported since it is quite tricky to implement and "
             "we decided to implement it only once there is a real need for it. "
-            "Please make a feature request on https://github.com/Parquery/icontract")
+            "Please make a feature request on https://github.com/Parquery/icontract"
+        )
 
     def visit_Return(self, node: ast.Return) -> Any:  # pylint: disable=no-self-use
         """Raise an exception that this node is unexpected."""
-        raise AssertionError("Unexpected return node during the re-computation: {}".format(ast.dump(node)))
+        raise AssertionError(
+            "Unexpected return node during the re-computation: {}".format(
+                ast.dump(node)
+            )
+        )
 
     def generic_visit(self, node: ast.AST) -> None:
         """Raise an exception that this node has not been handled."""
-        raise NotImplementedError("Unhandled re-computation of the node: {} {}".format(type(node), node))
+        raise NotImplementedError(
+            "Unhandled re-computation of the node: {} {}".format(type(node), node)
+        )
