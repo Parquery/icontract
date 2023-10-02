@@ -1,3 +1,9 @@
+2.6.3
+=====
+* Removed meta data files from setup.py (#262)
+* Added support for python 3.11 (#260)
+* Fixed in-progress set for async (#256)
+
 2.6.2
 =====
 * Added wheels to releases (#251)
