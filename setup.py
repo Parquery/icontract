@@ -65,11 +65,11 @@ setup(
             "typeguard>=2,<3",
             "astor==0.8.1",
             "numpy>=1,<2",
+            'mypy==1.5.1;python_version>="3.8"',
+            'black==23.9.1;python_version>="3.8"',
+            'deal==4.23.3;python_version>"=3.8"',
+            'asyncstdlib==3.9.1;python_version>="3.8"',
         ]
-        + (["mypy==1.5.1"] if sys.version_info >= (3, 8) else [])
-        + (["black==23.9.1"] if sys.version_info >= (3, 8) else [])
-        + (["deal==4.23.3"] if sys.version_info >= (3, 8) else [])
-        + (["asyncstdlib==3.9.1"] if sys.version_info >= (3, 8) else []),
     },
     py_modules=["icontract"],
     package_data={"icontract": ["py.typed"]},
