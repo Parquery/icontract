@@ -93,22 +93,22 @@ def measure_invariant_at_init() -> None:
     table = []  # type: List[List[str]]
 
     for cls, duration in zip(clses, durations):
-        # yapf: disable
+        # fmt: off
         table.append([
             '`{}`'.format(cls),
             '{:.2f} s'.format(duration),
             '{:.2f} μs'.format(duration * 1000 * 1000 / number),
             '{:.0f}%'.format(duration * 100 / durations[0])
         ])
-        # yapf: enable
+        # fmt: on
 
-    # yapf: disable
+    # fmt: off
     table_str = tabulate.tabulate(
         table,
         headers=['Case', 'Total time', 'Time per run', 'Relative time per run'],
         colalign=('left', 'right', 'right', 'right'),
         tablefmt='rst')
-    # yapf: enable
+    # fmt: on
 
     writeln_utf8(table_str)
 
@@ -130,22 +130,22 @@ def measure_invariant_at_function() -> None:
     table = []  # type: List[List[str]]
 
     for cls, duration in zip(clses, durations):
-        # yapf: disable
+        # fmt: off
         table.append([
             '`{}`'.format(cls),
             '{:.2f} s'.format(duration),
             '{:.2f} μs'.format(duration * 1000 * 1000 / number),
             '{:.0f}%'.format(duration * 100 / durations[0])
         ])
-        # yapf: enable
+        # fmt: on
 
-    # yapf: disable
+    # fmt: off
     table_str = tabulate.tabulate(
         table,
         headers=['Case', 'Total time', 'Time per run', 'Relative time per run'],
         colalign=('left', 'right', 'right', 'right'),
         tablefmt='rst')
-    # yapf: enable
+    # fmt: on
 
     writeln_utf8(table_str)
 

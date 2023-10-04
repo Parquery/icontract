@@ -428,7 +428,7 @@ def inspect_lambda_condition(
     return lambda_inspection
 
 
-# yapf: disable
+# fmt: off
 def collect_variable_lookup(
         condition: Callable[..., Any],
         resolved_kwargs: Optional[Mapping[str, Any]] = None
@@ -443,7 +443,7 @@ def collect_variable_lookup(
         The keyword arguments are added to the variable look-up tables accordingly.
         If ``resolved_kwargs`` is None, no keyword arguments will be added to the variable look-up table.
     """
-    # yapf: enable
+    # fmt: on
     variable_lookup = []  # type: List[Mapping[str, Any]]
 
     ##
