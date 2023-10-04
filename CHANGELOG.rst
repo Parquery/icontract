@@ -1,3 +1,12 @@
+2.6.4
+=====
+* Restored Python 3.6 support (#274)
+
+  The support for Python 3.6 has been dropped in #257 as GitHub removed
+  its support in the CI pipeline. With this patch, we restored
+  the support of Python 3.6. Notably, we had to add
+  the package ``contextvars`` conditioned on Python 3.6.
+
 2.6.3
 =====
 * Removed meta data files from setup.py (#262)
