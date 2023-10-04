@@ -36,6 +36,7 @@ setup(
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
+        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
@@ -47,6 +48,7 @@ setup(
     packages=find_packages(exclude=["tests*"]),
     install_requires=[
         "asttokens>=2,<3",
+        'contextvars;python_version=="3.6"',
         "typing_extensions",
     ],
     extras_require={
