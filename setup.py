@@ -32,7 +32,7 @@ setup(
     author="Marko Ristin",
     author_email="marko@ristin.ch",
     classifiers=[
-        # yapf: disable
+        # fmt: off
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
@@ -41,7 +41,7 @@ setup(
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10'
-        # yapf: enable
+        # fmt: on
     ],
     license="License :: OSI Approved :: MIT License",
     keywords="design-by-contract precondition postcondition validation",

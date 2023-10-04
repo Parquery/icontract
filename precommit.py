@@ -110,24 +110,24 @@ def main() -> int:
     env = os.environ.copy()
     env["ICONTRACT_SLOW"] = "true"
 
-    # yapf: disable
+    # fmt: off
     subprocess.check_call(
         ["coverage", "run",
          "--source", "icontract",
          "-m", "unittest", "discover"],
         cwd=str(repo_root),
         env=env)
-    # yapf: enable
+    # fmt: on
 
     if sys.version_info >= (3, 8):
-        # yapf: disable
+        # fmt: off
         subprocess.check_call(
             ["coverage", "run",
              "--source", "icontract",
              "-a", "-m", "tests_3_8.async.separately_test_concurrent"],
             cwd=str(repo_root),
             env=env)
-        # yapf: enable
+        # fmt: on
 
     subprocess.check_call(["coverage", "report"])
 

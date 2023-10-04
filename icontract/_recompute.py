@@ -658,13 +658,13 @@ class Visitor(ast.NodeVisitor):
             )
 
         # Short-circuit tracing the all quantifier over a generator expression
-        # yapf: disable
+        # fmt: off
         if (
                 func == builtins.all  # pylint: disable=comparison-with-callable
                 and len(node.args) == 1
                 and isinstance(node.args[0], ast.GeneratorExp)
         ):
-            # yapf: enable
+            # fmt: on
             result = self._trace_all_with_generator(func=func, node=node)
 
             if result is PLACEHOLDER:

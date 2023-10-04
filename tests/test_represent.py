@@ -552,11 +552,11 @@ class TestGeneratorExpr(unittest.TestCase):
     def test_multiple_for(self) -> None:
         lst = [[1, 2], [3]]
 
-        # yapf: disable
+        # fmt: off
         @icontract.require(
             lambda x: all(item == x for sublst in lst for item in sublst)
         )
-        # yapf: enable
+        # fmt: on
         def func(x: int) -> int:
             return x
 
@@ -672,7 +672,7 @@ class TestListComprehension(unittest.TestCase):
     def test_nested(self) -> None:
         lst_of_lsts = [[1, 2, 3]]
 
-        # yapf: disable
+        # fmt: off
         @icontract.require(
             lambda:
             [
@@ -680,7 +680,7 @@ class TestListComprehension(unittest.TestCase):
                 for sublst in lst_of_lsts
             ] == [[]]
         )
-        # yapf: enable
+        # fmt: on
         def func() -> None:
             pass
 
@@ -740,7 +740,7 @@ class TestSetComprehension(unittest.TestCase):
     def test_nested(self) -> None:
         lst_of_lsts = [[1, 2, 3]]
 
-        # yapf: disable
+        # fmt: off
         @icontract.require(
             lambda:
             {
@@ -748,7 +748,7 @@ class TestSetComprehension(unittest.TestCase):
                 for lst in lst_of_lsts
             } == set()
         )
-        # yapf: enable
+        # fmt: on
         def func() -> None:
             pass
 
@@ -805,7 +805,7 @@ class TestDictComprehension(unittest.TestCase):
     def test_nested(self) -> None:
         lst_of_lsts = [[1, 2, 3]]
 
-        # yapf: disable
+        # fmt: off
         @icontract.require(
             lambda:
             len({
@@ -813,7 +813,7 @@ class TestDictComprehension(unittest.TestCase):
                 for lst in lst_of_lsts
             }) == 0
         )
-        # yapf: enable
+        # fmt: on
         def func() -> None:
             pass
 
@@ -849,12 +849,12 @@ class TestConditionAsText(unittest.TestCase):
     """Test decompilation of the condition."""
 
     def test_single_line(self) -> None:
-        # yapf: disable
+        # fmt: off
         @icontract.require(lambda x: x > 3)
         def func(x: int) -> int:
             return x
 
-        # yapf: enable
+        # fmt: on
 
         violation_err = None  # type: Optional[icontract.ViolationError]
         try:
@@ -868,13 +868,13 @@ class TestConditionAsText(unittest.TestCase):
         )
 
     def test_condition_on_next_line(self) -> None:
-        # yapf: disable
+        # fmt: off
         @icontract.require(
             lambda x: x > 3)
         def func(x: int) -> int:
             return x
 
-        # yapf: enable
+        # fmt: on
 
         violation_err = None  # type: Optional[icontract.ViolationError]
         try:
@@ -888,7 +888,7 @@ class TestConditionAsText(unittest.TestCase):
         )
 
     def test_condition_on_multiple_lines(self) -> None:
-        # yapf: disable
+        # fmt: off
         @icontract.require(
             lambda x:
             x
@@ -897,7 +897,7 @@ class TestConditionAsText(unittest.TestCase):
         def func(x: int) -> int:
             return x
 
-        # yapf: enable
+        # fmt: on
 
         violation_err = None  # type: Optional[icontract.ViolationError]
         try:
@@ -918,7 +918,7 @@ class TestConditionAsText(unittest.TestCase):
 
     def test_with_multiple_lambdas_on_a_line(self) -> None:
         # pylint: disable=unnecessary-lambda
-        # yapf: disable
+        # fmt: off
         @icontract.require(
             error=lambda x: ValueError("x > 0, but got: {}".format(x)), condition=lambda x: x > 0)
         @icontract.require(
@@ -926,7 +926,7 @@ class TestConditionAsText(unittest.TestCase):
         def func(x: int) -> int:
             return x
 
-        # yapf: enable
+        # fmt: on
 
         value_error = None  # type: Optional[ValueError]
         try:
@@ -1341,7 +1341,7 @@ class TestRecomputationFailure(unittest.TestCase):
 
 class TestTracingAll(unittest.TestCase):
     def test_global_variable(self) -> None:
-        # yapf: disable
+        # fmt: off
         @icontract.require(
             lambda lst:
             all(
@@ -1349,7 +1349,7 @@ class TestTracingAll(unittest.TestCase):
                 for value in lst
             )
         )
-        # yapf: enable
+        # fmt: on
         def func(lst: List[int]) -> None:
             pass
 
@@ -1382,7 +1382,7 @@ class TestTracingAll(unittest.TestCase):
         )
 
     def test_formatted_string(self) -> None:
-        # yapf: disable
+        # fmt: off
         @icontract.require(
             lambda lst:
             all(
@@ -1390,7 +1390,7 @@ class TestTracingAll(unittest.TestCase):
                 for value in lst
             )
         )
-        # yapf: enable
+        # fmt: on
         def func(lst: List[str]) -> None:
             pass
 
@@ -1422,7 +1422,7 @@ class TestTracingAll(unittest.TestCase):
         )
 
     def test_two_fors_and_two_ifs(self) -> None:
-        # yapf: disable
+        # fmt: off
         @icontract.require(
             lambda matrix:
             all(
@@ -1433,7 +1433,7 @@ class TestTracingAll(unittest.TestCase):
                 if i == j
             )
         )
-        # yapf: enable
+        # fmt: on
         def func(matrix: List[List[int]]) -> None:
             pass
 
@@ -1482,7 +1482,7 @@ class TestTracingAll(unittest.TestCase):
     def test_nested_all(self) -> None:
         # Nesting is not recursively followed by design. Only the outer-most all expression should be traced.
 
-        # yapf: disable
+        # fmt: off
         @icontract.require(
             lambda lst_of_lsts:
             all(
@@ -1490,7 +1490,7 @@ class TestTracingAll(unittest.TestCase):
                 for sublst in lst_of_lsts
             )
         )
-        # yapf: enable
+        # fmt: on
         def func(lst_of_lsts: List[List[int]]) -> None:
             pass
 
@@ -1526,7 +1526,7 @@ class TestTracingAll(unittest.TestCase):
             def __repr__(self) -> str:
                 return "Something()"
 
-        # yapf: disable
+        # fmt: off
         @icontract.require(
             lambda something, lst:
             all(
@@ -1534,7 +1534,7 @@ class TestTracingAll(unittest.TestCase):
                 for item in lst
             )
         )
-        # yapf: enable
+        # fmt: on
         def func(something: Something, lst: List[int]) -> None:
             pass
 
@@ -1566,7 +1566,7 @@ class TestTracingAll(unittest.TestCase):
         )
 
     def test_shadows_in_targets(self) -> None:
-        # yapf: disable
+        # fmt: off
         @icontract.require(
             lambda lst_of_lsts:
             all(
@@ -1574,7 +1574,7 @@ class TestTracingAll(unittest.TestCase):
                 for item in lst_of_lsts
             )
         )
-        # yapf: enable
+        # fmt: on
         def func(lst_of_lsts: List[List[int]]) -> None:
             pass
 
