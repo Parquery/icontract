@@ -53,7 +53,7 @@ setup(
     ],
     extras_require={
         "dev": [
-            "pylint==2.17.5",
+            'pylint==2.17.5;python_version>="3.7"',
             "tox>=3.0.0",
             "pydocstyle>=6.3.0,<7",
             "coverage>=4.5.1,<5",

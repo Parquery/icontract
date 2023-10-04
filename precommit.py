@@ -80,22 +80,28 @@ def main() -> int:
 
         subprocess.check_call(["mypy", "--strict"] + mypy_targets, cwd=str(repo_root))
 
-    print("Pylint'ing...")
-    pylint_targets = ["icontract", "tests"]
+    if sys.version_info < (3, 7):
+        print(
+            "Pylint dropped support for Python 3.6 and "
+            "you are running Python {}, so skipping.".format(sys.version_info)
+        )
+    else:
+        print("Pylint'ing...")
+        pylint_targets = ["icontract", "tests"]
 
-    if sys.version_info >= (3, 6):
-        pylint_targets.append("tests_3_6")
+        if sys.version_info >= (3, 6):
+            pylint_targets.append("tests_3_6")
 
-    if sys.version_info >= (3, 7):
-        pylint_targets.append("tests_3_7")
+        if sys.version_info >= (3, 7):
+            pylint_targets.append("tests_3_7")
 
-    if sys.version_info >= (3, 8):
-        pylint_targets.append("tests_3_8")
-        pylint_targets.append("tests_with_others")
+        if sys.version_info >= (3, 8):
+            pylint_targets.append("tests_3_8")
+            pylint_targets.append("tests_with_others")
 
-    subprocess.check_call(
-        ["pylint", "--rcfile=pylint.rc"] + pylint_targets, cwd=str(repo_root)
-    )
+        subprocess.check_call(
+            ["pylint", "--rcfile=pylint.rc"] + pylint_targets, cwd=str(repo_root)
+        )
 
     print("Pydocstyle'ing...")
     subprocess.check_call(["pydocstyle", "icontract"], cwd=str(repo_root))
@@ -113,14 +119,15 @@ def main() -> int:
         env=env)
     # yapf: enable
 
-    # yapf: disable
-    subprocess.check_call(
-        ["coverage", "run",
-         "--source", "icontract",
-         "-a", "-m", "tests_3_8.async.separately_test_concurrent"],
-        cwd=str(repo_root),
-        env=env)
-    # yapf: enable
+    if sys.version_info >= (3, 8):
+        # yapf: disable
+        subprocess.check_call(
+            ["coverage", "run",
+             "--source", "icontract",
+             "-a", "-m", "tests_3_8.async.separately_test_concurrent"],
+            cwd=str(repo_root),
+            env=env)
+        # yapf: enable
 
     subprocess.check_call(["coverage", "report"])
 
