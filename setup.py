@@ -67,7 +67,7 @@ setup(
             "numpy>=1,<2",
             'mypy==1.5.1;python_version>="3.8"',
             'black==23.9.1;python_version>="3.8"',
-            'deal==4.23.3;python_version>"=3.8"',
+            'deal==4.23.3;python_version>="3.8"',
             'asyncstdlib==3.9.1;python_version>="3.8"',
         ]
     },
