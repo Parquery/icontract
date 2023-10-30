@@ -1,3 +1,13 @@
+2.6.5
+=====
+* Added Python 3.11 to the list of supported Pythons (#280)
+* Fixed deal dependency marker (#279)
+
+  This patch is important as we silently broke ``setup.py``, which was
+  tolerated by older versions of setuptools, but not any more by
+  the newer ones. With this patch, icontract's ``setup.py`` is made
+  valid again.
+
 2.6.4
 =====
 * Restored Python 3.6 support (#274)
