@@ -60,17 +60,25 @@ setup(
             "coverage>=4.5.1,<5",
             "docutils>=0.14,<1",
             "pygments>=2.2.0,<3",
-            "dpcontracts==0.6.0",
-            "tabulate>=0.8.7,<1",
-            "py-cpuinfo>=5.0.0,<6",
-            "typeguard>=2,<3",
             "astor==0.8.1",
             "numpy>=1,<2",
             'mypy==1.5.1;python_version>="3.8"',
             'black==23.9.1;python_version>="3.8"',
-            'deal==4.23.3;python_version>="3.8"',
             'asyncstdlib==3.9.1;python_version>="3.8"',
-        ]
+        ],
+        # NOTE (mristin, 2023-11-15):
+        # We move benchmark to a separate group of dependencies so that
+        # distributions can ignore them, and consequently do not have to keep up
+        # with their versions.
+        #
+        # See: https://github.com/Parquery/icontract/issues/282
+        "benchmark": [
+            "tabulate>=0.8.7,<1",
+            "py-cpuinfo>=5.0.0,<6",
+            "dpcontracts==0.6.0",
+            'deal==4.23.3;python_version>="3.8"',
+            "typeguard>=2,<3",
+        ],
     },
     py_modules=["icontract"],
     package_data={"icontract": ["py.typed"]},
