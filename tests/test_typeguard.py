@@ -14,8 +14,8 @@ import tests.error
 
 class TestPrecondition(unittest.TestCase):
     def test_both_precondition_and_typeguard_ok(self) -> None:
-        @typeguard.typechecked
         @icontract.require(lambda x: x > 0)
+        @typeguard.typechecked
         def some_func(x: int) -> None:
             pass
 
@@ -30,24 +30,23 @@ class TestPrecondition(unittest.TestCase):
             def is_ok(self) -> bool:
                 return True
 
-        @typeguard.typechecked
         @icontract.require(lambda x: x.is_ok())
+        @typeguard.typechecked
         def some_func(x: A) -> None:
             pass
 
         b = B()
-        type_error = None  # type: Optional[TypeError]
+        type_check_error = None  # type: Optional[typeguard.TypeCheckError]
         try:
             some_func(b)  # type: ignore
-        except TypeError as err:
-            type_error = err
+        except typeguard.TypeCheckError as err:
+            type_check_error = err
 
-        expected = 'type of argument "x" must be '
-        self.assertEqual(expected, str(type_error)[: len(expected)])
+        self.assertIsNotNone(type_check_error)
 
     def test_precondition_fails_and_typeguard_ok(self) -> None:
-        @typeguard.typechecked
         @icontract.require(lambda x: x > 0)
+        @typeguard.typechecked
         def some_func(x: int) -> None:
             pass
 
@@ -65,8 +64,8 @@ class TestPrecondition(unittest.TestCase):
 
 class TestInvariant(unittest.TestCase):
     def test_both_invariant_and_typeguard_ok(self) -> None:
-        @typeguard.typechecked
         @icontract.invariant(lambda self: self.x > 0)
+        @typeguard.typechecked
         class A:
             def __init__(self, x: int) -> None:
                 self.x = x
@@ -86,26 +85,25 @@ class TestInvariant(unittest.TestCase):
             def is_ok(self) -> bool:
                 return True
 
-        @typeguard.typechecked
         @icontract.invariant(lambda self: self.x.is_ok())
+        @typeguard.typechecked
         class C:
             def __init__(self, a: A) -> None:
                 self.a = a
 
         b = B()
 
-        type_error = None  # type: Optional[TypeError]
+        type_check_error = None  # type: Optional[typeguard.TypeCheckError]
         try:
             _ = C(a=b)  # type: ignore
-        except TypeError as err:
-            type_error = err
+        except typeguard.TypeCheckError as err:
+            type_check_error = err
 
-        expected = 'type of argument "a" must be '
-        self.assertEqual(expected, str(type_error)[: len(expected)])
+        self.assertIsNotNone(type_check_error)
 
     def test_invariant_fails_and_typeguard_ok(self) -> None:
-        @typeguard.typechecked
         @icontract.invariant(lambda self: self.x > 0)
+        @typeguard.typechecked
         class A:
             def __init__(self, x: int) -> None:
                 self.x = x
@@ -133,8 +131,8 @@ class TestInvariant(unittest.TestCase):
 
 class TestInheritance(unittest.TestCase):
     def test_both_invariant_and_typeguard_ok(self) -> None:
-        @typeguard.typechecked
         @icontract.invariant(lambda self: self.x > 0)
+        @typeguard.typechecked
         class A(icontract.DBC):
             def __init__(self, x: int) -> None:
                 self.x = x
@@ -157,8 +155,8 @@ class TestInheritance(unittest.TestCase):
             def is_ok(self) -> bool:
                 return True
 
-        @typeguard.typechecked
         @icontract.invariant(lambda self: self.x.is_ok())
+        @typeguard.typechecked
         class C(icontract.DBC):
             def __init__(self, a: A) -> None:
                 self.a = a
@@ -168,20 +166,17 @@ class TestInheritance(unittest.TestCase):
 
         b = B()
 
-        type_error = None  # type: Optional[TypeError]
+        type_check_error = None  # type: Optional[typeguard.TypeCheckError]
         try:
             _ = D(a=b)  # type: ignore
-        except TypeError as err:
-            type_error = err
+        except typeguard.TypeCheckError as err:
+            type_check_error = err
 
-        self.assertIsNotNone(type_error)
-
-        expected = 'type of argument "a" must be '
-        self.assertEqual(expected, str(type_error)[: len(expected)])
+        self.assertIsNotNone(type_check_error)
 
     def test_invariant_fails_and_typeguard_ok(self) -> None:
-        @typeguard.typechecked
         @icontract.invariant(lambda self: self.x > 0)
+        @typeguard.typechecked
         class A:
             def __init__(self, x: int) -> None:
                 self.x = x
