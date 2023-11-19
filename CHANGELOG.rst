@@ -1,3 +1,12 @@
+2.6.6
+=====
+* Updated typeguard and deal to latest versions (#284)
+
+  This change is needed so that distributions can successfully run
+  the necessary tests with the development dependencies. Previously,
+  the dependencies were outdated, and the old versions were already
+  deprecated in distributions (notably, typegard and deal).
+
 2.6.5
 =====
 * Added Python 3.11 to the list of supported Pythons (#280)
