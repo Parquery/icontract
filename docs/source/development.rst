@@ -39,3 +39,17 @@ Development
 .. code-block:: bash
 
     ./precommit.py  --overwrite
+
+
+Commit Message Style
+--------------------
+
+Use the following guidelines for commit message.
+
+* Past tense in the subject & body
+* Max. 50 characters subject
+* Max. 72 characters line length in the body (multiple lines are ok)
+* Past tense in the body
+* Have separate commits for the releases where the important changes are highlighted
+
+See examples from past commits at https://github.com/Parquery/icontract/commits/master/
