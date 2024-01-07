@@ -26,6 +26,14 @@ class TestOK(unittest.TestCase):
             RightHalfPlanePoint.__new__.__doc__,
         )
 
+    def test_on_dataclass_with_field(self) -> None:
+        @icontract.invariant(lambda self: self.x > 0)
+        @dataclasses.dataclass
+        class Foo:
+            x: int = dataclasses.field(default=42)
+
+        _ = Foo()
+
 
 class TestViolation(unittest.TestCase):
     def test_on_dataclass(self) -> None:
@@ -49,6 +57,52 @@ class TestViolation(unittest.TestCase):
             self.second > 0:
             self was TestViolation.test_on_dataclass.<locals>.RightHalfPlanePoint(first=1, second=-1)
             self.second was -1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
+
+    def test_on_dataclass_with_field(self) -> None:
+        @icontract.invariant(lambda self: self.x < 0)
+        @dataclasses.dataclass
+        class Foo:
+            x: int = dataclasses.field(default=-1)
+
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            _ = Foo(3)
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual(
+            textwrap.dedent(
+                """\
+            self.x < 0:
+            self was TestViolation.test_on_dataclass_with_field.<locals>.Foo(x=3)
+            self.x was 3"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
+
+    def test_on_dataclass_with_field_default_violating(self) -> None:
+        @icontract.invariant(lambda self: self.x < 0)
+        @dataclasses.dataclass
+        class Foo:
+            x: int = dataclasses.field(default=42)
+
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            _ = Foo()
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual(
+            textwrap.dedent(
+                """\
+            self.x < 0:
+            self was TestViolation.test_on_dataclass_with_field_default_violating.<locals>.Foo(x=42)
+            self.x was 42"""
             ),
             tests.error.wo_mandatory_location(str(violation_error)),
         )
