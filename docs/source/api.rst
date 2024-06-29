@@ -45,3 +45,7 @@ DBC
 ViolationError
 --------------
 .. autoclass:: ViolationError
+
+InvariantCheckEvent
+-------------------
+.. autoclass:: InvariantCheckEvent
