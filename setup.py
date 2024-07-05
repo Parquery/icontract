@@ -57,7 +57,7 @@ setup(
             'pylint==2.17.5;python_version>="3.7"',
             "tox>=3.0.0",
             "pydocstyle>=6.3.0,<7",
-            "coverage>=4.5.1,<5",
+            "coverage>=6.5.0,<7",
             "docutils>=0.14,<1",
             "pygments>=2.2.0,<3",
             "dpcontracts==0.6.0",
