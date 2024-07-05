@@ -48,3 +48,5 @@ _Snapshot = icontract._types.Snapshot
 import icontract.errors
 
 ViolationError = icontract.errors.ViolationError
+
+InvariantCheckEvent = icontract._types.InvariantCheckEvent

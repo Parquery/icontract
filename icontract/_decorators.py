@@ -13,7 +13,7 @@ from typing import (
 
 import icontract._checkers
 from icontract._globals import CallableT, ExceptionT, ClassT
-from icontract._types import Contract, Snapshot
+from icontract._types import Contract, Snapshot, InvariantCheckEvent, Invariant
 
 
 class require:  # pylint: disable=invalid-name
@@ -350,6 +350,9 @@ class invariant:  # pylint: disable=invalid-name
     async, as most dunder methods need to be synchronous methods, and wrapping them with async code would
     break that constraint.
 
+    For efficiency reasons, we do not check the invariants at the calls to ``__setattr__`` and ``__getattr__``
+    methods by default. If you indeed want to check the invariants in those calls as well, make sure to adapt
+    the argument ``check_on`` accordingly.
     """
 
     def __init__(
@@ -361,6 +364,7 @@ class invariant:  # pylint: disable=invalid-name
         error: Optional[
             Union[Callable[..., ExceptionT], Type[ExceptionT], BaseException]
         ] = None,
+        check_on: InvariantCheckEvent = InvariantCheckEvent.CALL,
     ) -> None:
         """
         Initialize a class decorator to establish the invariant on all the public methods.
@@ -387,11 +391,17 @@ class invariant:  # pylint: disable=invalid-name
             * A subclass of ``BaseException`` which is instantiated with the violation message and raised
               on contract violation.
             * An instance of ``BaseException`` that will be raised with the traceback on contract violation.
+        :param check_on:
+            Specify when to check the invariant.
+
+            * If :py:attr:`InvariantCheckEvent.CALL` is set, the invariant will be checked on all the method calls
+              except ``__setattr__``.
+            * If :py:attr:`InvariantCheckEvent.SETATTR` is set, the invariant will be checked on ``__setattr__`` calls.
         :return:
 
         """
         self.enabled = enabled
-        self._contract = None  # type: Optional[Contract]
+        self._invariant = None  # type: Optional[Invariant]
 
         if not enabled:
             return
@@ -432,7 +442,8 @@ class invariant:  # pylint: disable=invalid-name
                 "Async conditions are not possible in invariants as sync methods such as __init__ have to be wrapped."
             )
 
-        self._contract = Contract(
+        self._invariant = Invariant(
+            check_on=check_on,
             condition=condition,
             description=description,
             a_repr=a_repr,
@@ -440,10 +451,12 @@ class invariant:  # pylint: disable=invalid-name
             location=location,
         )
 
-        if self._contract.mandatory_args and self._contract.mandatory_args != ["self"]:
+        if self._invariant.mandatory_args and self._invariant.mandatory_args != [
+            "self"
+        ]:
             raise ValueError(
                 "Expected an invariant condition with at most an argument 'self', but got: {}".format(
-                    self._contract.condition_args
+                    self._invariant.condition_args
                 )
             )
 
@@ -459,12 +472,18 @@ class invariant:  # pylint: disable=invalid-name
             return cls
 
         assert (
-            self._contract is not None
+            self._invariant is not None
         ), "self._contract must be set if the contract was enabled."
 
         if not hasattr(cls, "__invariants__"):
-            invariants = []  # type: List[Contract]
+            invariants = []  # type: List[Invariant]
             setattr(cls, "__invariants__", invariants)
+
+            invariants_on_call = []  # type: List[Invariant]
+            setattr(cls, "__invariants_on_call__", invariants_on_call)
+
+            invariants_on_setattr = []  # type: List[Invariant]
+            setattr(cls, "__invariants_on_setattr__", invariants_on_setattr)
         else:
             invariants = getattr(cls, "__invariants__")
             assert isinstance(
@@ -473,7 +492,25 @@ class invariant:  # pylint: disable=invalid-name
                 cls, type(invariants)
             )
 
-        invariants.append(self._contract)
+            invariants_on_call = getattr(cls, "__invariants_on_call__")
+            assert isinstance(invariants_on_call, list), (
+                "Expected invariants on call of class {} to be a list, "
+                "but got: {}".format(cls, type(invariants_on_call))
+            )
+
+            invariants_on_setattr = getattr(cls, "__invariants_on_setattr__")
+            assert isinstance(invariants_on_setattr, list), (
+                "Expected invariants on call of class {} to be a list, "
+                "but got: {}".format(cls, type(invariants_on_setattr))
+            )
+
+        invariants.append(self._invariant)
+
+        if InvariantCheckEvent.CALL in self._invariant.check_on:
+            invariants_on_call.append(self._invariant)
+
+        if InvariantCheckEvent.SETATTR in self._invariant.check_on:
+            invariants_on_setattr.append(self._invariant)
 
         icontract._checkers.add_invariant_checks(cls=cls)
 

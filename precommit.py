@@ -131,14 +131,21 @@ def main() -> int:
 
     subprocess.check_call(["coverage", "report"])
 
-    print("Doctesting...")
-    doc_files = ["README.rst"]
-    for pth in (repo_root / "docs" / "source").glob("**/*.rst"):
-        doc_files.append(str(pth.relative_to(repo_root)))
-    subprocess.check_call([sys.executable, "-m", "doctest"] + doc_files)
+    if (3, 8) <= sys.version_info < (3, 9):
+        print("Doctesting...")
+        doc_files = ["README.rst"]
+        for pth in (repo_root / "docs" / "source").glob("**/*.rst"):
+            doc_files.append(str(pth.relative_to(repo_root)))
+        subprocess.check_call([sys.executable, "-m", "doctest"] + doc_files)
 
-    for pth in (repo_root / "icontract").glob("**/*.py"):
-        subprocess.check_call([sys.executable, "-m", "doctest", str(pth)])
+        for pth in (repo_root / "icontract").glob("**/*.py"):
+            subprocess.check_call([sys.executable, "-m", "doctest", str(pth)])
+    else:
+        print(
+            "We pin the doctests at Python 3.8 as the output of the exception "
+            "traceback changes between the Python versions. You are running Python "
+            "{}, so we will not run the doctests.".format(sys.version_info)
+        )
 
     print("Checking the restructured text of the readme...")
     subprocess.check_call(

@@ -909,5 +909,164 @@ class TestInvalid(unittest.TestCase):
         )
 
 
+class TestCheckOn(unittest.TestCase):
+    def test_setattr_not_affected_when_flag_not_set(self) -> None:
+        # The check_on default is expected to be ``CALL`` here.
+        @icontract.invariant(lambda self: self.x > 0)
+        class A:
+            def __init__(self) -> None:
+                self.x = 10
+
+        a = A()
+        a.x = -1
+
+        # No error expected here as we rely on the default ``check_on`` to be set to ``CALL``
+        # so that setattr is not affected.
+
+    def test_call_not_affected_when_flag_not_set(self) -> None:
+        # fmt: off
+        @icontract.invariant(
+            lambda self: self.x > 0,
+            check_on=icontract.InvariantCheckEvent.SETATTR
+        )
+        # fmt: on
+        class A:
+            def __init__(self) -> None:
+                self.x = 10
+
+            def do_something_bad(self) -> None:
+                self.__dict__["x"] = -1
+
+        a = A()
+        a.do_something_bad()
+
+        # No error expected here as ``check_on`` mandates to only check setting
+        # an attribute.
+
+    def test_setattr_affected_when_flag_set(self) -> None:
+        @icontract.invariant(
+            lambda self: self.x > 0, check_on=icontract.InvariantCheckEvent.SETATTR
+        )
+        class A:
+            def __init__(self) -> None:
+                self.x = 10
+
+            def __repr__(self) -> str:
+                return "an instance of {}".format(self.__class__.__name__)
+
+        a = A()
+
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            a.x = -1
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual(
+            textwrap.dedent(
+                """\
+                self.x > 0:
+                self was an instance of A
+                self.x was -1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
+
+    def test_call_and_setattr_affected_when_flags_set(self) -> None:
+        @icontract.invariant(
+            lambda self: self.x > 0,
+            check_on=(
+                icontract.InvariantCheckEvent.CALL
+                | icontract.InvariantCheckEvent.SETATTR
+            ),
+        )
+        class A:
+            def __init__(self) -> None:
+                self.x = 10
+
+            def do_something_bad(self) -> None:
+                self.x = -1
+
+            def __repr__(self) -> str:
+                return "an instance of {}".format(self.__class__.__name__)
+
+        that = A()
+
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            that.x = -1
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual(
+            textwrap.dedent(
+                """\
+                self.x > 0:
+                self was an instance of A
+                self.x was -1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
+
+        other = A()
+
+        another_violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            other.do_something_bad()
+        except icontract.ViolationError as err:
+            another_violation_error = err
+
+        self.assertIsNotNone(another_violation_error)
+        self.assertEqual(
+            textwrap.dedent(
+                """\
+                self.x > 0:
+                self was an instance of A
+                self.x was -1"""
+            ),
+            tests.error.wo_mandatory_location(str(another_violation_error)),
+        )
+
+    def test_setattr_with_property(self) -> None:
+        @icontract.invariant(
+            lambda self: self.x > 0, check_on=icontract.InvariantCheckEvent.SETATTR
+        )
+        class A:
+            def __init__(self) -> None:
+                self._x = 10
+
+            def __repr__(self) -> str:
+                return "an instance of {}".format(self.__class__.__name__)
+
+            @property
+            def x(self) -> int:
+                return self._x
+
+            @x.setter
+            def x(self, value: int) -> None:
+                self._x = value
+
+        a = A()
+
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            a.x = -1
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual(
+            textwrap.dedent(
+                """\
+                self.x > 0:
+                self was an instance of A
+                self.x was -1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
