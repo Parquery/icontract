@@ -133,6 +133,12 @@ prohibitively expensive in terms of computation for most use cases. However, the
 ``check_on`` to an :class:`invariant` which allows you to steer in a more fine-grained manner when the invariant should
 be enforced.
 
+.. note::
+
+    Be careful with instance attributes referencing other instances or collections. For example, ``a.some_list.append(3)``
+    will not trigger the check of invariants as the attribute ``a.some_list``, kept as a reference, remains unchanged.
+    That is, even though the referenced object changes (the actual list), the reference does not.
+
 The default value of ``check_on`` is set to :attr:`InvariantCheckEvent.CALL`, meaning that we check
 the invariants only in the calls to the methods *excluding* ``__setattr__``. If you want to check
 the invariants *only* on ``__setattr__`` and excluding *any* other method, set it to :attr:`InvariantCheckEvent.SETATTR`.

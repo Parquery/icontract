@@ -134,6 +134,9 @@ class InvariantCheckEvent(enum.Flag):
     #: Evaluate the invariant before and after all the calls to ``__setattr__``.
     SETATTR = enum.auto()
 
+    #: Always evaluate the invariant, *i.e., both on calls and on attributes set.
+    ALL = CALL | SETATTR
+
 
 class Invariant(Contract):
     """Represent a contract which is checked on all or some of the class operations."""
