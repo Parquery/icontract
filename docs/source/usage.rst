@@ -145,6 +145,9 @@ the invariants *only* on ``__setattr__`` and excluding *any* other method, set i
 The combinations is also possible; to check invariants on method calls *including* ``__setattr__``, set ``check_on`` to
 :attr:`InvariantCheckEvent.CALL` ``|`` :attr:`InvariantCheckEvent.SETATTR`.
 
+To save you some typing, we introduced the shortcut, :attr:`InvariantCheckEvent.ALL`, which stands for the combination
+:attr:`InvariantCheckEvent.CALL` ``|`` :attr:`InvariantCheckEvent.SETATTR`.
+
 .. note::
 
 	The property getters and setters are considered "normal" methods. If you want to check the invariants at property
