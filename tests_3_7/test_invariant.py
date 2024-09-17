@@ -108,5 +108,37 @@ class TestViolation(unittest.TestCase):
         )
 
 
+class TestCheckOn(unittest.TestCase):
+    def test_setattr_with_dataclass(self) -> None:
+        @icontract.invariant(
+            lambda self: self.x > 0, check_on=icontract.InvariantCheckEvent.SETATTR
+        )
+        @dataclasses.dataclass
+        class A:
+            x: int = 10
+
+            def __repr__(self) -> str:
+                return "an instance of {}".format(self.__class__.__name__)
+
+        a = A()
+
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            a.x = -1
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual(
+            textwrap.dedent(
+                """\
+                self.x > 0:
+                self was an instance of A
+                self.x was -1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -18,8 +18,9 @@ from typing import (
 
 import icontract._represent
 from icontract._globals import CallableT, ClassT
-from icontract._types import Contract, Snapshot
+from icontract._types import Contract, Snapshot, InvariantCheckEvent
 from icontract.errors import ViolationError
+
 
 # pylint does not play with typing.Mapping.
 # pylint: disable=unsubscriptable-object
@@ -965,8 +966,8 @@ def _decorate_new_with_invariants(new_func: CallableT) -> CallableT:
         """Pass the arguments to __new__ and check invariants on the result."""
         instance = new_func(*args, **kwargs)
 
-        for contract in instance.__class__.__invariants__:
-            _assert_invariant(contract=contract, instance=instance)
+        for invariant in instance.__class__.__invariants__:
+            _assert_invariant(contract=invariant, instance=instance)
 
         return instance
 
@@ -979,7 +980,7 @@ def _decorate_new_with_invariants(new_func: CallableT) -> CallableT:
 
 def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
     """
-    Decorate the function ``func`` of the class ``cls`` with invariant checks.
+    Decorate the method ``func`` with invariant checks.
 
     If the function has been already decorated with invariant checks, the function returns immediately.
 
@@ -1025,8 +1026,8 @@ def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
             try:
                 result = func(*args, **kwargs)
 
-                for contract in instance.__class__.__invariants__:
-                    _assert_invariant(contract=contract, instance=instance)
+                for invariant in instance.__class__.__invariants__:
+                    _assert_invariant(contract=invariant, instance=instance)
 
                 return result
             finally:
@@ -1060,6 +1061,12 @@ def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
                         ).format(func, param_names, args, kwargs)
                     ) from err
 
+                invariants = (
+                    instance.__class__.__invariants_on_setattr__
+                    if func.__name__ == "__setattr__"
+                    else instance.__class__.__invariants_on_call__
+                )
+
                 # We need to create a new in-progress set if it is None as the ``ContextVar`` does not accept
                 # a factory function for the default argument. If we didn't do this, and simply set an empty
                 # set as the default, ``ContextVar`` would always point to the same set by copying the default
@@ -1080,13 +1087,13 @@ def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
 
                 # ExitStack is not used here due to performance.
                 try:
-                    for contract in instance.__class__.__invariants__:
-                        _assert_invariant(contract=contract, instance=instance)
+                    for invariant in invariants:
+                        _assert_invariant(contract=invariant, instance=instance)
 
                     result = await func(*args, **kwargs)
 
-                    for contract in instance.__class__.__invariants__:
-                        _assert_invariant(contract=contract, instance=instance)
+                    for invariant in invariants:
+                        _assert_invariant(contract=invariant, instance=instance)
 
                     return result
                 finally:
@@ -1107,6 +1114,12 @@ def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
                             "the param names were {!r}, the args were {!r} and kwargs were {!r}"
                         ).format(func, param_names, args, kwargs)
                     ) from err
+
+                invariants = (
+                    instance.__class__.__invariants_on_setattr__
+                    if func.__name__ == "__setattr__"
+                    else instance.__class__.__invariants_on_call__
+                )
 
                 # The following dunder indicates whether another invariant is currently being checked. If so,
                 # we need to suspend any further invariant check to avoid endless recursion.
@@ -1129,13 +1142,13 @@ def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
 
                 # ExitStack is not used here due to performance.
                 try:
-                    for contract in instance.__class__.__invariants__:
-                        _assert_invariant(contract=contract, instance=instance)
+                    for invariant in invariants:
+                        _assert_invariant(contract=invariant, instance=instance)
 
                     result = func(*args, **kwargs)
 
-                    for contract in instance.__class__.__invariants__:
-                        _assert_invariant(contract=contract, instance=instance)
+                    for invariant in invariants:
+                        _assert_invariant(contract=invariant, instance=instance)
 
                     return result
                 finally:
@@ -1169,25 +1182,38 @@ def _already_decorated_with_invariants(func: CallableT) -> bool:
 def add_invariant_checks(cls: ClassT) -> None:
     """Decorate each of the class functions with invariant checks if not already decorated."""
     # Candidates for the decoration as list of (name, dir() value)
-    init_name_func = None  # type: Optional[Tuple[str, Callable[..., None]]]
+    init_func = None  # type: Optional[Callable[..., None]]
     names_funcs = []  # type: List[Tuple[str, Callable[..., None]]]
     names_properties = []  # type: List[Tuple[str, property]]
 
-    # Filter out entries in the directory which are certainly not candidates for decoration.
+    # As we continuously decorate the class with invariants, we never definitely know
+    # whether this decoration is the last one. Hence, we can only retrieve the list
+    # of invariants decorated *thus far*. As we only add one invariant at the time,
+    # we only need to check for the last invariant.
+    assert cls.__invariants__ is not None, (  # type: ignore
+        "Expected to set ``__invariants__`` in the invariant decorator before "
+        "the call to {}".format(add_invariant_checks.__name__)
+    )
+    assert len(cls.__invariants__) > 0, (  # type: ignore
+        "Expected at least one invariant in the ``__invariants__`` since we expect "
+        "to push the latest invariant in the invariant decorator before the call to "
+        "{}".format(add_invariant_checks.__name__)
+    )
+    last_invariant = cls.__invariants__[-1]  # type: ignore
+    assert isinstance(last_invariant, icontract._types.Invariant)
+
+    # Filter out entries in the directory which are certainly not candidates for decoration
+    # regarding the ``last_invariant``. Note that the functions which are already decorated
+    # will not be re-decorated, so that this loop runs in O( dir(cls) * len(invariants) ),
+    # but with a negligible constant.
     for name in dir(cls):
         value = getattr(cls, name)
 
         # __new__ is a special class method (though not marked properly with @classmethod!).
         # We need to ignore __repr__ to prevent endless loops when generating error messages.
-        # __getattribute__, __setattr__ and __delattr__ are too invasive and alter the state of the instance.
-        # Hence we don't consider them "public".
-        if name in [
-            "__new__",
-            "__repr__",
-            "__getattribute__",
-            "__setattr__",
-            "__delattr__",
-        ]:
+        # We also need to ignore __getattribute__ since pretty much any operation on the instance
+        # will result in an endless loop.
+        if name in ["__new__", "__repr__", "__getattribute__"]:
             continue
 
         if name == "__init__":
@@ -1197,7 +1223,19 @@ def add_invariant_checks(cls: ClassT) -> None:
                 type(value)
             )
 
-            init_name_func = (name, value)
+            init_func = value
+            continue
+
+        if (
+            name != "__setattr__"
+            and InvariantCheckEvent.CALL not in last_invariant.check_on
+        ):
+            continue
+
+        if (
+            name == "__setattr__"
+            and InvariantCheckEvent.SETATTR not in last_invariant.check_on
+        ):
             continue
 
         if (
@@ -1234,18 +1272,16 @@ def add_invariant_checks(cls: ClassT) -> None:
                 )
             )
 
-    if init_name_func:
-        name, func = init_name_func
-
+    if init_func:
         # We have to distinguish this special case which is used by named
         # tuples and possibly other optimized data structures.
         # In those cases, we have to wrap __new__ instead of __init__.
-        if func == object.__init__ and hasattr(cls, "__new__"):
+        if init_func == object.__init__ and hasattr(cls, "__new__"):
             new_func = getattr(cls, "__new__")
             setattr(cls, "__new__", _decorate_new_with_invariants(new_func))
         else:
-            wrapper = _decorate_with_invariants(func=func, is_init=True)
-            setattr(cls, name, wrapper)
+            wrapper = _decorate_with_invariants(func=init_func, is_init=True)
+            setattr(cls, init_func.__name__, wrapper)
 
     for name, func in names_funcs:
         wrapper = _decorate_with_invariants(func=func, is_init=False)

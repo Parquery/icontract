@@ -113,7 +113,7 @@ Invariants
 ----------
 Invariants are special contracts associated with an instance of a class. An invariant should hold *after* initialization
 and *before* and *after* a call to any public instance method. The invariants are the pivotal element of
-design-by-contract: they allow you to formally define properties of a data structures that you know will be maintained
+design-by-contract: they allow you to formally define properties of data structures that you know will be maintained
 throughout the life time of *every* instance.
 
 We consider the following methods to be "public":
@@ -121,15 +121,37 @@ We consider the following methods to be "public":
 * All methods not prefixed with ``_``
 * All magic methods (prefix ``__`` and suffix ``__``)
 
-Class methods (marked with ``@classmethod`` or special dunders such as ``__new__``) can not observe the invariant
-since they are not associated with an instance of the class.
+Class methods (marked with ``@classmethod`` or special dunders such as ``__new__``) can not observe the invariants
+since they are not associated with an instance of the class. We also exempt ``__getattribute__`` method from observing
+the invariants since these functions alter the state of the instance and thus can not be considered "public".
+We exempt ``__repr__`` method as well to prevent endless loops when generating error messages.
+At runtime, many icontract-specific dunder attributes (such as ``__invariants__``) need to be accessed, so the method
+``__getattribute__`` can not be decorated lest we end up in an endless recursion.
 
-We exempt ``__getattribute__``, ``__setattr__`` and ``__delattr__`` methods from observing the invariant since
-these functions alter the state of the instance and thus can not be considered "public".
+By default, we do not enforce the invariants on calls to ``__setattr__`` as that is usually
+prohibitively expensive in terms of computation for most use cases. However, there is a parameter
+``check_on`` to an :class:`invariant` which allows you to steer in a more fine-grained manner when the invariant should
+be enforced.
 
-We also exempt ``__repr__`` method to prevent endless loops when generating error messages.
+.. note::
 
-The icontract invariants are implemented as class decorators.
+    Be careful with instance attributes referencing other instances or collections. For example, ``a.some_list.append(3)``
+    will not trigger the check of invariants as the attribute ``a.some_list``, kept as a reference, remains unchanged.
+    That is, even though the referenced object changes (the actual list), the reference does not.
+
+The default value of ``check_on`` is set to :attr:`InvariantCheckEvent.CALL`, meaning that we check
+the invariants only in the calls to the methods *excluding* ``__setattr__``. If you want to check
+the invariants *only* on ``__setattr__`` and excluding *any* other method, set it to :attr:`InvariantCheckEvent.SETATTR`.
+The combinations is also possible; to check invariants on method calls *including* ``__setattr__``, set ``check_on`` to
+:attr:`InvariantCheckEvent.CALL` ``|`` :attr:`InvariantCheckEvent.SETATTR`.
+
+To save you some typing, we introduced the shortcut, :attr:`InvariantCheckEvent.ALL`, which stands for the combination
+:attr:`InvariantCheckEvent.CALL` ``|`` :attr:`InvariantCheckEvent.SETATTR`.
+
+.. note::
+
+	The property getters and setters are considered "normal" methods. If you want to check the invariants at property
+	getters and/or setters, make sure to include :attr:`InvariantCheckEvent.CALL` in ``check_on``.
 
 The following examples show various cases when an invariant is breached.
 
@@ -229,6 +251,45 @@ After the invocation of a magic method:
     self was an instance of SomeClass
     self.x was -1
 
+Enforcing the invariants on the method calls *including* ``__setattr__``:
+
+.. code-block:: python
+
+    >>> @icontract.invariant(
+    ...     lambda self: self.x > 0,
+    ...        check_on=(
+    ...            icontract.InvariantCheckEvent.CALL
+    ...            | icontract.InvariantCheckEvent.SETATTR
+    ...			)
+    ... )
+    ... class SomeClass:
+    ...     def __init__(self) -> None:
+    ...         self.x = 100
+    ...
+    ...     def do_something_bad(self) -> None:
+    ...         self.x = -1
+    ...
+    ...     def __repr__(self) -> str:
+    ...         return "an instance of SomeClass"
+    ...
+    >>> some_instance = SomeClass()
+    >>> some_instance.do_something_bad()
+    Traceback (most recent call last):
+     ...
+    icontract.errors.ViolationError: File <doctest usage.rst[26]>, line 1 in <module>:
+    self.x > 0:
+    self was an instance of SomeClass
+    self.x was -1
+
+    >>> another_instance = SomeClass()
+    >>> another_instance.x = -1
+    Traceback (most recent call last):
+     ...
+    icontract.errors.ViolationError: File <doctest usage.rst[26]>, line 1 in <module>:
+    self.x > 0:
+    self was an instance of SomeClass
+    self.x was -1
+
 Snapshots (a.k.a "old" argument values)
 ---------------------------------------
 Usual postconditions can not verify the state transitions of the function's argument values. For example, it is
@@ -261,7 +322,7 @@ Here is an example that uses snapshots to check that a value was appended to the
     >>> some_func(lst=[1, 2], value=3)
     Traceback (most recent call last):
         ...
-    icontract.errors.ViolationError: File <doctest usage.rst[28]>, line 2 in <module>:
+    icontract.errors.ViolationError: File <doctest usage.rst[33]>, line 2 in <module>:
     lst == OLD.lst + [value]:
     OLD was a bunch of OLD values
     OLD.lst was [1, 2]
@@ -285,7 +346,7 @@ The following example shows how you can name the snapshot:
     >>> some_func(lst=[1, 2], value=3)
     Traceback (most recent call last):
         ...
-    icontract.errors.ViolationError: File <doctest usage.rst[32]>, line 2 in <module>:
+    icontract.errors.ViolationError: File <doctest usage.rst[37]>, line 2 in <module>:
     len(lst) == OLD.len_lst + 1:
     OLD was a bunch of OLD values
     OLD.len_lst was 2
@@ -311,7 +372,7 @@ The next code snippet shows how you can combine multiple arguments of a function
     >>> some_func(lst_a=[1, 2], lst_b=[3, 4])  # doctest: +ELLIPSIS
     Traceback (most recent call last):
         ...
-    icontract.errors.ViolationError: File <doctest usage.rst[36]>, line ... in <module>:
+    icontract.errors.ViolationError: File <doctest usage.rst[...]>, line ... in <module>:
     set(lst_a).union(lst_b) == OLD.union:
     OLD was a bunch of OLD values
     OLD.union was {1, 2, 3, 4}
@@ -394,7 +455,7 @@ The following example shows an abstract parent class and a child class that inhe
         >>> some_b.func(y=0)
         Traceback (most recent call last):
             ...
-        icontract.errors.ViolationError: File <doctest usage.rst[40]>, line 7 in A:
+        icontract.errors.ViolationError: File <doctest usage.rst[45]>, line 7 in A:
         result < y:
         result was 1
         self was an instance of B
@@ -405,7 +466,7 @@ The following example shows an abstract parent class and a child class that inhe
         >>> another_b.break_parent_invariant()
         Traceback (most recent call last):
             ...
-        icontract.errors.ViolationError: File <doctest usage.rst[40]>, line 1 in <module>:
+        icontract.errors.ViolationError: File <doctest usage.rst[45]>, line 1 in <module>:
         self.x > 0:
         self was an instance of B
         self.x was -1
@@ -415,7 +476,7 @@ The following example shows an abstract parent class and a child class that inhe
         >>> yet_another_b.break_my_invariant()
         Traceback (most recent call last):
             ...
-        icontract.errors.ViolationError: File <doctest usage.rst[41]>, line 1 in <module>:
+        icontract.errors.ViolationError: File <doctest usage.rst[46]>, line 1 in <module>:
         self.x < 100:
         self was an instance of B
         self.x was 101
@@ -453,7 +514,7 @@ The following example shows how preconditions are weakened:
         >>> b.func(x=5)
         Traceback (most recent call last):
             ...
-        icontract.errors.ViolationError: File <doctest usage.rst[49]>, line 2 in B:
+        icontract.errors.ViolationError: File <doctest usage.rst[54]>, line 2 in B:
         x % 3 == 0:
         self was an instance of B
         x was 5
@@ -484,7 +545,7 @@ The example below illustrates how snapshots are inherited:
         >>> b.func(lst=[1, 2], value=3)
         Traceback (most recent call last):
             ...
-        icontract.errors.ViolationError: File <doctest usage.rst[54]>, line 4 in A:
+        icontract.errors.ViolationError: File <doctest usage.rst[59]>, line 4 in A:
         len(lst) == len(OLD.lst) + 1:
         OLD was a bunch of OLD values
         OLD.lst was [1, 2]
@@ -494,7 +555,6 @@ The example below illustrates how snapshots are inherited:
         result was None
         self was an instance of B
         value was 3
-
 
 Toggling Contracts
 ------------------
@@ -607,7 +667,7 @@ Here is an example of the error given as a subclass of `BaseException`_:
     >>> some_func(x=0)
     Traceback (most recent call last):
         ...
-    ValueError: File <doctest usage.rst[62]>, line 1 in <module>:
+    ValueError: File <doctest usage.rst[67]>, line 1 in <module>:
     x > 0: x was 0
 
 Here is an example of the error given as an instance of a `BaseException`_:

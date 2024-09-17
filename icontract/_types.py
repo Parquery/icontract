@@ -1,4 +1,5 @@
 """Define data structures shared among the modules."""
+import enum
 import inspect
 import reprlib
 from typing import (
@@ -122,3 +123,48 @@ class Snapshot:
         self.arg_set = set(args)
 
         self.location = location
+
+
+class InvariantCheckEvent(enum.Flag):
+    """Define when an invariant should be checked."""
+
+    #: Evaluate the invariant before and after all calls to a method.
+    CALL = enum.auto()
+
+    #: Evaluate the invariant before and after all the calls to ``__setattr__``.
+    SETATTR = enum.auto()
+
+    #: Always evaluate the invariant, *i.e., both on calls and on attributes set.
+    ALL = CALL | SETATTR
+
+
+class Invariant(Contract):
+    """Represent a contract which is checked on all or some of the class operations."""
+
+    # NOTE (mristin):
+    # The class ``Invariant`` inherits from ``Contract`` so that we can maintain
+    # the backwards compatibility with the integrators after introducing
+    # the ``check_on`` feature.
+
+    def __init__(
+        self,
+        check_on: InvariantCheckEvent,
+        condition: Callable[..., Any],
+        description: Optional[str] = None,
+        a_repr: reprlib.Repr = icontract._globals.aRepr,
+        error: Optional[
+            Union[Callable[..., ExceptionT], Type[ExceptionT], BaseException]
+        ] = None,
+        location: Optional[str] = None,
+    ) -> None:
+        """Initialize with the given values."""
+        assert not hasattr(self, "check_on")
+        self.check_on = check_on
+
+        super().__init__(
+            condition=condition,
+            description=description,
+            a_repr=a_repr,
+            error=error,
+            location=location,
+        )
