@@ -1,3 +1,16 @@
+2.7.0
+=====
+* Allowed to enforce invariants on attribute setting (#292)
+
+  Originally, we had enforced invariants only at calls to "normal"
+  methods, and excluded ``__setattr__`` since it is usually too expensive
+  to verify invariants whenever setting an attribute.
+
+  However, there are use cases where the users prefer to incur to
+  computational overhead for correctness. To that end, we introduced the
+  feature to steer when the invariants are enforced (at method calls,
+  on setting attributes, or in both situations).
+
 2.6.6
 =====
 * Updated typeguard and deal to latest versions (#284)
