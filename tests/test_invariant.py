@@ -909,6 +909,46 @@ class TestInvalid(unittest.TestCase):
             tests.error.wo_mandatory_location(str(value_error)),
         )
 
+    # noinspection PyUnusedLocal
+    def test_subclasses_affect_the_base_class_if_no_DBC(self) -> None:
+        # NOTE (mristin):
+        # This is a regression test for:
+        # https://github.com/Parquery/icontract/issues/295
+        #
+        # where the invariants of the derived class erroneously "slipped into"
+        # the base class when DBC or DBCMeta were not set in the ``Base`` class.
+
+        # NOTE (mristin):
+        # ``Base`` class should either inherit from ``icontract.DBC`` or have
+        # the metaclass ``icontract.DBCMeta``. If it does not, the invariants will be
+        # copied by reference, thus allowing the ``Derived`` class to mess them up.
+        @icontract.invariant(lambda: True)
+        class Base:
+            def __repr__(self) -> str:
+                return "an instance of {}".format(self.__class__.__name__)
+
+        # NOTE (mristin):
+        # We do not want to instantiate a derived class, but this is a regression test.
+        @icontract.invariant(lambda: False)
+        class Derived(Base):  # pylint: disable=unused-variable
+            pass
+
+        # NOTE (mristin):
+        # This causes a ``ViolationError``, as invariants are copied by reference if
+        # the ``Base`` does not inherit from ``icontract.DBC`` or uses
+        # ``icontract.DBCMeta`` as the metaclass.
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            _ = Base()
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual(
+            textwrap.dedent("""False: self was an instance of Base"""),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
+
 
 class TestCheckOn(unittest.TestCase):
     def test_invariant_checked_in_init_if_no_flag_set(self) -> None:
