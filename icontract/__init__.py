@@ -8,7 +8,7 @@
 # imports in setup.py.
 
 # Don't forget to update the version in __init__.py and CHANGELOG.rst!
-__version__ = "2.6.6"
+__version__ = "2.7.0"
 __author__ = "Marko Ristin"
 __copyright__ = "Copyright 2019 Parquery AG"
 __license__ = "MIT"
