@@ -390,12 +390,16 @@ a meta class set to :class:`icontract.DBCMeta`.
 .. note::
 
 	The inheritance from :class:`DBC` or using the meta class :class:`icontract.DBCMeta` is necessary so that
-	the invariants are correctly passed over from the parent to the child class. Otherwise, it is undefined
-	how invariants will be stacked in case of inheritance.
+	the contracts are correctly inherited from the parent to the child class. Otherwise, it is undefined
+	behavior how invariants, preconditions and postconditions will be inherited; most probably breaking
+	the Liskov substitution principle.
 
-	This undefined behavior is due to the fact that invariants will be stored as a list in the base class,
-	which is then passed as reference to the child class. The invariants decorator in the child class will
-	add the invariants to that list, thus inadvertently populating the invariants of the base class as well!
+	In particular, the contracts are collapsed into lists for efficiency. If your child class does not
+	inherit from :class:`DBC` or you do not use the meta class :class:`icontract.DBCMeta`, the inherited
+	contracts in the child class will leak, and thus contracts from the child will be inserted into the
+	parent class.
+
+	Hence, make sure you always use :class:`DBC` or :class:`icontract.DBCMeta` when dealing with inheritance.
 
 When no contracts are specified in the child class, all contracts are inherited from the parent class as-are.
 
