@@ -387,6 +387,20 @@ Inheritance
 To inherit the contracts of the parent class, the child class needs to either inherit from :class:`DBC` or have
 a meta class set to :class:`icontract.DBCMeta`.
 
+.. note::
+
+	The inheritance from :class:`DBC` or using the meta class :class:`icontract.DBCMeta` is necessary so that
+	the contracts are correctly inherited from the parent to the child class. Otherwise, it is undefined
+	behavior how invariants, preconditions and postconditions will be inherited; most probably breaking
+	the Liskov substitution principle.
+
+	In particular, the contracts are collapsed into lists for efficiency. If your child class does not
+	inherit from :class:`DBC` or you do not use the meta class :class:`icontract.DBCMeta`, the inherited
+	contracts in the child class will leak, and thus contracts from the child will be inserted into the
+	parent class.
+
+	Hence, make sure you always use :class:`DBC` or :class:`icontract.DBCMeta` when dealing with inheritance.
+
 When no contracts are specified in the child class, all contracts are inherited from the parent class as-are.
 
 When the child class introduces additional preconditions or postconditions and invariants, these contracts are
