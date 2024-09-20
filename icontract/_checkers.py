@@ -1213,7 +1213,7 @@ def add_invariant_checks(cls: ClassT) -> None:
         # We need to ignore __repr__ to prevent endless loops when generating error messages.
         # We also need to ignore __getattribute__ since pretty much any operation on the instance
         # will result in an endless loop.
-        if name in ["__new__", "__repr__", "__getattribute__"]:
+        if name in ("__new__", "__repr__", "__getattribute__"):
             continue
 
         if name == "__init__":

@@ -23,23 +23,38 @@ import icontract._checkers
 
 
 def _collapse_invariants(
-    bases: List[type], namespace: MutableMapping[str, Any]
+    bases: List[type], namespace: MutableMapping[str, Any], invariants_dunder: str
 ) -> None:
-    """Collect invariants from the bases and merge them with the invariants in the namespace."""
+    """
+    Collect invariants from the bases and merge them with the invariants in the namespace.
+
+    We do not only collapse ``__invariants__`` class property, but we also need to collapse
+    the filtered ``__invariants_on_call__`` and ``__invariants_on_setattr__``, as they are
+    sub-lists of the ``__invariants__``.
+    """
+    assert invariants_dunder in (
+        "__invariants__",
+        "__invariants_on_call__",
+        "__invariants_on_setattr__",
+    ), "Unexpected invariants_dunder: {!r}".format(invariants_dunder)
+
+    # region Invariants
     invariants = []  # type: List[Contract]
 
     # Add invariants of the bases
     for base in bases:
-        if hasattr(base, "__invariants__"):
-            invariants.extend(getattr(base, "__invariants__"))
+        if hasattr(base, invariants_dunder):
+            invariants.extend(getattr(base, invariants_dunder))
 
     # Add invariants in the current namespace
-    if "__invariants__" in namespace:
-        invariants.extend(namespace["__invariants__"])
+    if invariants_dunder in namespace:
+        invariants.extend(namespace[invariants_dunder])
 
     # Change the final invariants in the namespace
     if invariants:
-        namespace["__invariants__"] = invariants
+        namespace[invariants_dunder] = invariants
+
+    # endregion
 
 
 def _collapse_preconditions(
@@ -323,7 +338,14 @@ def _dbc_decorate_namespace(
     Instance methods are simply replaced with the decorated function/ Properties, class methods and static methods are
     overridden with new instances of ``property``, ``classmethod`` and ``staticmethod``, respectively.
     """
-    _collapse_invariants(bases=bases, namespace=namespace)
+    for invariant_dunder in (
+        "__invariants__",
+        "__invariants_on_call__",
+        "__invariants_on_setattr__",
+    ):
+        _collapse_invariants(
+            bases=bases, namespace=namespace, invariants_dunder=invariant_dunder
+        )
 
     for key, value in namespace.items():
         if inspect.isfunction(value) or isinstance(value, (staticmethod, classmethod)):
