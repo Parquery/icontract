@@ -1,3 +1,11 @@
+2.7.1
+=====
+* Fixed invariants leak between related classes (#297)
+
+This is a critical bugfix patch version. We introduced a bug in
+2.7.0 (#292) where invariants defined on derived classes leaked up
+to parent classes. This bug is fixed in this version.
+
 2.7.0
 =====
 * Allowed to enforce invariants on attribute setting (#292)
