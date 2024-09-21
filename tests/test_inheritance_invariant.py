@@ -51,6 +51,117 @@ class TestOK(unittest.TestCase):
             "Invariant is expected to run before and after the method call.",
         )
 
+    def test_level_1_inheritance_of_invariants_does_not_leak_to_parents(self) -> None:
+        # NOTE (mristin):
+        # This is a regression test for:
+        # https://github.com/Parquery/icontract/issues/295
+        #
+        # The invariants added to a child class were unexpectedly leaked back to
+        # the parent class.
+
+        @icontract.invariant(lambda: True)
+        class Base(icontract.DBC):
+            def do_something(self) -> None:
+                pass
+
+            def __repr__(self) -> str:
+                return "instance of {}".format(self.__class__.__name__)
+
+        @icontract.invariant(lambda: False)
+        class Derived(Base):
+            pass
+
+        Base()
+
+        # NOTE (mristin):
+        # This produced an unexpected violation error.
+        Base().do_something()
+
+        had_violation_error = False
+        try:
+            Derived()
+        except icontract.ViolationError:
+            had_violation_error = True
+
+        assert had_violation_error
+
+    def test_level_2_inheritance_of_invariants_does_not_leak_to_parents(self) -> None:
+        # NOTE (mristin):
+        # This is a regression test for:
+        # https://github.com/Parquery/icontract/issues/295
+        #
+        # The invariants added to a child class were unexpectedly leaked back to
+        # the parent class.
+
+        @icontract.invariant(lambda: True)
+        class Base(icontract.DBC):
+            def do_something(self) -> None:
+                pass
+
+            def __repr__(self) -> str:
+                return "instance of {}".format(self.__class__.__name__)
+
+        @icontract.invariant(lambda: True)
+        class Derived(Base):
+            pass
+
+        @icontract.invariant(lambda: False)
+        class DerivedDerived(Base):
+            pass
+
+        Base()
+        Base().do_something()
+        Derived()
+
+        had_violation_error = False
+        try:
+            DerivedDerived()
+        except icontract.ViolationError:
+            had_violation_error = True
+
+        assert had_violation_error
+
+    # noinspection PyUnusedLocal
+    def test_level_3_inheritance_of_invariants_does_not_leak_to_parents(self) -> None:
+        # NOTE (mristin):
+        # This is a regression test for:
+        # https://github.com/Parquery/icontract/issues/295
+        #
+        # The invariants added to a child class were unexpectedly leaked back to
+        # the parent class.
+
+        class A(icontract.DBC):
+            def do_something(self) -> None:
+                pass
+
+            def __repr__(self) -> str:
+                return "instance of {}".format(self.__class__.__name__)
+
+        @icontract.invariant(lambda: True)
+        class B(A):
+            pass
+
+        # NOTE (mristin):
+        # CFalse should not in any way influence A, B and CTrue, but it did due to
+        # a bug.
+        @icontract.invariant(lambda: False)
+        class CFalse(B):  # pylint: disable=unused-variable
+            pass
+
+        @icontract.invariant(lambda: True)
+        class CTrue(B):
+            pass
+
+        A()
+
+        CTrue()
+
+        A().do_something()
+
+        # NOTE (mristin):
+        # This produced an unexpected violation error.
+        CTrue().do_something()
+
 
 class TestViolation(unittest.TestCase):
     def test_inherited(self) -> None:
