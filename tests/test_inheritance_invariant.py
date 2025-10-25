@@ -162,6 +162,49 @@ class TestOK(unittest.TestCase):
         # This produced an unexpected violation error.
         CTrue().do_something()
 
+    def test_calling_super_init_checks_invariants_of_parent_not_child(self) -> None:
+        # NOTE (mristin):
+        # This test is a regression test from:
+        # https://github.com/Parquery/icontract/issues/300
+
+        @icontract.invariant(lambda self: True)
+        class A(icontract.DBC):
+            def __init__(self) -> None:
+                pass
+
+        @icontract.invariant(lambda self: self.x > 0)
+        class B(A):
+            def __init__(self, x: int) -> None:
+                super().__init__()
+                self.x = x
+
+        _ = B(2)
+
+    def test_calling_multi_super_init_checks_invariants_of_parent_not_child(
+        self,
+    ) -> None:
+        # NOTE (mristin):
+        # This test is a regression test from:
+        # https://github.com/Parquery/icontract/issues/300
+
+        @icontract.invariant(lambda self: True)
+        class A1(icontract.DBC):
+            def __init__(self) -> None:
+                pass
+
+        @icontract.invariant(lambda self: True)
+        class A2(icontract.DBC):
+            def __init__(self) -> None:
+                pass
+
+        @icontract.invariant(lambda self: self.x > 0)
+        class B(A1, A2):
+            def __init__(self, x: int) -> None:
+                super().__init__()
+                self.x = x
+
+        _ = B(2)
+
 
 class TestViolation(unittest.TestCase):
     def test_inherited(self) -> None:
@@ -242,12 +285,11 @@ class TestViolation(unittest.TestCase):
                 self.x = 10
 
             def __repr__(self) -> str:
-                return "an instance of A"
+                return "an instance of {}".format(self.__class__.__name__)
 
         @icontract.invariant(lambda self: self.x > 100)
         class B(A):
-            def __repr__(self) -> str:
-                return "an instance of B"
+            pass
 
         violation_error = None  # type: Optional[icontract.ViolationError]
         try:
@@ -373,6 +415,355 @@ class TestViolation(unittest.TestCase):
                 self.x > 0:
                 self was an instance of B
                 self.x was -1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
+
+    def test_violated_in_super_init(self) -> None:
+        # NOTE (mristin):
+        # This test is a regression test from:
+        # https://github.com/Parquery/icontract/issues/300
+
+        @icontract.invariant(lambda self: self.x > 0)
+        class A(icontract.DBC):
+            def __init__(self, x: int):
+                self.x = x
+
+            def __repr__(self) -> str:
+                return "an instance of {}".format(self.__class__.__name__)
+
+        @icontract.invariant(lambda self: self.x > 10)
+        class B(A):
+            def __init__(self, x: int):  # pylint: disable=useless-parent-delegation
+                super().__init__(x)
+
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            _ = B(-1)
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual(
+            # NOTE (mristin):
+            # This is an exception expected to be raised after super().__init__ call, not after B.__init__.
+            textwrap.dedent(
+                """\
+                self.x > 0:
+                self was an instance of B
+                self.x was -1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
+
+    def test_violated_in_one_of_multi_super_init(self) -> None:
+        # NOTE (mristin):
+        # This test is a regression test from:
+        # https://github.com/Parquery/icontract/issues/300
+
+        @icontract.invariant(lambda self: self.x > 0)
+        class A1(icontract.DBC):
+            def __init__(self, x: int):
+                self.x = x
+
+            def __repr__(self) -> str:
+                return "an instance of {}".format(self.__class__.__name__)
+
+        @icontract.invariant(lambda self: self.x > 2)
+        class A2(icontract.DBC):
+            def __init__(self, x: int):
+                self.x = x
+
+        @icontract.invariant(lambda self: self.x > 10)
+        class B(A1, A2):
+            def __init__(self, x: int):
+                A1.__init__(self, x)
+                A2.__init__(self, x)
+
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            # NOTE (mristin):
+            # This is expected to violate __init__ in A2 but not A1.
+            _ = B(1)
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual(
+            # NOTE (mristin):
+            # ``self.x > 2`` indiactes a violation in __init__ of A2 but not A1 and not B.
+            textwrap.dedent(
+                """\
+                self.x > 2:
+                self was an instance of B
+                self.x was 1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
+
+    def test_super_init_passes_but_init_violated(self) -> None:
+        # NOTE (mristin):
+        # This test is a regression test from:
+        # https://github.com/Parquery/icontract/issues/300
+
+        @icontract.invariant(lambda self: self.x > 0)
+        class A(icontract.DBC):
+            def __init__(self, x: int):
+                self.x = x
+
+            def __repr__(self) -> str:
+                return "an instance of {}".format(self.__class__.__name__)
+
+        @icontract.invariant(lambda self: self.x > 10)
+        class B(A):
+            def __init__(self, x: int):  # pylint: disable=useless-parent-delegation
+                super().__init__(x)
+
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            _ = B(2)
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual(
+            # NOTE (mristin):
+            # This is an exception expected to be raised after B.__init__, but not earlier after super().__init__ call.
+            textwrap.dedent(
+                """\
+                self.x > 10:
+                self was an instance of B
+                self.x was 2"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
+
+    def test_multi_super_inits_pass_but_init_violated(self) -> None:
+        # NOTE (mristin):
+        # This test is a regression test from:
+        # https://github.com/Parquery/icontract/issues/300
+
+        @icontract.invariant(lambda self: self.x > 0)
+        class A1(icontract.DBC):
+            def __init__(self, x: int):
+                self.x = x
+
+            def __repr__(self) -> str:
+                return "an instance of {}".format(self.__class__.__name__)
+
+        @icontract.invariant(lambda self: self.x > 2)
+        class A2(icontract.DBC):
+            def __init__(self, x: int):
+                self.x = x
+
+            def __repr__(self) -> str:
+                return "an instance of {}".format(self.__class__.__name__)
+
+        @icontract.invariant(lambda self: self.x > 10)
+        class B(A1, A2):
+            def __init__(self, x: int):
+                A1.__init__(self, x)
+                A2.__init__(self, x)
+
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            _ = B(3)
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual(
+            # NOTE (mristin):
+            # This is an exception expected to be raised after B.__init__, but not in any super __init__ calls.
+            textwrap.dedent(
+                """\
+                self.x > 10:
+                self was an instance of B
+                self.x was 3"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
+
+    def test_invariant_violated_in_parent_in_implicit_init(self) -> None:
+        @icontract.invariant(lambda self: self.x > 0)
+        class A(icontract.DBC):
+            def __init__(self, x: int) -> None:
+                self.x = x
+
+            def __repr__(self) -> str:
+                return "an instance of {}".format(self.__class__.__name__)
+
+        @icontract.invariant(lambda self: self.x > 10)
+        class B(A):
+            # NOTE (mristin):
+            # We explicitly define no constructor (``__init__``) here. The constructor is implicitly called
+            # from A (``A.__init__``). However, after the call to the implicit constructor, the invariants of B,
+            # and not only A, should apply.
+            pass
+
+        # NOTE (mristin):
+        # We check that the invariants of the parent are violated here.
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            _ = B(-1)
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual(
+            # NOTE (mristin):
+            # This is a violation expected to be raised after A.__init__ which is delegated to from B.__init__.
+            textwrap.dedent(
+                """\
+                self.x > 0:
+                self was an instance of B
+                self.x was -1"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
+
+    def test_invariant_violated_in_one_of_parents_in_implicit_init(self) -> None:
+        @icontract.invariant(lambda self: self.x > 0)
+        class A1(icontract.DBC):
+            def __init__(self, x: int) -> None:
+                self.x = x
+
+            def __repr__(self) -> str:
+                return "an instance of {}".format(self.__class__.__name__)
+
+        @icontract.invariant(lambda self: self.x > 5)
+        class A2(icontract.DBC):
+            def __init__(self, x: int) -> None:
+                self.x = x
+
+        class B(A1, A2):
+            # NOTE (mristin):
+            # We explicitly define no constructor (``__init__``) here. The constructor is implicitly called
+            # from one of the parents (``A1.__init__`` or ``A2.__init__``). However, after the call to the implicit
+            # constructor, the invariants of B, and not only of A1 and A2, should apply.
+            pass
+
+        # NOTE (mristin):
+        # We check that the invariants of one of the parents are violated here.
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            _ = B(3)
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual(
+            # NOTE (mristin):
+            # This is a violation expected to be raised after A2.__init__ which is delegated to from B.__init__.
+            textwrap.dedent(
+                """\
+                self.x > 5:
+                self was an instance of B
+                self.x was 3"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
+
+    def test_invariant_violated_in_child_in_implicit_init(self) -> None:
+        @icontract.invariant(lambda self: self.x > 0)
+        class A(icontract.DBC):
+            def __init__(self, x: int) -> None:
+                self.x = x
+
+            def __repr__(self) -> str:
+                return "an instance of {}".format(self.__class__.__name__)
+
+        @icontract.invariant(lambda self: self.x > 10)
+        class B(A):
+            # NOTE (mristin):
+            # We explicitly define no constructor (``__init__``) here. The constructor is implicitly called
+            # from A (``A.__init__``). However, after the call to the implicit constructor, the invariants of B,
+            # and not only A, should apply.
+            pass
+
+        # NOTE (mristin):
+        # We make sure explicitly that the invariants did not leak to the parent -- the invariants of B should not
+        # apply to an instance of A.
+        _ = A(3)
+
+        # NOTE (mristin):
+        # We also double-check that the invariants pass correctly.
+        _ = B(11)
+
+        # NOTE (mristin):
+        # Now we check that the invariants are violated which we exactly expect.
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            _ = B(3)
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual(
+            # NOTE (mristin):
+            # This is a violation expected to be raised after B.__init__ even though B.__init__ is simply delegated to
+            # A.__init__.
+            textwrap.dedent(
+                """\
+                self.x > 10:
+                self was an instance of B
+                self.x was 3"""
+            ),
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
+
+    def test_invariant_violated_in_child_in_implicit_init_with_multiple_inheritance(
+        self,
+    ) -> None:
+        @icontract.invariant(lambda self: self.x > 0)
+        class A1(icontract.DBC):
+            def __init__(self, x: int) -> None:
+                self.x = x
+
+            def __repr__(self) -> str:
+                return "an instance of {}".format(self.__class__.__name__)
+
+        @icontract.invariant(lambda self: self.x > 5)
+        class A2(icontract.DBC):
+            def __init__(self, x: int) -> None:
+                self.x = x
+
+        @icontract.invariant(lambda self: self.x > 10)
+        class B(A1, A2):
+            # NOTE (mristin):
+            # We explicitly define no constructor (``__init__``) here. The constructor is implicitly called
+            # from one of the super classes. However, after the call to the implicit constructor, the invariants of B,
+            # and not only of A1 and A2, should apply.
+            pass
+
+        # NOTE (mristin):
+        # We make sure explicitly that the invariants did not leak to the parent -- the invariants of B should not
+        # apply to an instance of A1 or of A2.
+        _ = A1(3)
+        _ = A2(7)
+
+        # NOTE (mristin):
+        # We also double-check that the invariant checks can pass correctly.
+        _ = B(11)
+
+        # NOTE (mristin):
+        # Now we check that the invariants are violated which we exactly expect.
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            _ = B(8)
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual(
+            # NOTE (mristin):
+            # This is a violation expected to be raised after B.__init__ even though B.__init__ is simply delegated to
+            # either A1.__init__ or A2.__init__.
+            textwrap.dedent(
+                """\
+                self.x > 10:
+                self was an instance of B
+                self.x was 8"""
             ),
             tests.error.wo_mandatory_location(str(violation_error)),
         )
