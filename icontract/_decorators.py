@@ -1,4 +1,5 @@
 """Define public decorators."""
+
 import inspect
 import reprlib
 import traceback
