@@ -587,9 +587,14 @@ class TestInvalid(unittest.TestCase):
                 "Can't instantiate abstract class B with abstract methods func",
                 str(type_err),
             )
-        else:
+        elif sys.version_info < (3, 12):
             self.assertEqual(
                 "Can't instantiate abstract class B with abstract method func",
+                str(type_err),
+            )
+        else:
+            self.assertEqual(
+                "Can't instantiate abstract class B without an implementation for abstract method 'func'",
                 str(type_err),
             )
 

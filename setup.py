@@ -36,13 +36,13 @@ setup(
         # fmt: off
         'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
         # fmt: on
     ],
     license="License :: OSI Approved :: MIT License",
@@ -55,7 +55,8 @@ setup(
     ],
     extras_require={
         "dev": [
-            'pylint==3.2.7;python_version>="3.8"',
+            'pylint==2.17.5;python_version>="3.7" and python_version<"3.12"',
+            'pylint==4.0.2;python_version>="3.12"',
             "tox>=3.0.0",
             "pydocstyle>=6.3.0,<7",
             "coverage>=6.5.0,<7",
@@ -67,8 +68,9 @@ setup(
             "typeguard>=2,<5",
             "astor==0.8.1",
             "numpy>=1,<2",
-            'mypy==1.14.1;python_version>="3.8"',
-            'black==24.8.0;python_version>="3.8"',
+            'mypy==1.5.1;python_version>="3.8" and python_version<"3.12"',
+            'mypy==1.18.2;python_version>="3.12"',
+            'black==23.9.1;python_version>="3.8"',
             'deal>=4,<5;python_version>="3.8"',
             'asyncstdlib==3.9.1;python_version>="3.8"',
         ]

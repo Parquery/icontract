@@ -99,8 +99,18 @@ def main() -> int:
             pylint_targets.append("tests_3_8")
             pylint_targets.append("tests_with_others")
 
+        import pylint
+        import packaging.version
+
+        if packaging.version.parse(pylint.__version__) < packaging.version.parse(
+            "3.3.7"
+        ):
+            rcfile = "pylint.lt_3.3.7.rc"
+        else:
+            rcfile = "pylint.ge_3.3.7.rc"
+
         subprocess.check_call(
-            ["pylint", "--rcfile=pylint.rc"] + pylint_targets, cwd=str(repo_root)
+            ["pylint", f"--rcfile={rcfile}"] + pylint_targets, cwd=str(repo_root)
         )
 
     print("Pydocstyle'ing...")
