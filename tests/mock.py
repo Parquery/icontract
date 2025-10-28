@@ -1,4 +1,5 @@
 """Provide mock structures used accross the tests."""
+
 from typing import List, Union
 
 

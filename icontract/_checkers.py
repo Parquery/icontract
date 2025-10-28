@@ -1,4 +1,5 @@
 """Provide functions to add/find contract checkers."""
+
 import contextvars
 import functools
 import inspect
@@ -1289,15 +1290,21 @@ def add_invariant_checks(cls: ClassT) -> None:
 
     for name, prop in names_properties:
         new_prop = property(
-            fget=_decorate_with_invariants(func=prop.fget, is_init=False)
-            if prop.fget
-            else None,
-            fset=_decorate_with_invariants(func=prop.fset, is_init=False)
-            if prop.fset
-            else None,
-            fdel=_decorate_with_invariants(func=prop.fdel, is_init=False)
-            if prop.fdel
-            else None,
+            fget=(
+                _decorate_with_invariants(func=prop.fget, is_init=False)
+                if prop.fget
+                else None
+            ),
+            fset=(
+                _decorate_with_invariants(func=prop.fset, is_init=False)
+                if prop.fset
+                else None
+            ),
+            fdel=(
+                _decorate_with_invariants(func=prop.fdel, is_init=False)
+                if prop.fdel
+                else None
+            ),
             doc=prop.__doc__,
         )
         setattr(cls, name, new_prop)

@@ -1,4 +1,5 @@
 """Handle representations necessary for informative error messages."""
+
 import ast
 import inspect
 import re
@@ -405,7 +406,7 @@ def find_lambda_condition(
 
 
 def inspect_lambda_condition(
-    condition: Callable[..., Any]
+    condition: Callable[..., Any],
 ) -> Optional[ConditionLambdaInspection]:
     """
     Try to extract the source code of the condition as lambda.

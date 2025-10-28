@@ -1,4 +1,5 @@
 """Define the metaclass necessary to inherit the contracts from the base classes."""
+
 import abc
 import inspect
 import sys
