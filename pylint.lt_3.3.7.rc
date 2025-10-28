@@ -1,11 +1,9 @@
 [TYPECHECK]
 ignored-modules = numpy
 ignored-classes = numpy,PurePath
-generated-members=bottle\.request\.forms\.decode,bottle\.request\.query\.decode
 
 [FORMAT]
 max-line-length=120
 
 [MESSAGES CONTROL]
 disable=too-few-public-methods,len-as-condition,duplicate-code,no-else-raise,too-many-locals,too-many-branches,too-many-lines,too-many-arguments,too-many-statements,too-many-nested-blocks,too-many-function-args,too-many-instance-attributes,too-many-public-methods,protected-access,consider-using-in,no-member,consider-using-f-string,use-dict-literal,redundant-keyword-arg,no-else-return
-

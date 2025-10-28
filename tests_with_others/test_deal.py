@@ -1,7 +1,6 @@
 # pylint: disable=missing-docstring
 # pylint: disable=broad-except
 # pylint: disable=invalid-name
-
 import unittest
 from typing import Optional
 
@@ -10,7 +9,11 @@ import deal
 
 class TestDeal(unittest.TestCase):
     def test_recursion_handled_in_preconditions(self) -> None:
-        @deal.pre(lambda _: another_func())  # type: ignore
+        # NOTE (mristin):
+        # Mypy 1.5.1 throws here a misc error -- that the untyped decorator forces the function to be untyped as well.
+        # On the other hand, mypy 1.18.2 can figure this situation, and throws unused-ignore. We ignore both cases
+        # to be able to support both versions of mypy.
+        @deal.pre(lambda _: another_func())  # type: ignore[unused-ignore,misc]
         @deal.pre(lambda _: yet_another_func())
         def some_func() -> bool:
             return True

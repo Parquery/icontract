@@ -232,7 +232,7 @@ def _translate_all_expression_to_a_module(
             )  # type: Union[ast.FunctionDef, ast.AsyncFunctionDef]
 
             module_node = ast.Module(body=[func_def_node])
-        else:
+        elif sys.version_info < (3, 12):
             func_def_node = ast.FunctionDef(
                 name=generated_function_name,
                 args=ast.arguments(
@@ -246,6 +246,24 @@ def _translate_all_expression_to_a_module(
                 ),
                 decorator_list=[],
                 body=block,
+            )
+
+            module_node = ast.Module(body=[func_def_node], type_ignores=[])
+        else:
+            func_def_node = ast.FunctionDef(
+                name=generated_function_name,
+                args=ast.arguments(
+                    args=args,
+                    posonlyargs=[],
+                    kwonlyargs=[],
+                    kw_defaults=[],
+                    defaults=[],
+                    vararg=None,
+                    kwarg=None,
+                ),
+                body=block,
+                decorator_list=[],
+                type_params=[],
             )
 
             module_node = ast.Module(body=[func_def_node], type_ignores=[])
@@ -266,6 +284,23 @@ def _translate_all_expression_to_a_module(
             )
 
             module_node = ast.Module(body=[async_func_def_node])
+        elif sys.version_info < (3, 12):
+            async_func_def_node = ast.AsyncFunctionDef(
+                name=generated_function_name,
+                args=ast.arguments(
+                    args=args,
+                    posonlyargs=[],
+                    kwonlyargs=[],
+                    kw_defaults=[],
+                    defaults=[],
+                    vararg=None,
+                    kwarg=None,
+                ),
+                decorator_list=[],
+                body=block,
+            )
+
+            module_node = ast.Module(body=[async_func_def_node], type_ignores=[])
         else:
             async_func_def_node = ast.AsyncFunctionDef(
                 name=generated_function_name,
@@ -280,6 +315,7 @@ def _translate_all_expression_to_a_module(
                 ),
                 decorator_list=[],
                 body=block,
+                type_params=[],
             )
 
             module_node = ast.Module(body=[async_func_def_node], type_ignores=[])
@@ -925,6 +961,21 @@ class Visitor(ast.NodeVisitor):
             )
 
             module_node = ast.Module(body=[func_def_node])
+        elif sys.version_info < (3, 12):
+            func_def_node = ast.FunctionDef(
+                name="generator_expr",
+                args=ast.arguments(
+                    args=args,
+                    posonlyargs=[],
+                    kwonlyargs=[],
+                    kw_defaults=[],
+                    defaults=[],
+                ),
+                decorator_list=[],
+                body=[ast.Return(node)],
+            )
+
+            module_node = ast.Module(body=[func_def_node], type_ignores=[])
         else:
             func_def_node = ast.FunctionDef(
                 name="generator_expr",
@@ -937,6 +988,7 @@ class Visitor(ast.NodeVisitor):
                 ),
                 decorator_list=[],
                 body=[ast.Return(node)],
+                type_params=[],
             )
 
             module_node = ast.Module(body=[func_def_node], type_ignores=[])
