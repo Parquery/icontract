@@ -979,13 +979,14 @@ def _decorate_new_with_invariants(new_func: CallableT) -> CallableT:
     return wrapper  # type: ignore
 
 
-def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
+def _decorate_with_invariants(func: CallableT, cls: ClassT, is_init: bool) -> CallableT:
     """
     Decorate the method ``func`` with invariant checks.
 
     If the function has been already decorated with invariant checks, the function returns immediately.
 
     :param func: function to be wrapped
+    :param cls: class corresponding to the invariant and ``func``
     :param is_init: True if the ``func`` is __init__
     :return: function wrapped with invariant checks
     """
@@ -1027,7 +1028,25 @@ def _decorate_with_invariants(func: CallableT, is_init: bool) -> CallableT:
             try:
                 result = func(*args, **kwargs)
 
-                for invariant in instance.__class__.__invariants__:
+                # NOTE (mristin):
+                # We go to the invariants corresponding to the class, not the instance, as we need to
+                # account also for a situation where super().__init__ is called. Here is an example:
+                #
+                # @invariant(lambda self: ...)
+                # class A(DBC):
+                #     pass
+                #
+                # @invariant(lambda self: ...)
+                # class B(A):
+                #     def __init__(self) -> None:
+                #         super().__init__()
+                #         # ↖ After this call, only the invariants of A, but not B, have to be checked.
+                #         #
+                #         #     However, the ``instance`` (i.e., resolved ``self``) in super().__init__ call points to
+                #         #     an instance of B, so instance.__cls__.__invariants__ refer to invariants of B, not A.
+
+                # noinspection PyUnresolvedReferences
+                for invariant in cls.__invariants__:  # type: ignore
                     _assert_invariant(contract=invariant, instance=instance)
 
                 return result
@@ -1273,35 +1292,97 @@ def add_invariant_checks(cls: ClassT) -> None:
                 )
             )
 
-    if init_func:
-        # We have to distinguish this special case which is used by named
-        # tuples and possibly other optimized data structures.
-        # In those cases, we have to wrap __new__ instead of __init__.
-        if init_func == object.__init__ and hasattr(cls, "__new__"):
-            new_func = getattr(cls, "__new__")
-            setattr(cls, "__new__", _decorate_new_with_invariants(new_func))
-        else:
-            wrapper = _decorate_with_invariants(func=init_func, is_init=True)
-            setattr(cls, init_func.__name__, wrapper)
+    assert init_func is not None, "Every class in Python must have a constructor."
+
+    # We must handle this special case which is used by named
+    # tuples and possibly other optimized data structures.
+    # In those cases, we have to wrap __new__ instead of __init__.
+    if init_func == object.__init__ and hasattr(cls, "__new__"):
+        new_func = getattr(cls, "__new__")
+        setattr(cls, "__new__", _decorate_new_with_invariants(new_func))
+    else:
+        # NOTE (mristin):
+        # We have to create a new __init__ function so that the invariants of *this* class are checked.
+        # The problem arises due to two different cases related to inheritance which we can not distinguish in Python.
+        # Namely, we can not know whether we are dealing with invariants coming from ``super().__init__`` or
+        # an implicit call to ``__init__``.
+        #
+        # In both of these edge cases, the instance is of the child class, but the constructors are
+        # of the parent class. Checking the invariants attached to the class would break the second case, while checking
+        # the invariants attached to the instance (through ``self.__class__.__invariants__``) would break the first
+        # case.
+        #
+        # The following snippets depict the two cases.
+        #
+        # Case 1: ``super().__init__``
+        # @invariant(lambda self: ...)
+        # class A(DBC):
+        #      pass
+        #
+        # @invariant(lambda self: ...)
+        # class B(A):
+        #     def __init__(self) -> None:
+        #         super().__init__()
+        #         # ↖ After this call, only the invariants of A, but not B, have to be checked.
+        #         # More code follows, and after this ``__init__``, invariants of B have to be checked.
+        #
+        # Case 2: Implicit ``__init__`` call
+        # @invariant(lambda self: ...)
+        # class A(DBC):
+        #      pass
+        #
+        # @invariant(lambda self: ...)
+        # class B(A):
+        #    pass
+        #
+        # b = B()
+        # # ↖ After this call, the invariants of B have to be checked.
+        # #   However, we only see the call to A.__init__, since there is no B.__init__.
+        #
+        # Therefore, to avert this problem, we have to create an ``__init__`` in the child class for the second
+        # case. This allows us to always check for invariants attached to the class in the case of constructors, so both
+        # cases can be successfully handled.
+
+        if "__init__" not in cls.__dict__:
+            init_after_mro = (
+                # NOTE (mristin):
+                # mypy gives us the following warning:
+                # Accessing "__init__" on an instance is unsound, since instance.__init__ could be from an incompatible
+                # subclass
+                #
+                # ... but this is exactly what we want here -- we want to look up the __init__ of the class at runtime.
+                cls.__init__  # type: ignore
+            )  # This is the constructor after MRO, pointing to one of the parent classes.
+
+            def __init__(self: Any, *args: Any, **kwargs: Any) -> None:
+                init_after_mro(self, *args, **kwargs)
+
+            # NOTE (mristin):
+            # See the comment above corresponding to this mypy warning.
+            cls.__init__ = __init__  # type: ignore
+            init_func = __init__
+
+        wrapper = _decorate_with_invariants(func=init_func, cls=cls, is_init=True)
+        setattr(cls, init_func.__name__, wrapper)
 
     for name, func in names_funcs:
-        wrapper = _decorate_with_invariants(func=func, is_init=False)
+        wrapper = _decorate_with_invariants(func=func, cls=cls, is_init=False)
         setattr(cls, name, wrapper)
 
     for name, prop in names_properties:
         new_prop = property(
             fget=(
-                _decorate_with_invariants(func=prop.fget, is_init=False)
+                _decorate_with_invariants(func=prop.fget, cls=cls, is_init=False)
                 if prop.fget
                 else None
             ),
             fset=(
-                _decorate_with_invariants(func=prop.fset, is_init=False)
+                _decorate_with_invariants(func=prop.fset, cls=cls, is_init=False)
                 if prop.fset
                 else None
             ),
             fdel=(
-                _decorate_with_invariants(func=prop.fdel, is_init=False)
+                _decorate_with_invariants(func=prop.fdel, cls=cls, is_init=False)
                 if prop.fdel
                 else None
             ),
