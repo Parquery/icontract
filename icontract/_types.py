@@ -1,4 +1,5 @@
 """Define data structures shared among the modules."""
+
 import enum
 import inspect
 import reprlib
