@@ -1,3 +1,17 @@
+2.7.2
+=====
+* Fix child invariants checked in ``super().__init__`` (#301)
+* Support Python 3.13 (#309)
+* Add support for Python 3.12 (#308)
+
+This is a critical bugfix patch version. Previously, we determined
+the invariants based on the ``self`` passed to the function. However,
+in case of ``super().__init__``, the invariants that need to be checked
+after the call are those belonging to to the super class, not
+the current (child) class. This lead to erroneous invariant checks, where
+the invariants of the child class where checked after the super-init call
+in the parent class.
+
 2.7.1
 =====
 * Fixed invariants leak between related classes (#297)
