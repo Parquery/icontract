@@ -1203,6 +1203,12 @@ def add_invariant_checks(cls: ClassT) -> None:
     """Decorate each of the class functions with invariant checks if not already decorated."""
     # Candidates for the decoration as list of (name, dir() value)
     init_func = None  # type: Optional[Callable[..., None]]
+
+    # NOTE (mristin):
+    # We also have to disable the invariant checks *before* and *during* the call to
+    # __setstate__ function as the invariants can not hold while unpickling the object.
+    setstate_func = None  # type: Optional[Callable[..., None]]
+
     names_funcs = []  # type: List[Tuple[str, Callable[..., None]]]
     names_properties = []  # type: List[Tuple[str, property]]
 
@@ -1244,6 +1250,14 @@ def add_invariant_checks(cls: ClassT) -> None:
             )
 
             init_func = value
+            continue
+
+        if name == "__setstate__":
+            assert inspect.isfunction(
+                value
+            ), "Expected __setstate__ to be a function, but got: {}".format(type(value))
+
+            setstate_func = value
             continue
 
         if (
@@ -1364,6 +1378,16 @@ def add_invariant_checks(cls: ClassT) -> None:
 
         wrapper = _decorate_with_invariants(func=init_func, cls=cls, is_init=True)
         setattr(cls, init_func.__name__, wrapper)
+
+    if setstate_func is not None:
+        assert setstate_func.__name__ == "__setstate__"
+
+        # NOTE (mristin):
+        # We make the decoration of __setstate__ the same as for the init function since
+        # we want to disable the invariant checks before and during the call, but we
+        # need to check the invariants *after* the call.
+        wrapper = _decorate_with_invariants(func=setstate_func, cls=cls, is_init=True)
+        setattr(cls, setstate_func.__name__, wrapper)
 
     for name, func in names_funcs:
         wrapper = _decorate_with_invariants(func=func, cls=cls, is_init=False)

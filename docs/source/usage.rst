@@ -153,6 +153,9 @@ To save you some typing, we introduced the shortcut, :attr:`InvariantCheckEvent.
 	The property getters and setters are considered "normal" methods. If you want to check the invariants at property
 	getters and/or setters, make sure to include :attr:`InvariantCheckEvent.CALL` in ``check_on``.
 
+In addition, we treat ``__setstate__`` as a constructor.
+That is, the invariants are checked *after* the call, but not before and during the call, as unpickling results in intermediate object states which might be invalid.
+
 The following examples show various cases when an invariant is breached.
 
 After the initialization:
