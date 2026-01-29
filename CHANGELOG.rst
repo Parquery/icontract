@@ -1,3 +1,11 @@
+2.7.3
+=====
+* Treat ``__setstate__`` as constructor (#311)
+
+This is a patch release so that we can enable unpickling of class
+instances where some of the attributes are not pickled and only restored
+in ``__setstate__``.
+
 2.7.2
 =====
 * Fix child invariants checked in ``super().__init__`` (#301)
