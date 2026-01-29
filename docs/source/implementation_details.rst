@@ -95,4 +95,5 @@ checks which, on their hand, might check on yet-to-be-defined instance attribute
             def some_func(self) -> int:
                 return 1984
 
+
 .. _functools.update_wrapper: https://docs.python.org/3/library/functools.html#functools.update_wrapper

@@ -1,6 +1,8 @@
 # pylint: disable=missing-docstring
 # pylint: disable=invalid-name
 # pylint: disable=unused-argument
+import io
+import pickle
 import textwrap
 import time
 import unittest
@@ -16,6 +18,84 @@ from typing import (
 import icontract
 import tests.error
 import tests.mock
+
+
+# NOTE (mristin):
+# We need to introduce a global class so that we can perform tests with pickling. Pickle module does
+# not support local classes.
+@icontract.invariant(lambda self: self.x > 0)
+class AMadeForPickling:
+    def __init__(self, x: int) -> None:
+        self.x = x
+
+
+@icontract.invariant(lambda self: self.x > 0)
+@icontract.invariant(lambda self: self.y > 0)
+class AMadeForPicklingWithSetState:
+    def __init__(self, x: int) -> None:
+        self.x = x
+
+        # NOTE (mristin):
+        # The attribute ``y`` is computed here, and we will not pickle it intentionally.
+        self._compute_internal_state()
+
+    def _compute_internal_state(self) -> None:
+        self.y = self.x + 10
+
+    def __getstate__(self) -> Dict[str, Any]:
+        state = self.__dict__.copy()
+
+        # NOTE (mristin):
+        # We intentionally do not want to pickle ``y``.
+        state.pop("y", None)
+
+        return state
+
+    def __setstate__(self, state: Dict[str, Any]) -> None:
+        # NOTE (mristin):
+        # The invariants should not be checked in __setstate__ as the object
+        # will not be in the correct state.
+
+        self.__dict__.update(state)
+
+        # NOTE (mristin):
+        # We have to re-compute the internal state.
+        self._compute_internal_state()
+
+
+@icontract.invariant(lambda self: self.x > 0)
+@icontract.invariant(lambda self: self.y > 0)
+class AMadeForPicklingWithInvalidSetState:
+    def __init__(self, x: int) -> None:
+        self.x = x
+
+        # NOTE (mristin):
+        # The creation does not violate the invariant.
+        self.y = 1000
+
+    def __getstate__(self) -> Dict[str, Any]:
+        state = self.__dict__.copy()
+
+        # NOTE (mristin):
+        # We intentionally do not want to pickle ``y``.
+        state.pop("y", None)
+
+        return state
+
+    def __setstate__(self, state: Dict[str, Any]) -> None:
+        # NOTE (mristin):
+        # The invariants should not be checked before and during the __setstate__
+        # as the object will not be in the correct state, but they should be
+        # checked after the call.
+
+        self.__dict__.update(state)
+
+        # NOTE (mristin):
+        # We wrongly re-compute the internal state; this violates the invariant.
+        self.y = -1000
+
+    def __repr__(self) -> str:
+        return "an instance of {}".format(self.__class__.__name__)
 
 
 class TestOK(unittest.TestCase):
@@ -274,6 +354,34 @@ class TestOK(unittest.TestCase):
         # 4 checks before the methods +
         # 4 checks after the methods.
         self.assertEqual(9, counter)
+
+    def test_pickle(self) -> None:
+        a = AMadeForPickling(x=2)
+
+        buffer = io.BytesIO()
+        # noinspection PyTypeChecker
+        pickle.dump(a, buffer)
+
+        buffer.seek(0)
+        _ = pickle.load(buffer)
+
+        # NOTE (mristin):
+        # No invariant violation expected even though __setstate__ will result in
+        # a temporarily invalid object state.
+
+    def test_pickle_with_setstate(self) -> None:
+        a = AMadeForPicklingWithSetState(x=2)
+
+        buffer = io.BytesIO()
+        # noinspection PyTypeChecker
+        pickle.dump(a, buffer)
+
+        buffer.seek(0)
+        _ = pickle.load(buffer)
+
+        # NOTE (mristin):
+        # No invariant violation expected even though __setstate__ will result in
+        # a temporarily invalid object state.
 
 
 class TestViolation(unittest.TestCase):
@@ -647,6 +755,33 @@ class TestViolation(unittest.TestCase):
         self.assertIsNotNone(violation_error)
         self.assertEqual(
             "some_condition: self was A(x=-1)",
+            tests.error.wo_mandatory_location(str(violation_error)),
+        )
+
+    def test_pickle_with_invalid_set_state(self) -> None:
+        a = AMadeForPicklingWithInvalidSetState(x=2)
+
+        buffer = io.BytesIO()
+        # noinspection PyTypeChecker
+        pickle.dump(a, buffer)
+
+        buffer.seek(0)
+
+        violation_error = None  # type: Optional[icontract.ViolationError]
+        try:
+            # NOTE (mristin):
+            # The __setstate__ is expected to violate the invariant.
+            _ = pickle.load(buffer)
+
+        except icontract.ViolationError as err:
+            violation_error = err
+
+        self.assertIsNotNone(violation_error)
+        self.assertEqual(
+            """\
+self.y > 0:
+self was an instance of AMadeForPicklingWithInvalidSetState
+self.y was -1000""",
             tests.error.wo_mandatory_location(str(violation_error)),
         )
 

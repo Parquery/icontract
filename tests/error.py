@@ -3,11 +3,12 @@
 import re
 
 _LOCATION_RE = re.compile(
-    r"\AFile [^\n]+, line [0-9]+ in [a-zA-Z_0-9]+:\n(.*)\Z",
+    r"\AFile [^\n]+, line [0-9]+ in ([a-zA-Z_0-9]+|<module>):\n(.*)\Z",
     flags=re.MULTILINE | re.DOTALL,
 )
 
 
+# pylint: disable=line-too-long
 def wo_mandatory_location(text: str) -> str:
     r"""
     Strip the location of the contract from the text of the error.
@@ -19,17 +20,20 @@ def wo_mandatory_location(text: str) -> str:
     >>> wo_mandatory_location(text='File /some/file.py, line 233 in some_module:\nsome\ntext')
     'some\ntext'
 
+    >>> wo_mandatory_location(text='File /some/file.py, line 233 in <module>:\nsome\ntext')
+    'some\ntext'
+
     >>> wo_mandatory_location(text='a text')
     Traceback (most recent call last):
     ...
-    AssertionError: Expected the text to match \AFile [^\n]+, line [0-9]+ in [a-zA-Z_0-9]+:\n(.*)\Z, but got: 'a text'
+    AssertionError: Expected the text to match \AFile [^\n]+, line [0-9]+ in ([a-zA-Z_0-9]+|<module>):\n(.*)\Z, but got: 'a text'
     """
-    mtch = _LOCATION_RE.match(text)
-    if not mtch:
+    match = _LOCATION_RE.match(text)
+    if not match:
         raise AssertionError(
             "Expected the text to match {}, but got: {!r}".format(
                 _LOCATION_RE.pattern, text
             )
         )
 
-    return mtch.group(1)
+    return match.group(2)
